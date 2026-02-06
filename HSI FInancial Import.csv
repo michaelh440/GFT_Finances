@@ -1,0 +1,433 @@
+﻿class_code,summary_month,summary_year,Class,track,registrations,revenue
+CT1,Jan,2023,Short Form Level 1,Core,19,"$5,253.50 "
+CT1,Feb,2023,Short Form Level 1,Core,10,"$2,765.00 "
+CT1,Mar,2023,Short Form Level 1,Core,16,"$4,424.00 "
+CT1,Apr,2023,Short Form Level 1,Core,8,"$2,212.00 "
+CT1,May,2023,Short Form Level 1,Core,12,"$3,318.00 "
+CT1,Jun,2023,Short Form Level 1,Core,8,"$2,212.00 "
+CT1,Jul,2023,Short Form Level 1,Core,7,"$1,935.50 "
+CT1,Aug,2023,Short Form Level 1,Core,15,"$4,146.00 "
+CT1,Sep,2023,Short Form Level 1,Core,11,"$3,040.00 "
+CT1,Oct,2023,Short Form Level 1,Core,9,"$2,488.50 "
+CT1,Nov,2023,Short Form Level 1,Core,9,"$2,488.50 "
+CT1,Dec,2023,Short Form Level 1,Core,11,"$3,041.50 "
+CT1,Jan,2024,Short Form Level 1,Core,17,"$4,700.50 "
+CT1,Feb,2024,Short Form Level 1,Core,11,"$3,041.50 "
+CT1,Mar,2024,Short Form Level 1,Core,9,"$3,038.50 "
+CT1,Apr,2024,Short Form Level 1,Core,17,"$4,700.50 "
+CT1,May,2024,Short Form Level 1,Core,14,"$3,871.00 "
+CT1,Jun,2024,Short Form Level 1,Core,15,"$4,147.50 "
+CT1,Jul,2024,Short Form Level 1,Core,9,"$2,488.50 "
+CT1,Aug,2024,Short Form Level 1,Core,11,"$3,041.50 "
+CT1,Sep,2024,Short Form Level 1,Core,6,"$1,659.00 "
+CT1,Oct,2024,Short Form Level 1,Core,, $-   
+CT1,Nov,2024,Short Form Level 1,Core,10,"$2,765.00 "
+CT1,Dec,2024,Short Form Level 1,Core,12,"$3,191.50 "
+CT1,Jan,2025,Short Form Level 1,Core,12,"$3,040.00 "
+CT1,Feb,2025,Short Form Level 1,Core,14,"$3,871.00 "
+CT1,Mar,2025,Short Form Level 1,Core,6,"$1,659.00 "
+CT1,Apr,2025,Short Form Level 1,Core,4,"$1,106.00 "
+CT1,May,2025,Short Form Level 1,Core,13,"$3,594.50 "
+CT1,Jun,2025,Short Form Level 1,Core,6,"$1,659.00 "
+CT1,Jul,2025,Short Form Level 1,Core,15,"$4,147.50 "
+CT1,Aug,2025,Short Form Level 1,Core,13,"$3,594.50 "
+CT1,Sep,2025,Short Form Level 1,Core,13,"$3,593.00 "
+CT1,Oct,2025,Short Form Level 1,Core,11,"$3,038.50 "
+CT1,Nov,2025,Short Form Level 1,Core,9,"$2,284.00 "
+CT1,Dec,2025,Short Form Level 1,Core,8,"$2,404.00 "
+CT1,Jan,2026,Short Form Level 1,Core,14,"$4,207.50 "
+CT1,Feb,2026,Short Form Level 1,Core,,
+CT1,Mar,2026,Short Form Level 1,Core,,
+CT1,Apr,2026,Short Form Level 1,Core,,
+CT1,May,2026,Short Form Level 1,Core,,
+CT1,Jun,2026,Short Form Level 1,Core,,
+CT1,Jul,2026,Short Form Level 1,Core,,
+CT1,Aug,2026,Short Form Level 1,Core,,
+CT1,Sep,2026,Short Form Level 1,Core,,
+CT1,Oct,2026,Short Form Level 1,Core,,
+CT1,Nov,2026,Short Form Level 1,Core,,
+CT1,Dec,2026,Short Form Level 1,Core,,
+CT2,Jan,2023,Short Form Level 2,Core,12,"$3,318.00 "
+CT2,Feb,2023,Short Form Level 2,Core,, $-   
+CT2,Mar,2023,Short Form Level 2,Core,13,"$3,595.00 "
+CT2,Apr,2023,Short Form Level 2,Core,0, $-   
+CT2,May,2023,Short Form Level 2,Core,13,"$3,494.50 "
+CT2,Jun,2023,Short Form Level 2,Core,, $-   
+CT2,Jul,2023,Short Form Level 2,Core,8,"$2,212.00 "
+CT2,Aug,2023,Short Form Level 2,Core,4,"$1,106.00 "
+CT2,Sep,2023,Short Form Level 2,Core,3,$829.00 
+CT2,Oct,2023,Short Form Level 2,Core,5,"$1,382.50 "
+CT2,Nov,2023,Short Form Level 2,Core,, $-   
+CT2,Dec,2023,Short Form Level 2,Core,13,"$3,593.00 "
+CT2,Jan,2024,Short Form Level 2,Core,0, $-   
+CT2,Feb,2024,Short Form Level 2,Core,, $-   
+CT2,Mar,2024,Short Form Level 2,Core,11,"$3,016.50 "
+CT2,Apr,2024,Short Form Level 2,Core,11,"$3,041.50 "
+CT2,May,2024,Short Form Level 2,Core,, $-   
+CT2,Jun,2024,Short Form Level 2,Core,12,"$3,318.00 "
+CT2,Jul,2024,Short Form Level 2,Core,1,$275.00 
+CT2,Aug,2024,Short Form Level 2,Core,12,"$3,318.00 "
+CT2,Sep,2024,Short Form Level 2,Core,1,$275.00 
+CT2,Oct,2024,Short Form Level 2,Core,, $-   
+CT2,Nov,2024,Short Form Level 2,Core,, $-   
+CT2,Dec,2024,Short Form Level 2,Core,10,"$2,765.00 "
+CT2,Jan,2025,Short Form Level 2,Core,-1,($276.50)
+CT2,Feb,2025,Short Form Level 2,Core,, $-   
+CT2,Mar,2025,Short Form Level 2,Core,6,"$1,659.00 "
+CT2,Apr,2025,Short Form Level 2,Core,-3,($829.50)
+CT2,May,2025,Short Form Level 2,Core,2,$276.50 
+CT2,Jun,2025,Short Form Level 2,Core,7,"$1,935.50 "
+CT2,Jul,2025,Short Form Level 2,Core,8,"$2,212.00 "
+CT2,Aug,2025,Short Form Level 2,Core,2,$551.50 
+CT2,Sep,2025,Short Form Level 2,Core,9,"$2,488.50 "
+CT2,Oct,2025,Short Form Level 2,Core,, $-   
+CT2,Nov,2025,Short Form Level 2,Core,7,"$1,725.00 "
+CT2,Dec,2025,Short Form Level 2,Core,9,"$2,712.50 "
+CT2,Jan,2026,Short Form Level 2,Core,13,"$3,055.50 "
+CT2,Feb,2026,Short Form Level 2,Core,,
+CT2,Mar,2026,Short Form Level 2,Core,,
+CT2,Apr,2026,Short Form Level 2,Core,,
+CT2,May,2026,Short Form Level 2,Core,,
+CT2,Jun,2026,Short Form Level 2,Core,,
+CT2,Jul,2026,Short Form Level 2,Core,,
+CT2,Aug,2026,Short Form Level 2,Core,,
+CT2,Sep,2026,Short Form Level 2,Core,,
+CT2,Oct,2026,Short Form Level 2,Core,,
+CT2,Nov,2026,Short Form Level 2,Core,,
+CT2,Dec,2026,Short Form Level 2,Core,,
+CT3,Jan,2023,Short Form Level 3,Core,3,$829.50 
+CT3,Feb,2023,Short Form Level 3,Core,, $-   
+CT3,Mar,2023,Short Form Level 3,Core,, $-   
+CT3,Apr,2023,Short Form Level 3,Core,, $-   
+CT3,May,2023,Short Form Level 3,Core,, $-   
+CT3,Jun,2023,Short Form Level 3,Core,1,$276.50 
+CT3,Jul,2023,Short Form Level 3,Core,4,"$1,106.00 "
+CT3,Aug,2023,Short Form Level 3,Core,3,$829.50 
+CT3,Sep,2023,Short Form Level 3,Core,, $-   
+CT3,Oct,2023,Short Form Level 3,Core,1,$276.50 
+CT3,Nov,2023,Short Form Level 3,Core,3,$829.50 
+CT3,Dec,2023,Short Form Level 3,Core,, $-   
+CT3,Jan,2024,Short Form Level 3,Core,2,$553.00 
+CT3,Feb,2024,Short Form Level 3,Core,4,"$1,106.00 "
+CT3,Mar,2024,Short Form Level 3,Core,, $-   
+CT3,Apr,2024,Short Form Level 3,Core,9,"$2,488.50 "
+CT3,May,2024,Short Form Level 3,Core,, $-   
+CT3,Jun,2024,Short Form Level 3,Core,,"$1,935.50 "
+CT3,Jul,2024,Short Form Level 3,Core,3,$829.50 
+CT3,Aug,2024,Short Form Level 3,Core,2,$553.00 
+CT3,Sep,2024,Short Form Level 3,Core,10,"$2,763.50 "
+CT3,Oct,2024,Short Form Level 3,Core,, $-   
+CT3,Nov,2024,Short Form Level 3,Core,, $-   
+CT3,Dec,2024,Short Form Level 3,Core,6,"$1,659.00 "
+CT3,Jan,2025,Short Form Level 3,Core,1, $-   
+CT3,Feb,2025,Short Form Level 3,Core,, $-   
+CT3,Mar,2025,Short Form Level 3,Core,11,"$3,041.50 "
+CT3,Apr,2025,Short Form Level 3,Core,1,$275.00 
+CT3,May,2025,Short Form Level 3,Core,, $-   
+CT3,Jun,2025,Short Form Level 3,Core,, $-   
+CT3,Jul,2025,Short Form Level 3,Core,1,$276.50 
+CT3,Aug,2025,Short Form Level 3,Core,1,$276.50 
+CT3,Sep,2025,Short Form Level 3,Core,3,$828.00 
+CT3,Oct,2025,Short Form Level 3,Core,6,"$1,659.00 "
+CT3,Nov,2025,Short Form Level 3,Core,2,$601.00 
+CT3,Dec,2025,Short Form Level 3,Core,3,$901.50 
+CT3,Jan,2026,Short Form Level 3,Core,4,"$1,202.00 "
+CT3,Feb,2026,Short Form Level 3,Core,,
+CT3,Mar,2026,Short Form Level 3,Core,,
+CT3,Apr,2026,Short Form Level 3,Core,,
+CT3,May,2026,Short Form Level 3,Core,,
+CT3,Jun,2026,Short Form Level 3,Core,,
+CT3,Jul,2026,Short Form Level 3,Core,,
+CT3,Aug,2026,Short Form Level 3,Core,,
+CT3,Sep,2026,Short Form Level 3,Core,,
+CT3,Oct,2026,Short Form Level 3,Core,,
+CT3,Nov,2026,Short Form Level 3,Core,,
+CT3,Dec,2026,Short Form Level 3,Core,,
+AGT1,Jan,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Feb,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Mar,2023,Short Form Level 4,Advanced Games Track,4,"$1,106.00 "
+AGT1,Apr,2023,Short Form Level 4,Advanced Games Track,-3,($829.50)
+AGT1,May,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jun,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jul,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Aug,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Sep,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Oct,2023,Short Form Level 4,Advanced Games Track,3,$829.50 
+AGT1,Nov,2023,Short Form Level 4,Advanced Games Track,3,$829.50 
+AGT1,Dec,2023,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jan,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Feb,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Mar,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Apr,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,May,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jun,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jul,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Aug,2024,Short Form Level 4,Advanced Games Track,15,"$4,143.00 "
+AGT1,Sep,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Oct,2024,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Nov,2024,Short Form Level 4,Advanced Games Track,12,"$3,318.00 "
+AGT1,Dec,2024,Short Form Level 4,Advanced Games Track,1,$275.00 
+AGT1,Jan,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Feb,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Mar,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Apr,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,May,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jun,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Jul,2025,Short Form Level 4,Advanced Games Track,12,"$3,041.50 "
+AGT1,Aug,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Sep,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Oct,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Nov,2025,Short Form Level 4,Advanced Games Track,, $-   
+AGT1,Dec,2025,Short Form Level 4,Advanced Games Track,3,$901.50 
+AGT1,Jan,2026,Short Form Level 4,Advanced Games Track,-1,($300.50)
+AGT1,Feb,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Mar,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Apr,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,May,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Jun,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Jul,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Aug,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Sep,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Oct,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Nov,2026,Short Form Level 4,Advanced Games Track,,
+AGT1,Dec,2026,Short Form Level 4,Advanced Games Track,,
+MIT1,Jan,2023,Workshop,Musical Improv Track,,
+MIT1,Feb,2023,Workshop,Musical Improv Track,,
+MIT1,Mar,2023,Workshop,Musical Improv Track,,
+MIT1,Apr,2023,Workshop,Musical Improv Track,,
+MIT1,May,2023,Workshop,Musical Improv Track,,
+MIT1,Jun,2023,Workshop,Musical Improv Track,,
+MIT1,Jul,2023,Workshop,Musical Improv Track,,
+MIT1,Aug,2023,Workshop,Musical Improv Track,,
+MIT1,Sep,2023,Workshop,Musical Improv Track,,
+MIT1,Oct,2023,Workshop,Musical Improv Track,,
+MIT1,Nov,2023,Workshop,Musical Improv Track,,
+MIT1,Dec,2023,Workshop,Musical Improv Track,,
+MIT1,Jan,2024,Workshop,Musical Improv Track,,
+MIT1,Feb,2024,Workshop,Musical Improv Track,,
+MIT1,Mar,2024,Workshop,Musical Improv Track,,
+MIT1,Apr,2024,Workshop,Musical Improv Track,,
+MIT1,May,2024,Workshop,Musical Improv Track,,
+MIT1,Jun,2024,Workshop,Musical Improv Track,,
+MIT1,Jul,2024,Workshop,Musical Improv Track,,
+MIT1,Aug,2024,Workshop,Musical Improv Track,,
+MIT1,Sep,2024,Workshop,Musical Improv Track,,
+MIT1,Oct,2024,Workshop,Musical Improv Track,,
+MIT1,Nov,2024,Workshop,Musical Improv Track,,
+MIT1,Dec,2024,Workshop,Musical Improv Track,,
+MIT1,Jan,2025,Workshop,Musical Improv Track,,
+MIT1,Feb,2025,Workshop,Musical Improv Track,,
+MIT1,Mar,2025,Workshop,Musical Improv Track,,
+MIT1,Apr,2025,Workshop,Musical Improv Track,,
+MIT1,May,2025,Workshop,Musical Improv Track,,
+MIT1,Jun,2025,Workshop,Musical Improv Track,,
+MIT1,Jul,2025,Workshop,Musical Improv Track,,
+MIT1,Aug,2025,Workshop,Musical Improv Track,,
+MIT1,Sep,2025,Workshop,Musical Improv Track,,
+MIT1,Oct,2025,Workshop,Musical Improv Track,,
+MIT1,Nov,2025,Workshop,Musical Improv Track,,
+MIT1,Dec,2025,Workshop,Musical Improv Track,17,$566.50 
+MIT1,Jan,2026,Workshop,Musical Improv Track,39,"2,369"
+MIT1,Feb,2026,Workshop,Musical Improv Track,,
+MIT1,Mar,2026,Workshop,Musical Improv Track,,
+MIT1,Apr,2026,Workshop,Musical Improv Track,,
+MIT1,May,2026,Workshop,Musical Improv Track,,
+MIT1,Jun,2026,Workshop,Musical Improv Track,,
+MIT1,Jul,2026,Workshop,Musical Improv Track,,
+MIT1,Aug,2026,Workshop,Musical Improv Track,,
+MIT1,Sep,2026,Workshop,Musical Improv Track,,
+MIT1,Oct,2026,Workshop,Musical Improv Track,,
+MIT1,Nov,2026,Workshop,Musical Improv Track,,
+MIT1,Dec,2026,Workshop,Musical Improv Track,,
+SHOWCASE1,Jan,2023,HSI Showcase,Showcase,55,$275.00 
+SHOWCASE1,Feb,2023,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Mar,2023,HSI Showcase,Showcase,85,$425.00 
+SHOWCASE1,Apr,2023,HSI Showcase,Showcase,22,$110.00 
+SHOWCASE1,May,2023,HSI Showcase,Showcase,50,$250.00 
+SHOWCASE1,Jun,2023,HSI Showcase,Showcase,14,$70.00 
+SHOWCASE1,Jul,2023,HSI Showcase,Showcase,18,$90.00 
+SHOWCASE1,Aug,2023,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Sep,2023,HSI Showcase,Showcase,13,$65.00 
+SHOWCASE1,Oct,2023,HSI Showcase,Showcase,63,$315.00 
+SHOWCASE1,Nov,2023,HSI Showcase,Showcase,24,$120.00 
+SHOWCASE1,Dec,2023,HSI Showcase,Showcase,21,$105.00 
+SHOWCASE1,Jan,2024,HSI Showcase,Showcase,19,$95.00 
+SHOWCASE1,Feb,2024,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Mar,2024,HSI Showcase,Showcase,68,$340.00 
+SHOWCASE1,Apr,2024,HSI Showcase,Showcase,23,$115.00 
+SHOWCASE1,May,2024,HSI Showcase,Showcase,39,$195.00 
+SHOWCASE1,Jun,2024,HSI Showcase,Showcase,69,$330.00 
+SHOWCASE1,Jul,2024,HSI Showcase,Showcase,40,$200.00 
+SHOWCASE1,Aug,2024,HSI Showcase,Showcase,33,$165.00 
+SHOWCASE1,Sep,2024,HSI Showcase,Showcase,60,$300.00 
+SHOWCASE1,Oct,2024,HSI Showcase,Showcase,27,$135.00 
+SHOWCASE1,Nov,2024,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Dec,2024,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Jan,2025,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Feb,2025,HSI Showcase,Showcase,71,$355.00 
+SHOWCASE1,Mar,2025,HSI Showcase,Showcase,65,$320.00 
+SHOWCASE1,Apr,2025,HSI Showcase,Showcase,38,$190.00 
+SHOWCASE1,May,2025,HSI Showcase,Showcase,, $-   
+SHOWCASE1,Jun,2025,HSI Showcase,Showcase,42,$210.00 
+SHOWCASE1,Jul,2025,HSI Showcase,Showcase,15,$75.00 
+SHOWCASE1,Aug,2025,HSI Showcase,Showcase,27,$135.00 
+SHOWCASE1,Sep,2025,HSI Showcase,Showcase,33,$165.00 
+SHOWCASE1,Oct,2025,HSI Showcase,Showcase,99,$495.00 
+SHOWCASE1,Nov,2025,HSI Showcase,Showcase,37,$185.00 
+SHOWCASE1,Dec,2025,HSI Showcase,Showcase,54,$270.00 
+SHOWCASE1,Jan,2026,HSI Showcase,Showcase,22,$110.00 
+SHOWCASE1,Feb,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Mar,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Apr,2026,HSI Showcase,Showcase,,
+SHOWCASE1,May,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Jun,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Jul,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Aug,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Sep,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Oct,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Nov,2026,HSI Showcase,Showcase,,
+SHOWCASE1,Dec,2026,HSI Showcase,Showcase,,
+LFT1,Jan,2023,Long Form Level 1,Long Form Track,,
+LFT1,Feb,2023,Long Form Level 1,Long Form Track,,
+LFT1,Mar,2023,Long Form Level 1,Long Form Track,,
+LFT1,Apr,2023,Long Form Level 1,Long Form Track,,
+LFT1,May,2023,Long Form Level 1,Long Form Track,,
+LFT1,Jun,2023,Long Form Level 1,Long Form Track,,
+LFT1,Jul,2023,Long Form Level 1,Long Form Track,,
+LFT1,Aug,2023,Long Form Level 1,Long Form Track,,
+LFT1,Sep,2023,Long Form Level 1,Long Form Track,,
+LFT1,Oct,2023,Long Form Level 1,Long Form Track,,
+LFT1,Nov,2023,Long Form Level 1,Long Form Track,,
+LFT1,Dec,2023,Long Form Level 1,Long Form Track,,
+LFT1,Jan,2024,Long Form Level 1,Long Form Track,,
+LFT1,Feb,2024,Long Form Level 1,Long Form Track,,
+LFT1,Mar,2024,Long Form Level 1,Long Form Track,,
+LFT1,Apr,2024,Long Form Level 1,Long Form Track,,
+LFT1,May,2024,Long Form Level 1,Long Form Track,,
+LFT1,Jun,2024,Long Form Level 1,Long Form Track,,
+LFT1,Jul,2024,Long Form Level 1,Long Form Track,,
+LFT1,Aug,2024,Long Form Level 1,Long Form Track,,
+LFT1,Sep,2024,Long Form Level 1,Long Form Track,,
+LFT1,Oct,2024,Long Form Level 1,Long Form Track,,
+LFT1,Nov,2024,Long Form Level 1,Long Form Track,,
+LFT1,Dec,2024,Long Form Level 1,Long Form Track,,
+LFT1,Jan,2025,Long Form Level 1,Long Form Track,,
+LFT1,Feb,2025,Long Form Level 1,Long Form Track,,
+LFT1,Mar,2025,Long Form Level 1,Long Form Track,,
+LFT1,Apr,2025,Long Form Level 1,Long Form Track,,
+LFT1,May,2025,Long Form Level 1,Long Form Track,,
+LFT1,Jun,2025,Long Form Level 1,Long Form Track,,
+LFT1,Jul,2025,Long Form Level 1,Long Form Track,,
+LFT1,Aug,2025,Long Form Level 1,Long Form Track,,
+LFT1,Sep,2025,Long Form Level 1,Long Form Track,,
+LFT1,Oct,2025,Long Form Level 1,Long Form Track,,
+LFT1,Nov,2025,Long Form Level 1,Long Form Track,,
+LFT1,Dec,2025,Long Form Level 1,Long Form Track,,
+LFT1,Jan,2026,Long Form Level 1,Long Form Track,7,"$1,585.50 "
+LFT1,Feb,2026,Long Form Level 1,Long Form Track,,
+LFT1,Mar,2026,Long Form Level 1,Long Form Track,,
+LFT1,Apr,2026,Long Form Level 1,Long Form Track,,
+LFT1,May,2026,Long Form Level 1,Long Form Track,,
+LFT1,Jun,2026,Long Form Level 1,Long Form Track,,
+LFT1,Jul,2026,Long Form Level 1,Long Form Track,,
+LFT1,Aug,2026,Long Form Level 1,Long Form Track,,
+LFT1,Sep,2026,Long Form Level 1,Long Form Track,,
+LFT1,Oct,2026,Long Form Level 1,Long Form Track,,
+LFT1,Nov,2026,Long Form Level 1,Long Form Track,,
+LFT1,Dec,2026,Long Form Level 1,Long Form Track,,
+VET1,Jan,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Feb,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Mar,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Apr,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,May,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jun,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jul,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Aug,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Sep,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Oct,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Nov,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Dec,2023,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jan,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Feb,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Mar,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Apr,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,May,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jun,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jul,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Aug,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Sep,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Oct,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Nov,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Dec,2024,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jan,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Feb,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Mar,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Apr,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,May,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jun,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jul,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Aug,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Sep,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Oct,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Nov,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Dec,2025,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jan,2026,Ross Byrant Workshop,Visiting Experts Track,12,$618.00 
+VET1,Feb,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Mar,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Apr,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,May,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jun,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Jul,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Aug,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Sep,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Oct,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Nov,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET1,Dec,2026,Ross Byrant Workshop,Visiting Experts Track,,
+VET2,Jan,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Feb,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Mar,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Apr,2023,Manager Workshops,Visiting Experts Track,,
+VET2,May,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Jun,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Jul,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Aug,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Sep,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Oct,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Nov,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Dec,2023,Manager Workshops,Visiting Experts Track,,
+VET2,Jan,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Feb,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Mar,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Apr,2024,Manager Workshops,Visiting Experts Track,,
+VET2,May,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Jun,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Jul,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Aug,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Sep,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Oct,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Nov,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Dec,2024,Manager Workshops,Visiting Experts Track,,
+VET2,Jan,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Feb,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Mar,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Apr,2025,Manager Workshops,Visiting Experts Track,,
+VET2,May,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Jun,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Jul,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Aug,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Sep,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Oct,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Nov,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Dec,2025,Manager Workshops,Visiting Experts Track,,
+VET2,Jan,2026,Manager Workshops,Visiting Experts Track,70,"$3,884.00 "
+VET2,Feb,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Mar,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Apr,2026,Manager Workshops,Visiting Experts Track,,
+VET2,May,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Jun,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Jul,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Aug,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Sep,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Oct,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Nov,2026,Manager Workshops,Visiting Experts Track,,
+VET2,Dec,2026,Manager Workshops,Visiting Experts Track,,
