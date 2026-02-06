@@ -3,16 +3,41 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import Chart from 'chart.js/auto';
-  
+
+  /**
+   * @typedef {Object} ClassItem
+   * @property {string} class_code
+   * @property {string} class_name
+   * @property {string} class_type
+   * @property {string} student_type
+   * @property {number} standard_price
+   * @property {string} track
+   * @property {string} description
+   * @property {boolean} is_active
+   */
+
+  /**
+   * @typedef {Object} Summary
+   * @property {string} class_code
+   * @property {string} summary_month
+   * @property {number} summary_year
+   * @property {number} registrations
+   * @property {number} revenue
+   */
+
+  /** @type {{ classes: ClassItem[], summaries: Summary[] }} */
   export let data;
-  
+
   let selectedClassCode = 'all';
   let selectedTrack = 'all';
+  /** @type {Record<string, Chart>} */
   let charts = {};
   let mounted = false;
-  
+
   // Year filter states
+  /** @type {number[]} */
   let availableYears = [];
+  /** @type {number[]} */
   let selectedYearsMonthly = [];
   let selectedYearMoM = new Date().getFullYear();
   
@@ -71,14 +96,20 @@
   
   $: chartData = processChartData(filteredData, selectedYearsMonthly, selectedYearMoM);
   
+  /**
+   * @param {string} classCode
+   * @param {string} trackId
+   * @param {Summary[]} summaries
+   * @returns {Summary[]}
+   */
   function getFilteredData(classCode, trackId, summaries) {
     let filtered = summaries;
-    
+
     // Filter by class
     if (classCode !== 'all') {
       filtered = filtered.filter(s => s.class_code === classCode);
     }
-    
+
     // Filter by track
     if (trackId !== 'all') {
       const classCodesInTrack = data.classes
@@ -86,10 +117,13 @@
         .map(c => c.class_code);
       filtered = filtered.filter(s => classCodesInTrack.includes(s.class_code));
     }
-    
+
     return filtered;
   }
-  
+
+  /**
+   * @param {number} year
+   */
   function toggleYear(year) {
     if (selectedYearsMonthly.includes(year)) {
       selectedYearsMonthly = selectedYearsMonthly.filter(y => y !== year);
@@ -97,7 +131,18 @@
       selectedYearsMonthly = [...selectedYearsMonthly, year].sort((a, b) => a - b);
     }
   }
-  
+
+  /**
+   * @typedef {Object} MonthData
+   * @property {number} registrations
+   * @property {number} revenue
+   */
+
+  /**
+   * @param {Summary[]} summaries
+   * @param {number[]} yearsFilter
+   * @param {number} momYear
+   */
   function processChartData(summaries, yearsFilter, momYear) {
     if (!summaries || summaries.length === 0) {
       console.log('No summaries to process');
@@ -110,62 +155,65 @@
         ytdRevenue: { labels: [], datasets: [] }
       };
     }
-    
+
     // Group data by year
+    /** @type {Record<number, MonthData[]>} */
     const dataByYear = {};
     summaries.forEach(summary => {
       const date = new Date(summary.summary_month);
       const year = date.getFullYear();
       const month = date.getMonth();
-      
+
       if (!dataByYear[year]) {
         dataByYear[year] = Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
       }
-      
+
       // Add to existing values (for aggregating multiple classes)
       dataByYear[year][month].registrations += summary.registrations;
       dataByYear[year][month].revenue += summary.revenue;
     });
-    
+
     console.log('Data by year:', dataByYear);
     console.log('Years to filter:', yearsFilter);
-    
+
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-    
+
     // Filter years for monthly charts - sort ascending for better visual order
     const filteredYears = yearsFilter.filter(year => dataByYear[year]).sort((a, b) => a - b);
-    
+
     console.log('Filtered years for charts:', filteredYears);
-    
+
     // 1. Monthly Registrations by Year (Bar Chart)
     const monthlyRegistrations = {
       labels: months,
       datasets: filteredYears.map((year, index) => ({
         label: year.toString(),
-        data: dataByYear[year].map(d => d.registrations),
+        data: dataByYear[year].map((/** @type {MonthData} */ d) => d.registrations),
         backgroundColor: colors[index % colors.length],
         borderColor: colors[index % colors.length],
         borderWidth: 1
       }))
     };
-    
+
     console.log('Monthly registrations datasets:', monthlyRegistrations.datasets);
-    
+
     // 2. Monthly Revenue by Year (Bar Chart)
     const monthlyRevenue = {
       labels: months,
       datasets: filteredYears.map((year, index) => ({
         label: year.toString(),
-        data: dataByYear[year].map(d => d.revenue),
+        data: dataByYear[year].map((/** @type {MonthData} */ d) => d.revenue),
         backgroundColor: colors[index % colors.length],
         borderColor: colors[index % colors.length],
         borderWidth: 1
       }))
     };
-    
+
     // 3. Month over Month Registrations (selected year)
-    const momYearData = dataByYear[momYear] || Array(12).fill({ registrations: 0, revenue: 0 });
+    /** @type {MonthData[]} */
+    const momYearData = dataByYear[momYear] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
+    /** @type {number[]} */
     const momRegistrationsData = [];
     for (let i = 1; i < 12; i++) {
       const current = momYearData[i].registrations;
@@ -173,7 +221,7 @@
       const change = previous > 0 ? ((current - previous) / previous) * 100 : 0;
       momRegistrationsData.push(change);
     }
-    
+
     const momRegistrations = {
       labels: months.slice(1),
       datasets: [{
@@ -182,8 +230,9 @@
         backgroundColor: momRegistrationsData.map(v => v >= 0 ? '#10b981' : '#ef4444'),
       }]
     };
-    
+
     // 4. Month over Month Revenue (selected year)
+    /** @type {number[]} */
     const momRevenueData = [];
     for (let i = 1; i < 12; i++) {
       const current = momYearData[i].revenue;
@@ -191,7 +240,7 @@
       const change = previous > 0 ? ((current - previous) / previous) * 100 : 0;
       momRevenueData.push(change);
     }
-    
+
     const momRevenue = {
       labels: months.slice(1),
       datasets: [{
@@ -200,15 +249,17 @@
         backgroundColor: momRevenueData.map(v => v >= 0 ? '#10b981' : '#ef4444'),
       }]
     };
-    
+
     // 5. YTD Registrations Comparison
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth();
-    const currentYearData = dataByYear[currentYear] || Array(12).fill({ registrations: 0, revenue: 0 });
-    const ytdCurrentYear = currentYearData.slice(0, currentMonth + 1).reduce((sum, d) => sum + d.registrations, 0);
-    const lastYearData = dataByYear[currentYear - 1] || Array(12).fill({ registrations: 0, revenue: 0 });
-    const ytdLastYear = lastYearData.slice(0, currentMonth + 1).reduce((sum, d) => sum + d.registrations, 0);
-    
+    /** @type {MonthData[]} */
+    const currentYearData = dataByYear[currentYear] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
+    const ytdCurrentYear = currentYearData.slice(0, currentMonth + 1).reduce((/** @type {number} */ sum, /** @type {MonthData} */ d) => sum + d.registrations, 0);
+    /** @type {MonthData[]} */
+    const lastYearData = dataByYear[currentYear - 1] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
+    const ytdLastYear = lastYearData.slice(0, currentMonth + 1).reduce((/** @type {number} */ sum, /** @type {MonthData} */ d) => sum + d.registrations, 0);
+
     const ytdRegistrations = {
       labels: [`${currentYear - 1} YTD`, `${currentYear} YTD`],
       datasets: [{
@@ -217,10 +268,10 @@
         backgroundColor: ['#6b7280', '#3b82f6'],
       }]
     };
-    
+
     // 6. YTD Revenue Comparison
-    const ytdCurrentYearRevenue = currentYearData.slice(0, currentMonth + 1).reduce((sum, d) => sum + d.revenue, 0);
-    const ytdLastYearRevenue = lastYearData.slice(0, currentMonth + 1).reduce((sum, d) => sum + d.revenue, 0);
+    const ytdCurrentYearRevenue = currentYearData.slice(0, currentMonth + 1).reduce((/** @type {number} */ sum, /** @type {MonthData} */ d) => sum + d.revenue, 0);
+    const ytdLastYearRevenue = lastYearData.slice(0, currentMonth + 1).reduce((/** @type {number} */ sum, /** @type {MonthData} */ d) => sum + d.revenue, 0);
     
     const ytdRevenue = {
       labels: [`${currentYear - 1} YTD`, `${currentYear} YTD`],
@@ -241,6 +292,10 @@
     };
   }
   
+  /**
+   * @param {number} value
+   * @returns {string}
+   */
   function formatCurrency(value) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -249,18 +304,22 @@
       maximumFractionDigits: 0
     }).format(value);
   }
-  
+
+  /**
+   * @param {string} canvasId
+   * @param {import('chart.js').ChartConfiguration} config
+   */
   function createChart(canvasId, config) {
     if (!browser || !mounted) return;
-    
-    const ctx = document.getElementById(canvasId);
+
+    const ctx = /** @type {HTMLCanvasElement | null} */ (document.getElementById(canvasId));
     if (!ctx) return;
-    
+
     // Destroy existing chart if it exists
     if (charts[canvasId]) {
       charts[canvasId].destroy();
     }
-    
+
     charts[canvasId] = new Chart(ctx, config);
   }
   
@@ -295,17 +354,17 @@
             title: { display: true, text: 'Monthly Revenue by Year' },
             tooltip: {
               callbacks: {
-                label: function(context) {
+                label: function(/** @type {any} */ context) {
                   return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
                 }
               }
             }
           },
           scales: {
-            y: { 
+            y: {
               beginAtZero: true,
               ticks: {
-                callback: function(value) {
+                callback: function(/** @type {any} */ value) {
                   return formatCurrency(value);
                 }
               }
@@ -313,7 +372,7 @@
           }
         }
       });
-      
+
       // Month over Month Registrations
       createChart('momRegistrationsChart', {
         type: 'bar',
@@ -328,7 +387,7 @@
           scales: {
             y: {
               ticks: {
-                callback: function(value) {
+                callback: function(/** @type {any} */ value) {
                   return value + '%';
                 }
               }
@@ -336,7 +395,7 @@
           }
         }
       });
-      
+
       // Month over Month Revenue
       createChart('momRevenueChart', {
         type: 'bar',
@@ -351,7 +410,7 @@
           scales: {
             y: {
               ticks: {
-                callback: function(value) {
+                callback: function(/** @type {any} */ value) {
                   return value + '%';
                 }
               }
@@ -389,17 +448,17 @@
             title: { display: true, text: 'Year-to-Date Revenue Comparison' },
             tooltip: {
               callbacks: {
-                label: function(context) {
+                label: function(/** @type {any} */ context) {
                   return formatCurrency(context.parsed.y);
                 }
               }
             }
           },
           scales: {
-            y: { 
+            y: {
               beginAtZero: true,
               ticks: {
-                callback: function(value) {
+                callback: function(/** @type {any} */ value) {
                   return formatCurrency(value);
                 }
               }

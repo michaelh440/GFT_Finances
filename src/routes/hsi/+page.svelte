@@ -1,11 +1,25 @@
 <!-- src/routes/hsi/+page.svelte -->
 <script>
+  /**
+   * @typedef {Object} ClassItem
+   * @property {string} class_code
+   * @property {string} class_name
+   * @property {string} class_type
+   * @property {string} student_type
+   * @property {number} standard_price
+   * @property {string} track
+   * @property {string} description
+   * @property {boolean} is_active
+   */
+
+  /** @type {{ classes: ClassItem[] }} */
   export let data;
-  
+
   $: classes = data.classes;
-  
+
   // Group classes by track
-  $: classesByTrack = classes.reduce((acc, classItem) => {
+  /** @type {Record<string, ClassItem[]>} */
+  $: classesByTrack = classes.reduce((/** @type {Record<string, ClassItem[]>} */ acc, classItem) => {
     const track = classItem.track || 'Uncategorized';
     if (!acc[track]) {
       acc[track] = [];
@@ -13,9 +27,13 @@
     acc[track].push(classItem);
     return acc;
   }, {});
-  
+
   $: tracks = Object.keys(classesByTrack).sort();
-  
+
+  /**
+   * @param {number} amount
+   * @returns {string}
+   */
   function formatCurrency(amount) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

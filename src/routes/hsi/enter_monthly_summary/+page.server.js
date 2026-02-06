@@ -56,28 +56,28 @@ export const load = async () => {
 export const actions = {
   default: async ({ request }) => {
     const formData = await request.formData();
-    const entryCount = parseInt(formData.get('entry_count')) || 0;
-    
+    const entryCount = parseInt(String(formData.get('entry_count'))) || 0;
+
     if (entryCount === 0) {
       return {
         success: false,
         error: 'No entries to save'
       };
     }
-    
+
     try {
       // Process each entry
       for (let i = 0; i < entryCount; i++) {
-        const month = formData.get(`month_${i}`);
-        const classCode = formData.get(`class_code_${i}`);
-        const registrations = parseInt(formData.get(`registrations_${i}`)) || 0;
-        const revenue = parseFloat(formData.get(`revenue_${i}`)) || 0;
-        
+        const month = String(formData.get(`month_${i}`) || '');
+        const classCode = String(formData.get(`class_code_${i}`) || '');
+        const registrations = parseInt(String(formData.get(`registrations_${i}`))) || 0;
+        const revenue = parseFloat(String(formData.get(`revenue_${i}`))) || 0;
+
         // Validate required fields
         if (!month || !classCode) {
           continue; // Skip invalid entries
         }
-        
+
         // Convert month (YYYY-MM) to first day of month (YYYY-MM-01)
         const summaryMonth = month + '-01';
         const summaryYear = parseInt(month.split('-')[0]);

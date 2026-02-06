@@ -1,13 +1,37 @@
 <!-- src/routes/hsi/enter_monthly_summary/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
-  
+
+  /**
+   * @typedef {Object} ClassItem
+   * @property {string} class_code
+   * @property {string} class_name
+   * @property {string} class_type
+   * @property {string} student_type
+   * @property {number} standard_price
+   * @property {string} track
+   * @property {string} description
+   * @property {boolean} is_active
+   */
+
+  /**
+   * @typedef {Object} SummaryEntry
+   * @property {string} id
+   * @property {string} class_code
+   * @property {string} month
+   * @property {number} registrations
+   * @property {number} revenue
+   */
+
+  /** @type {{ classes: ClassItem[], existingSummaries: Array<{class_code: string, summary_month: string, summary_year: number, registrations: number, revenue: number}> }} */
   export let data;
+  /** @type {{ success?: boolean, error?: string } | null} */
   export let form;
-  
+
   // Initialize entries with existing summaries or empty array
+  /** @type {SummaryEntry[]} */
   let entries = [];
-  
+
   $: {
     if (data.existingSummaries && data.existingSummaries.length > 0) {
       entries = data.existingSummaries.map(summary => ({
@@ -22,7 +46,7 @@
       addEntry();
     }
   }
-  
+
   function addEntry() {
     entries = [...entries, {
       id: crypto.randomUUID(),
@@ -32,31 +56,42 @@
       revenue: 0
     }];
   }
-  
+
+  /**
+   * @param {string} id
+   */
   function removeEntry(id) {
     entries = entries.filter(e => e.id !== id);
   }
-  
+
+  /**
+   * @param {number} amount
+   * @returns {string}
+   */
   function formatCurrency(amount) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
   }
-  
+
+  /**
+   * @param {string} classCode
+   * @returns {ClassItem | undefined}
+   */
   function getClassByCode(classCode) {
     return data.classes.find(c => c.class_code === classCode);
   }
-  
+
   // Calculate total revenue
   $: totalRevenue = entries.reduce((sum, entry) => {
-    const revenue = parseFloat(entry.revenue) || 0;
+    const revenue = parseFloat(String(entry.revenue)) || 0;
     return sum + revenue;
   }, 0);
-  
+
   // Calculate total registrations
   $: totalRegistrations = entries.reduce((sum, entry) => {
-    const registrations = parseInt(entry.registrations) || 0;
+    const registrations = parseInt(String(entry.registrations)) || 0;
     return sum + registrations;
   }, 0);
 </script>
