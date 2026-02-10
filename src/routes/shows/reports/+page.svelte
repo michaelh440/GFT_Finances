@@ -1,41 +1,43 @@
-<!-- src/routes/hsi/reports/+page.svelte -->
+<!-- src/routes/shows/reports/+page.svelte -->
 <script>
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import Chart from 'chart.js/auto';
 
   /**
-   * @typedef {Object} ClassItem
-   * @property {string} class_code
-   * @property {string} class_name
-   * @property {string} class_type
-   * @property {string} student_type
-   * @property {number} standard_price
-   * @property {string} track
+   * @typedef {Object} ShowItem
+   * @property {string} show_code
+   * @property {string} show_name
+   * @property {string} format
+   * @property {string} audience_type
+   * @property {string} day_of_week
+   * @property {number} standard_ticket_price
    * @property {string} description
    * @property {boolean} is_active
    */
 
   /**
    * @typedef {Object} Summary
-   * @property {string} class_code
+   * @property {string} show_code
    * @property {string} summary_month
    * @property {number} summary_year
-   * @property {number} registrations
+   * @property {number} tickets_sold
    * @property {number} revenue
    */
 
   /**
    * @typedef {Object} MonthData
-   * @property {number} registrations
+   * @property {number} tickets_sold
    * @property {number} revenue
    */
 
-  /** @type {{ classes: ClassItem[], summaries: Summary[] }} */
+  /** @type {{ shows: ShowItem[], summaries: Summary[] }} */
   export let data;
 
-  let selectedClassCode = 'all';
-  let selectedTrack = 'all';
+  let selectedShowCode = 'all';
+  let selectedFormat = 'all';
+  let selectedAudience = 'all';
+  let selectedDay = 'all';
   /** @type {Record<string, Chart>} */
   let charts = {};
   let mounted = false;
@@ -56,10 +58,12 @@
     mounted = true;
   });
 
-  // Get unique tracks from data
-  $: uniqueTracks = [...new Set(data.classes.map((/** @type {ClassItem} */ c) => c.track).filter(Boolean))].sort();
+  // Get unique filter values from data
+  $: uniqueFormats = [...new Set(data.shows.map((/** @type {ShowItem} */ s) => s.format).filter(Boolean))].sort();
+  $: uniqueAudiences = [...new Set(data.shows.map((/** @type {ShowItem} */ s) => s.audience_type).filter(Boolean))].sort();
+  $: uniqueDays = [...new Set(data.shows.map((/** @type {ShowItem} */ s) => s.day_of_week).filter(Boolean))].sort();
   
-  $: filteredData = getFilteredData(selectedClassCode, selectedTrack, data.summaries);
+  $: filteredData = getFilteredData(selectedShowCode, selectedFormat, selectedAudience, selectedDay, data.summaries);
   
   // Extract available years from data
   $: {
@@ -98,28 +102,44 @@
   $: chartData = processChartData(filteredData, selectedYearsMonthly, selectedYearMoM, selectedMonth4M, selectedYears4M);
   
   /**
-   * @param {string} classCode
-   * @param {string} trackId
+   * @param {string} showCode
+   * @param {string} format
+   * @param {string} audience
+   * @param {string} day
    * @param {Summary[]} summaries
    * @returns {Summary[]}
    */
-  function getFilteredData(classCode, trackId, summaries) {
+  function getFilteredData(showCode, format, audience, day, summaries) {
     let filtered = summaries;
 
-    if (classCode !== 'all') {
-      filtered = filtered.filter(s => s.class_code === classCode);
+    if (showCode !== 'all') {
+      filtered = filtered.filter(s => s.show_code === showCode);
     }
 
-    if (trackId !== 'all') {
-      const classCodesInTrack = data.classes
-        .filter(c => c.track === trackId)
-        .map(c => c.class_code);
-      filtered = filtered.filter(s => classCodesInTrack.includes(s.class_code));
+    if (format !== 'all') {
+      const showCodesInFormat = data.shows
+        .filter(s => s.format === format)
+        .map(s => s.show_code);
+      filtered = filtered.filter(s => showCodesInFormat.includes(s.show_code));
+    }
+
+    if (audience !== 'all') {
+      const showCodesInAudience = data.shows
+        .filter(s => s.audience_type === audience)
+        .map(s => s.show_code);
+      filtered = filtered.filter(s => showCodesInAudience.includes(s.show_code));
+    }
+
+    if (day !== 'all') {
+      const showCodesOnDay = data.shows
+        .filter(s => s.day_of_week === day)
+        .map(s => s.show_code);
+      filtered = filtered.filter(s => showCodesOnDay.includes(s.show_code));
     }
 
     return filtered;
   }
-
+  
   /**
    * @param {number} year
    */
@@ -143,6 +163,12 @@
   }
 
   /**
+   * @typedef {Object} ShowMonthData
+   * @property {number} tickets
+   * @property {number} revenue
+   */
+
+  /**
    * @param {Summary[]} summaries
    * @param {number[]} yearsFilter
    * @param {number} momYear
@@ -152,19 +178,19 @@
   function processChartData(summaries, yearsFilter, momYear, month4M, years4M) {
     if (!summaries || summaries.length === 0) {
       return {
-        monthlyRegistrations: { labels: [], datasets: [] },
+        monthlyTickets: { labels: [], datasets: [] },
         monthlyRevenue: { labels: [], datasets: [] },
-        fourMonthRegistrations: { labels: [], datasets: [] },
+        fourMonthTickets: { labels: [], datasets: [] },
         fourMonthRevenue: { labels: [], datasets: [] },
-        momRegistrations: { labels: [], datasets: [] },
+        momTickets: { labels: [], datasets: [] },
         momRevenue: { labels: [], datasets: [] },
-        ytdRegistrations: { labels: [], datasets: [] },
+        ytdTickets: { labels: [], datasets: [] },
         ytdRevenue: { labels: [], datasets: [] }
       };
     }
-    
+
     // Group data by year
-    /** @type {Record<number, MonthData[]>} */
+    /** @type {Record<number, ShowMonthData[]>} */
     const dataByYear = {};
     summaries.forEach(summary => {
       const year = summary.summary_year;
@@ -174,10 +200,10 @@
       if (year < 2023 || year > 2027) return;
 
       if (!dataByYear[year]) {
-        dataByYear[year] = Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
+        dataByYear[year] = Array(12).fill(null).map(() => ({ tickets: 0, revenue: 0 }));
       }
 
-      dataByYear[year][month].registrations += summary.registrations;
+      dataByYear[year][month].tickets += summary.tickets_sold;
       dataByYear[year][month].revenue += summary.revenue;
     });
 
@@ -187,12 +213,12 @@
     // Filter years for monthly charts
     const filteredYears = yearsFilter.filter(year => dataByYear[year]).sort((a, b) => a - b);
 
-    // 1. Monthly Registrations by Year
-    const monthlyRegistrations = {
+    // 1. Monthly Tickets by Year
+    const monthlyTickets = {
       labels: months,
       datasets: filteredYears.map((year, index) => ({
         label: year.toString(),
-        data: dataByYear[year].map((/** @type {MonthData} */ d) => d.registrations),
+        data: dataByYear[year].map((/** @type {ShowMonthData} */ d) => d.tickets),
         backgroundColor: colors[index % colors.length],
         borderColor: colors[index % colors.length],
         borderWidth: 1
@@ -204,14 +230,14 @@
       labels: months,
       datasets: filteredYears.map((year, index) => ({
         label: year.toString(),
-        data: dataByYear[year].map((/** @type {MonthData} */ d) => d.revenue),
+        data: dataByYear[year].map((/** @type {ShowMonthData} */ d) => d.revenue),
         backgroundColor: colors[index % colors.length],
         borderColor: colors[index % colors.length],
         borderWidth: 1
       }))
     };
 
-    // 3. 4-Month Rolling Registrations
+    // 3. 4-Month Rolling Tickets
     const filteredYears4M = years4M.filter(year => dataByYear[year]).sort((a, b) => a - b);
     /** @type {number[]} */
     const monthIndices = [];
@@ -223,11 +249,11 @@
       monthLabels.push(months[idx]);
     }
 
-    const fourMonthRegistrations = {
+    const fourMonthTickets = {
       labels: monthLabels,
       datasets: filteredYears4M.map((year, index) => ({
         label: year.toString(),
-        data: monthIndices.map(idx => dataByYear[year][idx].registrations),
+        data: monthIndices.map(idx => dataByYear[year][idx].tickets),
         backgroundColor: colors[index % colors.length],
         borderColor: colors[index % colors.length],
         borderWidth: 1
@@ -245,47 +271,45 @@
         borderWidth: 1
       }))
     };
-
-    // 5. Month over Month Registrations (including January)
-    /** @type {MonthData[]} */
-    const momYearData = dataByYear[momYear] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
-    /** @type {MonthData[]} */
-    const prevYearData = dataByYear[momYear - 1] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
-    const momRegistrationsData = [];
+    
+    // 5. Month over Month Tickets
+    /** @type {ShowMonthData[]} */
+    const momYearData = dataByYear[momYear] || Array(12).fill(null).map(() => ({ tickets: 0, revenue: 0 }));
+    /** @type {ShowMonthData[]} */
+    const prevYearData = dataByYear[momYear - 1] || Array(12).fill(null).map(() => ({ tickets: 0, revenue: 0 }));
+    const momTicketsData = [];
     
     // January: compare to December of previous year
-    const janCurrent = momYearData[0].registrations;
-    const decPrevious = prevYearData[11].registrations;
+    const janCurrent = momYearData[0].tickets;
+    const decPrevious = prevYearData[11].tickets;
     const janChange = decPrevious > 0 ? ((janCurrent - decPrevious) / decPrevious) * 100 : 0;
-    momRegistrationsData.push(janChange);
+    momTicketsData.push(janChange);
     
-    // February through December: compare to previous month of same year
+    // February through December
     for (let i = 1; i < 12; i++) {
-      const current = momYearData[i].registrations;
-      const previous = momYearData[i - 1].registrations;
+      const current = momYearData[i].tickets;
+      const previous = momYearData[i - 1].tickets;
       const change = previous > 0 ? ((current - previous) / previous) * 100 : 0;
-      momRegistrationsData.push(change);
+      momTicketsData.push(change);
     }
     
-    const momRegistrations = {
+    const momTickets = {
       labels: months,
       datasets: [{
         label: 'Month over Month % Change',
-        data: momRegistrationsData,
-        backgroundColor: momRegistrationsData.map(v => v >= 0 ? '#10b981' : '#ef4444'),
+        data: momTicketsData,
+        backgroundColor: momTicketsData.map(v => v >= 0 ? '#10b981' : '#ef4444'),
       }]
     };
     
-    // 6. Month over Month Revenue (including January)
+    // 6. Month over Month Revenue
     const momRevenueData = [];
     
-    // January: compare to December of previous year
     const janRevCurrent = momYearData[0].revenue;
     const decRevPrevious = prevYearData[11].revenue;
     const janRevChange = decRevPrevious > 0 ? ((janRevCurrent - decRevPrevious) / decRevPrevious) * 100 : 0;
     momRevenueData.push(janRevChange);
     
-    // February through December: compare to previous month of same year
     for (let i = 1; i < 12; i++) {
       const current = momYearData[i].revenue;
       const previous = momYearData[i - 1].revenue;
@@ -302,27 +326,26 @@
       }]
     };
     
-    // 7. YTD Registrations - Cumulative totals by month
+    // 7. YTD Tickets
     const currentYear = new Date().getFullYear();
-    /** @type {MonthData[]} */
-    const currentYearData = dataByYear[currentYear] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
-    /** @type {MonthData[]} */
-    const lastYearData = dataByYear[currentYear - 1] || Array(12).fill(null).map(() => ({ registrations: 0, revenue: 0 }));
+    /** @type {ShowMonthData[]} */
+    const currentYearData = dataByYear[currentYear] || Array(12).fill(null).map(() => ({ tickets: 0, revenue: 0 }));
+    /** @type {ShowMonthData[]} */
+    const lastYearData = dataByYear[currentYear - 1] || Array(12).fill(null).map(() => ({ tickets: 0, revenue: 0 }));
     
-    // Calculate cumulative sums for registrations
     const currentYearCumulative = [];
     const lastYearCumulative = [];
     let currentYearSum = 0;
     let lastYearSum = 0;
     
     for (let i = 0; i < 12; i++) {
-      currentYearSum += currentYearData[i].registrations;
-      lastYearSum += lastYearData[i].registrations;
+      currentYearSum += currentYearData[i].tickets;
+      lastYearSum += lastYearData[i].tickets;
       currentYearCumulative.push(currentYearSum);
       lastYearCumulative.push(lastYearSum);
     }
     
-    const ytdRegistrations = {
+    const ytdTickets = {
       labels: months,
       datasets: [
         {
@@ -342,7 +365,7 @@
       ]
     };
     
-    // 8. YTD Revenue - Cumulative totals by month
+    // 8. YTD Revenue
     const currentYearRevenueCumulative = [];
     const lastYearRevenueCumulative = [];
     let currentYearRevenueSum = 0;
@@ -376,13 +399,13 @@
     };
     
     return {
-      monthlyRegistrations,
+      monthlyTickets,
       monthlyRevenue,
-      fourMonthRegistrations,
+      fourMonthTickets,
       fourMonthRevenue,
-      momRegistrations,
+      momTickets,
       momRevenue,
-      ytdRegistrations,
+      ytdTickets,
       ytdRevenue
     };
   }
@@ -419,16 +442,16 @@
   
   $: if (browser && mounted && chartData) {
     setTimeout(() => {
-      // Monthly Registrations
-      createChart('monthlyRegistrationsChart', {
+      // Monthly Tickets
+      createChart('monthlyTicketsChart', {
         type: 'bar',
-        data: chartData.monthlyRegistrations,
+        data: chartData.monthlyTickets,
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: 'Monthly Registrations by Year' }
+            title: { display: true, text: 'Monthly Tickets Sold by Year' }
           },
           scales: {
             y: { beginAtZero: true }
@@ -467,16 +490,16 @@
         }
       });
 
-      // 4-Month Rolling Registrations
-      createChart('fourMonthRegistrationsChart', {
+      // 4-Month Rolling Tickets
+      createChart('fourMonthTicketsChart', {
         type: 'bar',
-        data: chartData.fourMonthRegistrations,
+        data: chartData.fourMonthTickets,
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: '4-Month Rolling Registrations' }
+            title: { display: true, text: '4-Month Rolling Tickets Sold' }
           },
           scales: {
             y: { beginAtZero: true }
@@ -515,16 +538,16 @@
         }
       });
 
-      // Month over Month Registrations
-      createChart('momRegistrationsChart', {
+      // Month over Month Tickets
+      createChart('momTicketsChart', {
         type: 'bar',
-        data: chartData.momRegistrations,
+        data: chartData.momTickets,
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: `Month over Month Registration Growth (%) - ${selectedYearMoM}` }
+            title: { display: true, text: `Month over Month Ticket Growth (%) - ${selectedYearMoM}` }
           },
           scales: {
             y: {
@@ -537,7 +560,7 @@
           }
         }
       });
-
+      
       // Month over Month Revenue
       createChart('momRevenueChart', {
         type: 'bar',
@@ -560,24 +583,24 @@
           }
         }
       });
-      
-      // YTD Registrations
-      createChart('ytdRegistrationsChart', {
+
+      // YTD Tickets
+      createChart('ytdTicketsChart', {
         type: 'bar',
-        data: chartData.ytdRegistrations,
+        data: chartData.ytdTickets,
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: 'Year-to-Date Cumulative Registrations' }
+            title: { display: true, text: 'Year-to-Date Cumulative Tickets Sold' }
           },
           scales: {
             y: { beginAtZero: true }
           }
         }
       });
-      
+
       // YTD Revenue
       createChart('ytdRevenueChart', {
         type: 'bar',
@@ -613,39 +636,61 @@
 </script>
 
 <svelte:head>
-  <title>HSI Reports | B&C Financial Tracker</title>
+  <title>Show Reports | B&C Financial Tracker</title>
 </svelte:head>
 
 <div class="container">
   <header>
     <div>
-      <h1>HSI Class Reports</h1>
-      <p class="subtitle">Visual analysis of class performance and trends</p>
+      <h1>Live Show Reports</h1>
+      <p class="subtitle">Visual analysis of show performance and trends</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <a href="/shows" class="btn-secondary">Back to Shows</a>
   </header>
   
   <!-- Global Filters -->
   <div class="filter-section">
     <div class="filter-row">
       <div class="filter-group">
-        <label for="classSelect">Class Filter:</label>
-        <select id="classSelect" bind:value={selectedClassCode} class="filter-select">
-          <option value="all">All Classes</option>
-          {#each data.classes as classItem}
-            <option value={classItem.class_code}>
-              {classItem.class_name}
+        <label for="showSelect">Show:</label>
+        <select id="showSelect" bind:value={selectedShowCode} class="filter-select">
+          <option value="all">All Shows</option>
+          {#each data.shows as show}
+            <option value={show.show_code}>
+              {show.show_name}
             </option>
           {/each}
         </select>
       </div>
       
       <div class="filter-group">
-        <label for="trackSelect">Track Filter:</label>
-        <select id="trackSelect" bind:value={selectedTrack} class="filter-select">
-          <option value="all">All Tracks</option>
-          {#each uniqueTracks as track}
-            <option value={track}>{track}</option>
+        <label for="formatSelect">Format:</label>
+        <select id="formatSelect" bind:value={selectedFormat} class="filter-select">
+          <option value="all">All Formats</option>
+          {#each uniqueFormats as format}
+            <option value={format}>{format}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+    
+    <div class="filter-row" style="margin-top: 1rem;">
+      <div class="filter-group">
+        <label for="audienceSelect">Audience:</label>
+        <select id="audienceSelect" bind:value={selectedAudience} class="filter-select">
+          <option value="all">All Audiences</option>
+          {#each uniqueAudiences as audience}
+            <option value={audience}>{audience}</option>
+          {/each}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="daySelect">Day of Week:</label>
+        <select id="daySelect" bind:value={selectedDay} class="filter-select">
+          <option value="all">All Days</option>
+          {#each uniqueDays as day}
+            <option value={day}>{day}</option>
           {/each}
         </select>
       </div>
@@ -677,7 +722,7 @@
       
       <div class="charts-grid">
         <div class="chart-card">
-          <canvas id="monthlyRegistrationsChart"></canvas>
+          <canvas id="monthlyTicketsChart"></canvas>
         </div>
         <div class="chart-card">
           <canvas id="monthlyRevenueChart"></canvas>
@@ -729,7 +774,7 @@
       
       <div class="charts-grid">
         <div class="chart-card">
-          <canvas id="fourMonthRegistrationsChart"></canvas>
+          <canvas id="fourMonthTicketsChart"></canvas>
         </div>
         <div class="chart-card">
           <canvas id="fourMonthRevenueChart"></canvas>
@@ -754,7 +799,7 @@
       
       <div class="charts-grid">
         <div class="chart-card">
-          <canvas id="momRegistrationsChart"></canvas>
+          <canvas id="momTicketsChart"></canvas>
         </div>
         <div class="chart-card">
           <canvas id="momRevenueChart"></canvas>
@@ -768,7 +813,7 @@
       
       <div class="charts-grid">
         <div class="chart-card">
-          <canvas id="ytdRegistrationsChart"></canvas>
+          <canvas id="ytdTicketsChart"></canvas>
         </div>
         <div class="chart-card">
           <canvas id="ytdRevenueChart"></canvas>
