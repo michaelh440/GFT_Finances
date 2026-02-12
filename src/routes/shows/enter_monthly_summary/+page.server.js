@@ -1,25 +1,25 @@
-// src/routes/hsi/enter_monthly_summary/+page.server.js
+// src/routes/shows/enter_monthly_summary/+page.server.js
 import sql from '$lib/db';
 
 export const load = async () => {
   try {
-    const classes = await sql`
+    const shows = await sql`
       SELECT 
-        class_code,
-        class_name,
-        track
-      FROM classes
+        show_code,
+        show_name,
+        format
+      FROM shows
       WHERE is_active = true
-      ORDER BY track ASC, class_name ASC
+      ORDER BY format ASC, show_name ASC
     `;
 
     return {
-      classes
+      shows
     };
   } catch (error) {
-    console.error('Error loading classes:', error);
+    console.error('Error loading shows:', error);
     return {
-      classes: []
+      shows: []
     };
   }
 };
@@ -35,23 +35,20 @@ export const actions = {
 
     let saved = 0;
     let skipped = 0;
-    const errors = [];
 
     try {
       for (let i = 0; i < rowCount; i++) {
-        const classCode = String(formData.get(`class_code_${i}`) || '');
+        const showCode = String(formData.get(`show_code_${i}`) || '');
         const month = String(formData.get(`month_${i}`) || '');
-        const registrations = parseInt(String(formData.get(`registrations_${i}`))) || 0;
+        const ticketsSold = parseInt(String(formData.get(`tickets_sold_${i}`))) || 0;
         const revenue = parseFloat(String(formData.get(`revenue_${i}`))) || 0;
 
-        // Skip rows with no class or month selected
-        if (!classCode || !month) {
+        if (!showCode || !month) {
           skipped++;
           continue;
         }
 
-        // Skip rows where both values are 0
-        if (registrations === 0 && revenue === 0) {
+        if (ticketsSold === 0 && revenue === 0) {
           skipped++;
           continue;
         }
@@ -60,27 +57,21 @@ export const actions = {
         const summaryYear = parseInt(month.split('-')[0]);
 
         await sql`
-          INSERT INTO monthly_class_summary (
-            class_code,
+          INSERT INTO monthly_show_summary (
+            show_code,
             summary_month,
             summary_year,
-            registrations,
+            tickets_sold,
             revenue,
             updated_at
           ) VALUES (
-            ${classCode},
+            ${showCode},
             ${summaryMonth},
             ${summaryYear},
-            ${registrations},
+            ${ticketsSold},
             ${revenue},
             CURRENT_TIMESTAMP
           )
-          ON CONFLICT (class_code, summary_month)
-          DO UPDATE SET
-            registrations = ${registrations},
-            revenue = ${revenue},
-            summary_year = ${summaryYear},
-            updated_at = CURRENT_TIMESTAMP
         `;
         saved++;
       }
@@ -90,7 +81,7 @@ export const actions = {
         message: `Saved ${saved} ${saved === 1 ? 'entry' : 'entries'}${skipped > 0 ? `, skipped ${skipped} empty rows` : ''}.`
       };
     } catch (error) {
-      console.error('Error saving monthly summaries:', error);
+      console.error('Error saving show summaries:', error);
       return {
         success: false,
         error: 'Failed to save summaries. Please try again.'

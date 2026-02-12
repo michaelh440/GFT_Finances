@@ -1,24 +1,24 @@
-<!-- src/routes/hsi/enter_monthly_summary/+page.svelte -->
+<!-- src/routes/shows/enter_monthly_summary/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
 
   /**
-   * @typedef {Object} ClassItem
-   * @property {string} class_code
-   * @property {string} class_name
-   * @property {string} track
+   * @typedef {Object} ShowItem
+   * @property {string} show_code
+   * @property {string} show_name
+   * @property {string} format
    */
 
   /**
    * @typedef {Object} Row
    * @property {string} id
    * @property {string} month
-   * @property {string} class_code
-   * @property {number} registrations
+   * @property {string} show_code
+   * @property {number} tickets_sold
    * @property {number} revenue
    */
 
-  /** @type {{ classes: ClassItem[] }} */
+  /** @type {{ shows: ShowItem[] }} */
   export let data;
   /** @type {{ success?: boolean, message?: string, error?: string } | null} */
   export let form;
@@ -31,14 +31,13 @@
     return {
       id: crypto.randomUUID(),
       month: new Date().toISOString().slice(0, 7),
-      class_code: '',
-      registrations: 0,
+      show_code: '',
+      tickets_sold: 0,
       revenue: 0
     };
   }
 
   function addRow() {
-    // Copy month from last row for convenience
     const lastMonth = rows[rows.length - 1]?.month || new Date().toISOString().slice(0, 7);
     const newRow = createRow();
     newRow.month = lastMonth;
@@ -64,33 +63,33 @@
     }).format(amount);
   }
 
-  // Group classes by track for the dropdown
-  /** @type {Record<string, ClassItem[]>} */
-  $: classesByTrack = data.classes.reduce((/** @type {Record<string, ClassItem[]>} */ acc, c) => {
-    const track = c.track || 'Other';
-    if (!acc[track]) acc[track] = [];
-    acc[track].push(c);
+  // Group shows by format for the dropdown
+  /** @type {Record<string, ShowItem[]>} */
+  $: showsByFormat = data.shows.reduce((/** @type {Record<string, ShowItem[]>} */ acc, s) => {
+    const format = s.format || 'Other';
+    if (!acc[format]) acc[format] = [];
+    acc[format].push(s);
     return acc;
   }, {});
 
-  $: tracks = Object.keys(classesByTrack).sort();
+  $: formats = Object.keys(showsByFormat).sort();
 
   // Totals
-  $: totalRegistrations = rows.reduce((sum, r) => sum + (Number(r.registrations) || 0), 0);
+  $: totalTickets = rows.reduce((sum, r) => sum + (Number(r.tickets_sold) || 0), 0);
   $: totalRevenue = rows.reduce((sum, r) => sum + (Number(r.revenue) || 0), 0);
 </script>
 
 <svelte:head>
-  <title>Enter Monthly Summary | B&C Financial Tracker</title>
+  <title>Enter Show Summary | B&C Financial Tracker</title>
 </svelte:head>
 
 <div class="container">
   <header>
     <div>
-      <h1>Enter Monthly Class Summary</h1>
-      <p class="subtitle">Add registrations and revenue data by class and month</p>
+      <h1>Enter Monthly Show Summary</h1>
+      <p class="subtitle">Add ticket sales and revenue data by show and month</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <a href="/shows" class="btn-secondary">Back to Shows</a>
   </header>
 
   {#if form?.success}
@@ -113,8 +112,8 @@
         <thead>
           <tr>
             <th class="col-month">Month</th>
-            <th class="col-class">Class</th>
-            <th class="col-number">Registrations</th>
+            <th class="col-show">Show</th>
+            <th class="col-number">Tickets Sold</th>
             <th class="col-number">Revenue ($)</th>
             <th class="col-actions"></th>
           </tr>
@@ -131,12 +130,12 @@
                 />
               </td>
               <td>
-                <select name="class_code_{i}" bind:value={row.class_code} class="input-class">
-                  <option value="">Select a class...</option>
-                  {#each tracks as track}
-                    <optgroup label={track}>
-                      {#each classesByTrack[track] as c}
-                        <option value={c.class_code}>{c.class_name}</option>
+                <select name="show_code_{i}" bind:value={row.show_code} class="input-show">
+                  <option value="">Select a show...</option>
+                  {#each formats as format}
+                    <optgroup label={format}>
+                      {#each showsByFormat[format] as s}
+                        <option value={s.show_code}>{s.show_name}</option>
                       {/each}
                     </optgroup>
                   {/each}
@@ -145,8 +144,8 @@
               <td>
                 <input
                   type="number"
-                  name="registrations_{i}"
-                  bind:value={row.registrations}
+                  name="tickets_sold_{i}"
+                  bind:value={row.tickets_sold}
                   min="0"
                   class="input-number"
                   placeholder="0"
@@ -184,7 +183,7 @@
           <tr>
             <td></td>
             <td class="totals-label">Totals:</td>
-            <td class="totals-value">{totalRegistrations}</td>
+            <td class="totals-value">{totalTickets}</td>
             <td class="totals-value">{formatCurrency(totalRevenue)}</td>
             <td></td>
           </tr>
@@ -286,7 +285,7 @@
     width: 180px;
   }
 
-  .col-class {
+  .col-show {
     min-width: 250px;
   }
 
@@ -307,7 +306,7 @@
     background-color: white;
   }
 
-  .input-class {
+  .input-show {
     padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
@@ -327,7 +326,7 @@
   }
 
   .input-month:focus,
-  .input-class:focus,
+  .input-show:focus,
   .input-number:focus {
     outline: none;
     border-color: #3b82f6;
@@ -454,7 +453,7 @@
       width: 150px;
     }
 
-    .col-class {
+    .col-show {
       min-width: 200px;
     }
 
