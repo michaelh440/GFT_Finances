@@ -1,25 +1,11 @@
 <!-- src/routes/shows/+page.svelte -->
 <script>
-  /**
-   * @typedef {Object} ShowItem
-   * @property {string} show_code
-   * @property {string} show_name
-   * @property {string} format
-   * @property {string} audience_type
-   * @property {string} day_of_week
-   * @property {number} standard_ticket_price
-   * @property {string} description
-   * @property {boolean} is_active
-   */
-
-  /** @type {{ shows: ShowItem[] }} */
   export let data;
 
   $: shows = data.shows;
 
   // Group shows by format
-  /** @type {Record<string, ShowItem[]>} */
-  $: showsByFormat = shows.reduce((/** @type {Record<string, ShowItem[]>} */ acc, show) => {
+  $: showsByFormat = shows.reduce((acc, show) => {
     const format = show.format || 'Uncategorized';
     if (!acc[format]) {
       acc[format] = [];
@@ -30,10 +16,6 @@
 
   $: formats = Object.keys(showsByFormat).sort();
 
-  /**
-   * @param {number} amount
-   * @returns {string}
-   */
   function formatCurrency(amount) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -48,14 +30,10 @@
 
 <div class="container">
   <header>
-    <h1>Live Shows</h1>
+    <h1>Good Friends Theater - Live Shows</h1>
     <div class="header-actions">
-      <a href="/shows/enter_monthly_summary" class="btn-primary">
-        Enter Monthly Summary
-      </a>
-      <a href="/shows/reports" class="btn-primary">
-        View Reports
-      </a>
+      <!--a href="/shows/enter_monthly_summary" class="btn-primary">Enter Monthly Summary</a>
+      <a href="/shows/reports" class="btn-primary">View Reports</a-->
     </div>
   </header>
 
@@ -68,6 +46,15 @@
           <h2 class="format-title">{format}</h2>
 
           <table>
+            <colgroup>
+              <col class="col-code" />
+              <col class="col-name" />
+              <col class="col-audience" />
+              <col class="col-day" />
+              <col class="col-price" />
+              <col class="col-status" />
+              <col class="col-actions" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Show Code</th>
@@ -82,8 +69,8 @@
             <tbody>
               {#each showsByFormat[format] as show}
                 <tr class:inactive={!show.is_active}>
-                  <td class="show-code">{show.show_code}</td>
-                  <td class="show-name">{show.show_name}</td>
+                  <td><span class="show-code">{show.show_code}</span></td>
+                  <td>{show.show_name}</td>
                   <td>
                     {#if show.audience_type}
                       <span class="audience-badge">{show.audience_type}</span>
@@ -106,8 +93,8 @@
                   </td>
                   <td>
                     <div class="actions">
-                      <a href="/shows/show/{show.show_code}" class="btn-secondary">View</a>
-                      <a href="/shows/show/{show.show_code}/edit" class="btn-secondary">Edit</a>
+                      <a href="/shows/show/{show.show_code}" class="btn-action">View</a>
+                      <a href="/shows/show/{show.show_code}/edit" class="btn-action">Edit</a>
                     </div>
                   </td>
                 </tr>
@@ -145,105 +132,6 @@
     gap: 1rem;
   }
 
-  .format-section {
-    margin-bottom: 2rem;
-  }
-
-  .format-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #374151;
-    margin: 0 0 0.75rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e5e7eb;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    margin-bottom: 1rem;
-  }
-
-  thead {
-    background-color: #f9fafb;
-  }
-
-  th {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-    border-bottom: 2px solid #e5e7eb;
-  }
-
-  td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #f3f4f6;
-    color: #1a202c;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tr:hover {
-    background-color: #f9fafb;
-  }
-
-  tr.inactive {
-    opacity: 0.5;
-  }
-
-  .show-code {
-    font-family: monospace;
-    font-weight: 600;
-    color: #6366f1;
-    font-size: 0.9rem;
-  }
-
-  .show-name {
-    font-weight: 500;
-  }
-
-  .audience-badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: #fef3c7;
-    color: #92400e;
-  }
-
-  .empty-value {
-    color: #9ca3af;
-  }
-
-  .status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    background-color: #fee2e2;
-    color: #991b1b;
-  }
-
-  .status-badge.active {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
   .btn-primary {
     background-color: #3b82f6;
     color: white;
@@ -258,20 +146,133 @@
     background-color: #2563eb;
   }
 
-  .btn-secondary {
+  .shows-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .format-section {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .format-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    margin: 0;
+  }
+
+  /* Fixed column widths so all tables align */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .col-code     { width: 12%; }
+  .col-name     { width: 25%; }
+  .col-audience { width: 13%; }
+  .col-day      { width: 12%; }
+  .col-price    { width: 12%; }
+  .col-status   { width: 10%; }
+  .col-actions  { width: 16%; }
+
+  thead {
+    background-color: #f9fafb;
+  }
+
+  th {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #f3f4f6;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.9rem;
+    color: #1a202c;
+  }
+
+  tr:hover {
+    background-color: #f9fafb;
+  }
+
+  tr.inactive {
+    opacity: 0.5;
+  }
+
+  .show-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: #6366f1;
+    background-color: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  .audience-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .empty-value {
+    color: #9ca3af;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+
+  .status-badge.active {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .btn-action {
     background-color: #e5e7eb;
     color: #374151;
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 0.375rem;
-    border: none;
-    font-weight: 500;
-    font-size: 0.875rem;
-    cursor: pointer;
     text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
     transition: background-color 0.2s;
   }
 
-  .btn-secondary:hover {
+  .btn-action:hover {
     background-color: #d1d5db;
   }
 
@@ -280,13 +281,16 @@
     padding: 3rem;
     color: #6b7280;
     font-size: 1.125rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     header {
       flex-direction: column;
-      gap: 1rem;
       align-items: flex-start;
+      gap: 1rem;
     }
 
     .header-actions {
@@ -294,11 +298,11 @@
     }
 
     table {
-      font-size: 0.875rem;
+      font-size: 0.85rem;
     }
 
     th, td {
-      padding: 0.5rem 0.75rem;
+      padding: 0.5rem 0.5rem;
     }
   }
 </style>

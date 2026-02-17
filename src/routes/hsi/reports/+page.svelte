@@ -622,7 +622,7 @@
       <h1>HSI Class Reports</h1>
       <p class="subtitle">Visual analysis of class performance and trends</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <!--a href="/hsi" class="btn-secondary">Back to Classes</a-->
   </header>
   
   <!-- Global Filters -->

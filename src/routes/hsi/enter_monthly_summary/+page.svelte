@@ -90,7 +90,7 @@
       <h1>Enter Monthly Class Summary</h1>
       <p class="subtitle">Add registrations and revenue data by class and month</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <!--a href="/hsi" class="btn-secondary">Back to Classes</a-->
   </header>
 
   {#if form?.success}

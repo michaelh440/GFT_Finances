@@ -89,7 +89,7 @@
       <h1>Enter Monthly Show Summary</h1>
       <p class="subtitle">Add ticket sales and revenue data by show and month</p>
     </div>
-    <a href="/shows" class="btn-secondary">Back to Shows</a>
+    <!--a href="/shows" class="btn-secondary">Back to Shows</a-->
   </header>
 
   {#if form?.success}

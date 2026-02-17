@@ -105,7 +105,7 @@
   <header>
     <h1>Students</h1>
     <div class="header-actions">
-      <a href="/hsi" class="btn-secondary">Back to Classes</a>
+      <!--a href="/hsi" class="btn-secondary">Back to Classes</a-->
     </div>
   </header>
 

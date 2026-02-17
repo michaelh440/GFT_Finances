@@ -4,43 +4,62 @@
   import { browser } from '$app/environment';
   import Chart from 'chart.js/auto';
 
-  /**
-   * @typedef {Object} FunnelData
-   * @property {number} ct1_total
-   * @property {number} ct1_to_ct2
-   * @property {number} ct1_not_ct2
-   * @property {number} ct2_total
-   * @property {number} ct2_to_ct3
-   * @property {number} ct2_not_ct3
-   * @property {number} ct3_total
-   * @property {number} ct3_to_agt1
-   * @property {number} ct3_not_agt1
-   * @property {number} agt1_total
-   */
-
-  /**
-   * @typedef {Object} MonthlyFunnelRecord
-   * @property {string} class_code
-   * @property {string} reg_month
-   * @property {number} did_not_continue
-   * @property {number} continued
-   */
-
-  /** @type {{ funnel: FunnelData | null, monthlyFunnel: MonthlyFunnelRecord[] }} */
   export let data;
 
-  /** @type {Record<string, Chart>} */
   let charts = {};
   let mounted = false;
-  /** @type {string | number} */
-  let selectedYear = 'all';
+  let selectedMonthlyYear = 'all';
+
+  // Year filter for overall progression - all checked by default
+  let selectedOverallYears = {};
+  $: {
+    if (data.years && Object.keys(selectedOverallYears).length === 0) {
+      data.years.forEach(y => { selectedOverallYears[y] = true; });
+    }
+  }
 
   onMount(() => {
     mounted = true;
   });
 
+  // Compute funnel based on selected years
+  $: funnel = (() => {
+    if (!data.registrations || data.registrations.length === 0) return null;
+
+    const activeYears = Object.entries(selectedOverallYears)
+      .filter(([_, v]) => v)
+      .map(([k]) => Number(k));
+
+    if (activeYears.length === 0) return null;
+
+    // Filter registrations to selected years
+    const filtered = data.registrations.filter(r => activeYears.includes(r.reg_year));
+
+    // Get unique students per class
+    const ct1 = new Set(filtered.filter(r => r.class_code === 'CT1').map(r => r.student_id));
+    const ct2 = new Set(filtered.filter(r => r.class_code === 'CT2').map(r => r.student_id));
+    const ct3 = new Set(filtered.filter(r => r.class_code === 'CT3').map(r => r.student_id));
+    const agt1 = new Set(filtered.filter(r => r.class_code === 'AGT1').map(r => r.student_id));
+
+    let ct1_to_ct2 = 0, ct1_not_ct2 = 0;
+    ct1.forEach(id => { if (ct2.has(id)) ct1_to_ct2++; else ct1_not_ct2++; });
+
+    let ct2_to_ct3 = 0, ct2_not_ct3 = 0;
+    ct2.forEach(id => { if (ct3.has(id)) ct2_to_ct3++; else ct2_not_ct3++; });
+
+    let ct3_to_agt1 = 0, ct3_not_agt1 = 0;
+    ct3.forEach(id => { if (agt1.has(id)) ct3_to_agt1++; else ct3_not_agt1++; });
+
+    return {
+      ct1_total: ct1.size, ct2_total: ct2.size, ct3_total: ct3.size, agt1_total: agt1.size,
+      ct1_to_ct2, ct1_not_ct2,
+      ct2_to_ct3, ct2_not_ct3,
+      ct3_to_agt1, ct3_not_agt1
+    };
+  })();
+
   // Available years from monthly data
-  $: availableYears = (() => {
+  $: availableMonthlyYears = (() => {
     if (!data.monthlyFunnel || data.monthlyFunnel.length === 0) return [];
     const years = [...new Set(data.monthlyFunnel.map(r => {
       return new Date(r.reg_month + 'T12:00:00').getFullYear();
@@ -51,10 +70,10 @@
   // Filter monthly data by year
   $: filteredMonthly = (() => {
     if (!data.monthlyFunnel) return [];
-    if (selectedYear === 'all') return data.monthlyFunnel;
+    if (selectedMonthlyYear === 'all') return data.monthlyFunnel;
     return data.monthlyFunnel.filter(r => {
       const year = new Date(r.reg_month + 'T12:00:00').getFullYear();
-      return year === Number(selectedYear);
+      return year === selectedMonthlyYear;
     });
   })();
 
@@ -66,14 +85,10 @@
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    /**
-     * @param {string} classCode
-     */
     function buildMonthlyData(classCode) {
       const classData = filteredMonthly.filter(r => r.class_code === classCode);
-      
-      if (selectedYear === 'all') {
-        // Group by year-month
+
+      if (selectedMonthlyYear === 'all') {
         const sorted = classData.sort((a, b) => a.reg_month.localeCompare(b.reg_month));
         return {
           labels: sorted.map(r => {
@@ -84,7 +99,6 @@
           continued: sorted.map(r => r.continued)
         };
       } else {
-        // Group by month within selected year
         const byMonth = Array(12).fill(null).map(() => ({ stopped: 0, continued: 0 }));
         classData.forEach(r => {
           const month = new Date(r.reg_month + 'T12:00:00').getMonth();
@@ -106,13 +120,9 @@
     };
   })();
 
-  /**
-   * @param {string} canvasId
-   * @param {import('chart.js').ChartConfiguration} config
-   */
   function createChart(canvasId, config) {
     if (!browser || !mounted) return;
-    const ctx = /** @type {HTMLCanvasElement | null} */ (document.getElementById(canvasId));
+    const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     if (charts[canvasId]) {
       charts[canvasId].destroy();
@@ -120,10 +130,23 @@
     charts[canvasId] = new Chart(ctx, config);
   }
 
-  $: if (browser && mounted && data.funnel) {
-    const funnel = data.funnel;
+  function toggleAllYears(checked) {
+    data.years.forEach(y => { selectedOverallYears[y] = checked; });
+    selectedOverallYears = selectedOverallYears;
+  }
+
+  $: allYearsSelected = data.years && data.years.every(y => selectedOverallYears[y]);
+
+  // Overall funnel charts - reactive to year filter
+  $: if (browser && mounted && funnel) {
     setTimeout(() => {
-      // Overall funnel chart
+      const yearLabel = (() => {
+        const active = Object.entries(selectedOverallYears).filter(([_, v]) => v).map(([k]) => k);
+        if (active.length === data.years.length) return 'All Years';
+        if (active.length <= 3) return active.join(', ');
+        return `${active.length} years selected`;
+      })();
+
       createChart('funnelChart', {
         type: 'bar',
         data: {
@@ -146,7 +169,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: 'Student Progression Funnel (All Time)' }
+            title: { display: true, text: `Student Progression Funnel (${yearLabel})` }
           },
           scales: {
             x: { stacked: true },
@@ -155,7 +178,6 @@
         }
       });
 
-      // Conversion rate chart
       const ct1Rate = funnel.ct1_total > 0 ? (funnel.ct1_to_ct2 / funnel.ct1_total * 100) : 0;
       const ct2Rate = funnel.ct2_total > 0 ? (funnel.ct2_to_ct3 / funnel.ct2_total * 100) : 0;
       const ct3Rate = funnel.ct3_total > 0 ? (funnel.ct3_to_agt1 / funnel.ct3_total * 100) : 0;
@@ -175,10 +197,10 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            title: { display: true, text: 'Conversion Rate Between Levels (%)' },
+            title: { display: true, text: `Conversion Rate Between Levels (${yearLabel})` },
             tooltip: {
               callbacks: {
-                label: function(/** @type {any} */ context) {
+                label: function(context) {
                   return context.parsed.y.toFixed(1) + '%';
                 }
               }
@@ -189,7 +211,7 @@
               beginAtZero: true,
               max: 100,
               ticks: {
-                callback: function(/** @type {any} */ value) { return value + '%'; }
+                callback: function(value) { return value + '%'; }
               }
             }
           }
@@ -201,101 +223,56 @@
   // Monthly charts - reactive to year filter
   $: if (browser && mounted && monthlyChartData) {
     setTimeout(() => {
-      const yearLabel = selectedYear === 'all' ? 'All Time' : selectedYear;
+      const yearLabel = selectedMonthlyYear === 'all' ? 'All Time' : selectedMonthlyYear;
 
-      // CT1 monthly
       createChart('monthlyCT1Chart', {
         type: 'bar',
         data: {
           labels: monthlyChartData.ct1.labels,
           datasets: [
-            {
-              label: 'Did Not Take CT2',
-              data: monthlyChartData.ct1.stopped,
-              backgroundColor: '#ef4444'
-            },
-            {
-              label: 'Continued to CT2',
-              data: monthlyChartData.ct1.continued,
-              backgroundColor: '#10b981'
-            }
+            { label: 'Did Not Take CT2', data: monthlyChartData.ct1.stopped, backgroundColor: '#ef4444' },
+            { label: 'Continued to CT2', data: monthlyChartData.ct1.continued, backgroundColor: '#10b981' }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: `CT1 Students - Continued to CT2 (${yearLabel})` }
-          },
-          scales: {
-            x: { stacked: true },
-            y: { stacked: true, beginAtZero: true }
-          }
+          plugins: { legend: { position: 'top' }, title: { display: true, text: `CT1 Students - Continued to CT2 (${yearLabel})` } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
         }
       });
 
-      // CT2 monthly
       createChart('monthlyCT2Chart', {
         type: 'bar',
         data: {
           labels: monthlyChartData.ct2.labels,
           datasets: [
-            {
-              label: 'Did Not Take CT3',
-              data: monthlyChartData.ct2.stopped,
-              backgroundColor: '#ef4444'
-            },
-            {
-              label: 'Continued to CT3',
-              data: monthlyChartData.ct2.continued,
-              backgroundColor: '#10b981'
-            }
+            { label: 'Did Not Take CT3', data: monthlyChartData.ct2.stopped, backgroundColor: '#ef4444' },
+            { label: 'Continued to CT3', data: monthlyChartData.ct2.continued, backgroundColor: '#10b981' }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: `CT2 Students - Continued to CT3 (${yearLabel})` }
-          },
-          scales: {
-            x: { stacked: true },
-            y: { stacked: true, beginAtZero: true }
-          }
+          plugins: { legend: { position: 'top' }, title: { display: true, text: `CT2 Students - Continued to CT3 (${yearLabel})` } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
         }
       });
 
-      // CT3 monthly
       createChart('monthlyCT3Chart', {
         type: 'bar',
         data: {
           labels: monthlyChartData.ct3.labels,
           datasets: [
-            {
-              label: 'Did Not Take AGT1',
-              data: monthlyChartData.ct3.stopped,
-              backgroundColor: '#ef4444'
-            },
-            {
-              label: 'Continued to AGT1',
-              data: monthlyChartData.ct3.continued,
-              backgroundColor: '#10b981'
-            }
+            { label: 'Did Not Take AGT1', data: monthlyChartData.ct3.stopped, backgroundColor: '#ef4444' },
+            { label: 'Continued to AGT1', data: monthlyChartData.ct3.continued, backgroundColor: '#10b981' }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: `CT3 Students - Continued to AGT1 (${yearLabel})` }
-          },
-          scales: {
-            x: { stacked: true },
-            y: { stacked: true, beginAtZero: true }
-          }
+          plugins: { legend: { position: 'top' }, title: { display: true, text: `CT3 Students - Continued to AGT1 (${yearLabel})` } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
         }
       });
     }, 150);
@@ -312,42 +289,66 @@
       <h1>Registration Funnel</h1>
       <p class="subtitle">Student progression through class levels</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <!--a href="/hsi" class="btn-secondary">Back to Classes</a-->
   </header>
 
-  {#if browser && mounted && data.funnel}
+  {#if browser && mounted}
     <!-- Summary Cards -->
-    <div class="summary-cards">
-      <div class="card">
-        <div class="card-label">CT1 Students</div>
-        <div class="card-value">{data.funnel.ct1_total}</div>
+    {#if funnel}
+      <div class="summary-cards">
+        <div class="card">
+          <div class="card-label">CT1 Students</div>
+          <div class="card-value">{funnel.ct1_total}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">CT2 Students</div>
+          <div class="card-value">{funnel.ct2_total}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">CT3 Students</div>
+          <div class="card-value">{funnel.ct3_total}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">AGT1 Students</div>
+          <div class="card-value">{funnel.agt1_total}</div>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-label">CT2 Students</div>
-        <div class="card-value">{data.funnel.ct2_total}</div>
-      </div>
-      <div class="card">
-        <div class="card-label">CT3 Students</div>
-        <div class="card-value">{data.funnel.ct3_total}</div>
-      </div>
-      <div class="card">
-        <div class="card-label">AGT1 Students</div>
-        <div class="card-value">{data.funnel.agt1_total}</div>
-      </div>
-    </div>
+    {/if}
 
     <!-- Overall Funnel Section -->
     <section class="chart-section">
       <h2 class="section-title">Overall Progression</h2>
 
-      <div class="charts-grid">
-        <div class="chart-card">
-          <canvas id="funnelChart"></canvas>
-        </div>
-        <div class="chart-card">
-          <canvas id="conversionChart"></canvas>
+      <div class="filter-section">
+        <div class="filter-group">
+          <label class="filter-label">Include Years:</label>
+          <div class="year-checkboxes">
+            <label class="checkbox-label">
+              <input type="checkbox" checked={allYearsSelected} on:change={(e) => toggleAllYears(e.target.checked)} />
+              <span>All</span>
+            </label>
+            {#each data.years as year}
+              <label class="checkbox-label">
+                <input type="checkbox" bind:checked={selectedOverallYears[year]} />
+                <span>{year}</span>
+              </label>
+            {/each}
+          </div>
         </div>
       </div>
+
+      {#if funnel}
+        <div class="charts-grid">
+          <div class="chart-card">
+            <canvas id="funnelChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <canvas id="conversionChart"></canvas>
+          </div>
+        </div>
+      {:else}
+        <div class="empty-state">Select at least one year to see data.</div>
+      {/if}
     </section>
 
     <!-- Monthly Breakdown Section -->
@@ -356,10 +357,10 @@
 
       <div class="filter-section">
         <div class="filter-group">
-          <label for="yearSelect">Year:</label>
-          <select id="yearSelect" bind:value={selectedYear} class="filter-select">
+          <label for="monthlyYearSelect">Year:</label>
+          <select id="monthlyYearSelect" bind:value={selectedMonthlyYear} class="filter-select">
             <option value="all">All Years</option>
-            {#each availableYears as year}
+            {#each availableMonthlyYears as year}
               <option value={year}>{year}</option>
             {/each}
           </select>
@@ -452,7 +453,7 @@
 
   .filter-section {
     background: white;
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     margin-bottom: 1.5rem;
@@ -464,7 +465,14 @@
     gap: 1rem;
   }
 
-  .filter-group label {
+  .filter-label {
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  .filter-group label:not(.checkbox-label) {
     font-weight: 600;
     color: #374151;
     white-space: nowrap;
@@ -483,6 +491,38 @@
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .year-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background-color: #f3f4f6;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    transition: background-color 0.15s;
+    user-select: none;
+  }
+
+  .checkbox-label:hover {
+    background-color: #e5e7eb;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    accent-color: #3b82f6;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
   }
 
   .charts-grid {
@@ -513,11 +553,14 @@
     max-height: 100%;
   }
 
-  .loading {
+  .loading, .empty-state {
     text-align: center;
     padding: 3rem;
     color: #6b7280;
     font-size: 1.125rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   }
 
   .btn-secondary {
@@ -551,6 +594,10 @@
   @media (max-width: 768px) {
     .summary-cards {
       grid-template-columns: 1fr;
+    }
+
+    .year-checkboxes {
+      gap: 0.375rem;
     }
   }
 </style>

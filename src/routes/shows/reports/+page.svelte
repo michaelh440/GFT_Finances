@@ -645,7 +645,7 @@
       <h1>Live Show Reports</h1>
       <p class="subtitle">Visual analysis of show performance and trends</p>
     </div>
-    <a href="/shows" class="btn-secondary">Back to Shows</a>
+    <!--a href="/shows" class="btn-secondary">Back to Shows</a-->
   </header>
   
   <!-- Global Filters -->

@@ -3,31 +3,26 @@ import sql from '$lib/db';
 
 export const load = async () => {
   try {
-    // Overall funnel counts
-    const funnelData = await sql`
-      WITH student_classes AS (
-        SELECT DISTINCT student_id, class_code
-        FROM registrations
-        WHERE class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
-      ),
-      ct1_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT1'),
-      ct2_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT2'),
-      ct3_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT3'),
-      agt1_students AS (SELECT student_id FROM student_classes WHERE class_code = 'AGT1')
-      SELECT
-        (SELECT COUNT(*) FROM ct1_students) AS ct1_total,
-        (SELECT COUNT(*) FROM ct2_students) AS ct2_total,
-        (SELECT COUNT(*) FROM ct3_students) AS ct3_total,
-        (SELECT COUNT(*) FROM agt1_students) AS agt1_total,
-        (SELECT COUNT(*) FROM ct1_students WHERE student_id NOT IN (SELECT student_id FROM ct2_students)) AS ct1_not_ct2,
-        (SELECT COUNT(*) FROM ct1_students WHERE student_id IN (SELECT student_id FROM ct2_students)) AS ct1_to_ct2,
-        (SELECT COUNT(*) FROM ct2_students WHERE student_id NOT IN (SELECT student_id FROM ct3_students)) AS ct2_not_ct3,
-        (SELECT COUNT(*) FROM ct2_students WHERE student_id IN (SELECT student_id FROM ct3_students)) AS ct2_to_ct3,
-        (SELECT COUNT(*) FROM ct3_students WHERE student_id NOT IN (SELECT student_id FROM agt1_students)) AS ct3_not_agt1,
-        (SELECT COUNT(*) FROM ct3_students WHERE student_id IN (SELECT student_id FROM agt1_students)) AS ct3_to_agt1
+    // Get all distinct student+class+year combos for client-side funnel filtering
+    const allRegistrations = await sql`
+      SELECT DISTINCT
+        r.student_id,
+        r.class_code,
+        EXTRACT(YEAR FROM r.registration_date)::INTEGER AS reg_year
+      FROM registrations r
+      WHERE r.class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
+      ORDER BY r.student_id, r.class_code
     `;
 
-    // Monthly breakdown - students who took the first class in the pair, grouped by their registration month for that class
+    // Get available years
+    const years = await sql`
+      SELECT DISTINCT EXTRACT(YEAR FROM registration_date)::INTEGER AS year
+      FROM registrations
+      WHERE class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
+      ORDER BY year ASC
+    `;
+
+    // Monthly breakdown for monthly charts
     const monthlyFunnel = await sql`
       WITH student_classes AS (
         SELECT DISTINCT student_id, class_code
@@ -37,7 +32,6 @@ export const load = async () => {
       ct2_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT2'),
       ct3_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT3'),
       agt1_students AS (SELECT student_id FROM student_classes WHERE class_code = 'AGT1'),
-      -- Get earliest registration date per student per class
       earliest_reg AS (
         SELECT student_id, class_code, MIN(registration_date) AS first_reg_date
         FROM registrations
@@ -64,18 +58,12 @@ export const load = async () => {
     `;
 
     return {
-      funnel: funnelData[0] ? {
-        ct1_total: Number(funnelData[0].ct1_total),
-        ct2_total: Number(funnelData[0].ct2_total),
-        ct3_total: Number(funnelData[0].ct3_total),
-        agt1_total: Number(funnelData[0].agt1_total),
-        ct1_not_ct2: Number(funnelData[0].ct1_not_ct2),
-        ct1_to_ct2: Number(funnelData[0].ct1_to_ct2),
-        ct2_not_ct3: Number(funnelData[0].ct2_not_ct3),
-        ct2_to_ct3: Number(funnelData[0].ct2_to_ct3),
-        ct3_not_agt1: Number(funnelData[0].ct3_not_agt1),
-        ct3_to_agt1: Number(funnelData[0].ct3_to_agt1)
-      } : null,
+      registrations: allRegistrations.map(r => ({
+        student_id: r.student_id,
+        class_code: r.class_code,
+        reg_year: Number(r.reg_year)
+      })),
+      years: years.map(y => Number(y.year)),
       monthlyFunnel: monthlyFunnel.map(r => ({
         reg_month: r.reg_month.toISOString().split('T')[0],
         class_code: r.class_code,
@@ -87,7 +75,8 @@ export const load = async () => {
   } catch (error) {
     console.error('Error loading registration funnel data:', error);
     return {
-      funnel: null,
+      registrations: [],
+      years: [],
       monthlyFunnel: []
     };
   }
