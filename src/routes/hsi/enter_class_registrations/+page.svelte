@@ -60,20 +60,7 @@
   let existingSessionId = null;
   let sessionInfo = null;
 
-  function buildDecisions() {
-    return matchResults.map((match, i) => {
-      const d = decisions[i];
-      return {
-        action: d.action,
-        csv: match.csv,
-        student_id: match.dbStudent?.student_id || null,
-        registration_id: match.dbRegistration?.registration_id || null,
-        updateFields: d.updateFields || [],
-        updateStudentFields: d.updateStudentFields || [],
-        updateRegFields: d.updateRegFields || []
-      };
-    });
-  }
+  // Decisions are built fresh at submit time in the enhance callback
 
   // Auto-generate session name when class or date change
   function generateSessionName(classCode, dateStr) {
@@ -210,9 +197,9 @@
       last_name: findCol(header, ['last name', 'last', 'lastname']),
       phone: findCol(header, ['phone', 'mobile phone', 'mobile', 'telephone']),
       amount_paid: findCol(header, ['amount', 'amount spent', 'amount_paid', 'paid', 'price']),
-      registration_date: findCol(header, ['account date', 'registration date', 'reg date', 'date']),
+      registration_date: findCol(header, ['last ticket bought', 'last ticket', 'ticket date', 'registration date', 'reg date']),
       tickets_bought: findCol(header, ['tickets bought', 'tickets', 'ticket count', 'qty', 'quantity']),
-      last_ticket_bought: findCol(header, ['last ticket bought', 'last ticket', 'ticket date'])
+      account_date: findCol(header, ['account date', 'date'])
     };
 
     const parsed = [];
@@ -228,36 +215,32 @@
         amount_paid: cleanAmount(cols[colMap.amount_paid]),
         registration_date: cleanDate(cols[colMap.registration_date]),
         tickets_bought: parseInt(cleanVal(cols[colMap.tickets_bought])) || 1,
-        last_ticket_bought: cleanDate(cols[colMap.last_ticket_bought])
+        account_date: cleanDate(cols[colMap.account_date])
       };
 
       if (!row.email) continue;
 
       const ticketCount = Math.max(1, row.tickets_bought);
-      const perPersonAmount = ticketCount > 1
-        ? Math.round((row.amount_paid / ticketCount) * 100) / 100
-        : row.amount_paid;
 
-      // Primary registrant
+      // Primary registrant gets the full amount
       parsed.push({
         ...row,
-        amount_paid: perPersonAmount,
         is_guest: false,
         guest_number: 0,
         purchaser_name: null
       });
 
-      // Additional guest rows for extra tickets
+      // Additional guest rows for extra tickets get $0
       for (let g = 2; g <= ticketCount; g++) {
         parsed.push({
           email: '',
           first_name: `Guest ${g}`,
           last_name: `of ${row.first_name} ${row.last_name}`,
           phone: '',
-          amount_paid: perPersonAmount,
+          amount_paid: 0,
           registration_date: row.registration_date,
           tickets_bought: 1,
-          last_ticket_bought: row.last_ticket_bought,
+          account_date: row.account_date,
           is_guest: true,
           guest_number: g,
           purchaser_name: `${row.first_name} ${row.last_name}`
@@ -525,18 +508,40 @@
                 existingSessionId = null;
               }
 
-              // Initialize decisions
+              // Initialize decisions with all diffs pre-checked
               decisions = matchResults.map(m => {
                 if (m.matchType === 'new') return { action: 'add_new', updateFields: [] };
-                if (m.matchType === 'existing_no_reg') return { action: 'add_reg', updateFields: [] };
-                return { action: 'skip', updateStudentFields: [], updateRegFields: [] };
+                if (m.matchType === 'existing_no_reg') {
+                  // Pre-check all differing student fields
+                  const updateFields = [];
+                  if (m.dbStudent) {
+                    if (m.csv.first_name.toLowerCase() !== (m.dbStudent.first_name || '').toLowerCase()) updateFields.push('first_name');
+                    if (m.csv.last_name.toLowerCase() !== (m.dbStudent.last_name || '').toLowerCase()) updateFields.push('last_name');
+                    if (m.csv.phone && m.csv.phone !== (m.dbStudent.phone || '')) updateFields.push('phone');
+                  }
+                  return { action: 'add_reg', updateFields };
+                }
+                // existing_with_reg
+                const updateStudentFields = [];
+                const updateRegFields = [];
+                if (m.dbStudent) {
+                  if (m.csv.first_name.toLowerCase() !== (m.dbStudent.first_name || '').toLowerCase()) updateStudentFields.push('first_name');
+                  if (m.csv.last_name.toLowerCase() !== (m.dbStudent.last_name || '').toLowerCase()) updateStudentFields.push('last_name');
+                  if (m.csv.phone && m.csv.phone !== (m.dbStudent.phone || '')) updateStudentFields.push('phone');
+                }
+                if (m.dbRegistration) {
+                  if (csvClassDate !== m.dbRegistration.class_date) updateRegFields.push('class_date');
+                  if (m.csv.amount_paid !== m.dbRegistration.amount_paid) updateRegFields.push('amount_paid');
+                  if (m.csv.registration_date && m.csv.registration_date !== m.dbRegistration.registration_date) updateRegFields.push('registration_date');
+                }
+                return { action: 'skip', updateStudentFields, updateRegFields, updateFields: [] };
               });
             } else if (result.type === 'success' && result.data?.error) {
               form = result.data;
             }
           };
         }}>
-          <input type="hidden" name="csv_data" value={csvDataJson} />
+          <input type="hidden" name="csv_data" value={JSON.stringify(csvParsed)} />
           <input type="hidden" name="csv_class_code" value={csvClassCode} />
           <input type="hidden" name="csv_class_date" value={csvClassDate} />
 
@@ -596,7 +601,23 @@
         </form>
       {:else if reviewMode && matchResults.length > 0}
         <!-- Step 2: Review Matches -->
-        <form method="POST" action="?/csv_confirm" use:enhance={() => {
+        <form method="POST" action="?/csv_confirm" use:enhance={({ formData }) => {
+          // Build decisions fresh at submit time to capture all user changes
+          const builtDecisions = matchResults.map((match, i) => {
+            const d = decisions[i];
+            if (!d) return { action: 'skip', csv: match.csv };
+            return {
+              action: d.action,
+              csv: match.csv,
+              student_id: match.dbStudent?.student_id || null,
+              registration_id: match.dbRegistration?.registration_id || null,
+              updateFields: d.updateFields || [],
+              updateStudentFields: d.updateStudentFields || [],
+              updateRegFields: d.updateRegFields || []
+            };
+          });
+          formData.set('decisions', JSON.stringify(builtDecisions));
+
           return async ({ result, update }) => {
             if (result.type === 'success') {
               reviewMode = false;
@@ -612,7 +633,7 @@
         }}>
           <input type="hidden" name="csv_class_code" value={csvClassCode} />
           <input type="hidden" name="csv_class_date" value={csvClassDate} />
-          <input type="hidden" name="decisions" value={JSON.stringify(buildDecisions())} />
+          <input type="hidden" id="decisions-input" name="decisions" value="" />
           <input type="hidden" name="session_name" value={sessionName} />
           <input type="hidden" name="existing_session_id" value={existingSessionId || ''} />
 

@@ -8,7 +8,7 @@ export const load = async () => {
       SELECT DISTINCT
         r.student_id,
         r.class_code,
-        EXTRACT(YEAR FROM r.registration_date)::INTEGER AS reg_year
+        EXTRACT(YEAR FROM r.class_date)::INTEGER AS reg_year
       FROM registrations r
       WHERE r.class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
       ORDER BY r.student_id, r.class_code
@@ -16,7 +16,7 @@ export const load = async () => {
 
     // Get available years
     const years = await sql`
-      SELECT DISTINCT EXTRACT(YEAR FROM registration_date)::INTEGER AS year
+      SELECT DISTINCT EXTRACT(YEAR FROM class_date)::INTEGER AS year
       FROM registrations
       WHERE class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
       ORDER BY year ASC
@@ -33,7 +33,7 @@ export const load = async () => {
       ct3_students AS (SELECT student_id FROM student_classes WHERE class_code = 'CT3'),
       agt1_students AS (SELECT student_id FROM student_classes WHERE class_code = 'AGT1'),
       earliest_reg AS (
-        SELECT student_id, class_code, MIN(registration_date) AS first_reg_date
+        SELECT student_id, class_code, MIN(class_date) AS first_reg_date
         FROM registrations
         WHERE class_code IN ('CT1', 'CT2', 'CT3')
         GROUP BY student_id, class_code
