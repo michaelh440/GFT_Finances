@@ -2,8 +2,8 @@
 import sql from '$lib/db';
 
 export const load = async () => {
-  try {
-    const classes = await sql`
+	try {
+		const classes = await sql`
       SELECT 
         class_code,
         class_name,
@@ -21,17 +21,17 @@ export const load = async () => {
         track ASC,
         class_name ASC
     `;
-    
-    return {
-      classes: classes.map(c => ({
-        ...c,
-        standard_price: Number(c.standard_price)
-      }))
-    };
-  } catch (error) {
-    console.error('Error loading classes:', error);
-    return {
-      classes: []
-    };
-  }
+
+		return {
+			classes: classes.map((c) => ({
+				...c,
+				standard_price: Number(c.standard_price)
+			}))
+		};
+	} catch (error) {
+		console.error('Error loading classes:', error);
+		return {
+			classes: []
+		};
+	}
 };

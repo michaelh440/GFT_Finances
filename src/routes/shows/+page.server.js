@@ -2,8 +2,8 @@
 import sql from '$lib/db';
 
 export const load = async () => {
-  try {
-    const shows = await sql`
+	try {
+		const shows = await sql`
       SELECT 
         show_code,
         show_name,
@@ -22,16 +22,16 @@ export const load = async () => {
         show_name ASC
     `;
 
-    return {
-      shows: shows.map(s => ({
-        ...s,
-        standard_ticket_price: Number(s.standard_ticket_price || 0)
-      }))
-    };
-  } catch (error) {
-    console.error('Error loading shows:', error);
-    return {
-      shows: []
-    };
-  }
+		return {
+			shows: shows.map((s) => ({
+				...s,
+				standard_ticket_price: Number(s.standard_ticket_price || 0)
+			}))
+		};
+	} catch (error) {
+		console.error('Error loading shows:', error);
+		return {
+			shows: []
+		};
+	}
 };

@@ -2,8 +2,8 @@
 import sql from '$lib/db';
 
 export const load = async () => {
-  try {
-    const students = await sql`
+	try {
+		const students = await sql`
       SELECT 
         s.student_id,
         s.first_name,
@@ -22,18 +22,18 @@ export const load = async () => {
       ORDER BY s.last_name ASC, s.first_name ASC
     `;
 
-    return {
-      students: students.map(s => ({
-        ...s,
-        registration_count: Number(s.registration_count),
-        account_date: s.account_date ? s.account_date.toISOString().split('T')[0] : null,
-        last_class_date: s.last_class_date ? s.last_class_date.toISOString().split('T')[0] : null
-      }))
-    };
-  } catch (error) {
-    console.error('Error loading students:', error);
-    return {
-      students: []
-    };
-  }
+		return {
+			students: students.map((s) => ({
+				...s,
+				registration_count: Number(s.registration_count),
+				account_date: s.account_date ? s.account_date.toISOString().split('T')[0] : null,
+				last_class_date: s.last_class_date ? s.last_class_date.toISOString().split('T')[0] : null
+			}))
+		};
+	} catch (error) {
+		console.error('Error loading students:', error);
+		return {
+			students: []
+		};
+	}
 };
