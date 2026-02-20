@@ -1,4 +1,4 @@
-<!-- src/routes/hsi/+page.svelte -->
+<!-- src/routes/hsi/classes/+page.svelte -->
 <script>
 	import { base } from '$app/paths';
 
@@ -108,11 +108,11 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href="{base}/hsi/class/{classItem.class_code}" class="btn-action"
+											<a href="{base}/hsi/classes/{classItem.class_code}" class="btn-action"
 												>View</a
 											>
 											<a
-												href="{base}/hsi/class/{classItem.class_code}/edit"
+												href="{base}/hsi/classes/{classItem.class_code}/edit"
 												class="btn-action">Edit</a
 											>
 										</div>

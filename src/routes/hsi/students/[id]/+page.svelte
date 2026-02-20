@@ -69,12 +69,12 @@
 		<div class="not-found">
 			<h1>Student Not Found</h1>
 			<p>The student you're looking for doesn't exist.</p>
-			<a href={resolve('/hsi/students')} class="btn-secondary">Back to Students</a>
+			<a href="{base}/hsi/students" class="btn-secondary">Back to Students</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve('/hsi/students')} class="back-link">← Back to Students</a>
+				<a href="{base}/hsi/students" class="back-link">← Back to Students</a>
 				<h1>{student.first_name} {student.last_name}</h1>
 			</div>
 		</header>

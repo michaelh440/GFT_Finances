@@ -12,12 +12,13 @@
 			icon: '🎭',
 			basePath: '/hsi',
 			children: [
-				{ label: 'Classes', href: '/hsi' },
+				{ label: 'Classes', href: '/hsi/classes' },
 				{ label: 'Students', href: '/hsi/students' },
-				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
 				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				{ label: 'Class Reports', href: '/hsi/reports' },
-				{ label: 'Registration Funnel', href: '/hsi/registrations' }
+				{ label: 'Registration Funnel', href: '/hsi/registrations' },
+				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
+				{ label: 'Class Financial Reports', href: '/hsi/reports' }
+				
 			]
 		},
 		{
@@ -29,7 +30,7 @@
 			children: [
 				{ label: 'Shows', href: '/shows' },
 				{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
-				{ label: 'Show Reports', href: '/shows/reports' }
+				{ label: 'Shows Financial Reports', href: '/shows/reports' }
 			]
 		},
 		{

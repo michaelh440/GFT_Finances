@@ -20,7 +20,7 @@
 		<div class="quick-links">
 			<h2>Quick Access</h2>
 			<div class="link-grid">
-				<a href="{base}/hsi" class="quick-card">
+				<a href="{base}/hsi/classes" class="quick-card">
 					<span class="card-icon">🎭</span>
 					<span class="card-label">HSI</span>
 					<span class="card-desc">Houston School of Improv</span>

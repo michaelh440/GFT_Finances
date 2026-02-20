@@ -1,4 +1,4 @@
-// src/routes/hsi/+page.server.js
+// src/routes/hsi/classes/+page.server.js
 import sql from '$lib/db';
 
 export const load = async () => {

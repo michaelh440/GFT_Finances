@@ -399,7 +399,7 @@
 			<h1>Registration Funnel</h1>
 			<p class="subtitle">Student progression through class levels</p>
 		</div>
-		<!--a href="/hsi" class="btn-secondary">Back to Classes</a-->
+		<!--a href="/hsi/classes" class="btn-secondary">Back to Classes</a-->
 	</header>
 
 	{#if browser && mounted}

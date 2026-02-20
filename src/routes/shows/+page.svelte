@@ -115,9 +115,9 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href="{base}/shows/show/{show.show_code}" class="btn-action">View</a>
+											<a href="{base}/shows/{show.show_code}" class="btn-action">View</a>
 											<a
-												href="{base}/shows/show/{show.show_code}/edit"
+												href="{base}/shows/{show.show_code}/edit"
 												class="btn-action">Edit</a
 											>
 										</div>
