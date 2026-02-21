@@ -29,6 +29,9 @@
 			basePath: '/shows',
 			children: [
 				{ label: 'Shows', href: '/shows' },
+				{ label: 'Patrons', href: '/shows/patrons' },
+				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
+				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
 				{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
 				{ label: 'Shows Financial Reports', href: '/shows/reports' }
 			]
