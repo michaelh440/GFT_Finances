@@ -54,9 +54,44 @@
 		}
 	];
 
-	// Track which sections are expanded
+	// Admin sub-sections (each expandable independently)
+	const adminSubSections = [
+		{
+			id: 'admin-hsi',
+			label: 'HSI',
+			basePath: '/admin/hsi',
+			children: 
+			[
+				{ label: 'Coming Soon', href: '#' }	
+			
+			]
+		},
+		{
+			id: 'admin-gft',
+			label: 'GFT',
+			basePath: '/admin/gft',
+			children: [{ label: 'Coming Soon', href: '#' }]
+		},
+		{
+			id: 'admin-csz',
+			label: 'CSz',
+			basePath: '/admin/csz',
+			children: [{ label: 'Coming Soon', href: '#' }]
+		},
+		{
+			id: 'admin-corp',
+			label: 'Corp',
+			basePath: '/admin/corp',
+			children: [{ label: 'Coming Soon', href: '#' }]
+		}
+	];
+
+	// Track which sections are expanded (covers both main nav + admin sub-sections)
 	/** @type {Record<string, boolean>} */
 	let expandedSections = {};
+
+	// Whether the admin parent group is expanded
+	let adminExpanded = false;
 
 	// Auto-expand the section matching the current path
 	$: {
@@ -66,12 +101,25 @@
 				expandedSections[section.id] = true;
 			}
 		});
+		// Auto-expand admin if path starts with /admin
+		if (path.startsWith('/admin')) {
+			adminExpanded = true;
+			adminSubSections.forEach((sub) => {
+				if (path.startsWith(sub.basePath)) {
+					expandedSections[sub.id] = true;
+				}
+			});
+		}
 	}
 
 	/** @param {string} id */
 	function toggleSection(id) {
 		expandedSections[id] = !expandedSections[id];
 		expandedSections = expandedSections; // trigger reactivity
+	}
+
+	function toggleAdmin() {
+		adminExpanded = !adminExpanded;
 	}
 
 	/** @param {string} href */
@@ -143,6 +191,63 @@
 					{/if}
 				</div>
 			{/each}
+
+			<!-- Divider -->
+			{#if !sidebarCollapsed}
+				<div class="nav-divider"></div>
+			{/if}
+
+			<!-- Admin Section -->
+			<div class="nav-section" class:active={isSectionActive('/admin')}>
+				<button
+					class="nav-section-header"
+					class:expanded={adminExpanded}
+					on:click={toggleAdmin}
+					title={sidebarCollapsed ? 'Admin' : ''}
+				>
+					<span class="nav-icon">⚙️</span>
+					{#if !sidebarCollapsed}
+						<span class="nav-label">Admin</span>
+						<span class="nav-full-name">Administration</span>
+						<span class="nav-chevron">{adminExpanded ? '▾' : '›'}</span>
+					{/if}
+				</button>
+
+				{#if adminExpanded && !sidebarCollapsed}
+					<div class="admin-subsections">
+						{#each adminSubSections as sub (sub.id)}
+							<div class="admin-sub">
+								<button
+									class="admin-sub-header"
+									class:expanded={expandedSections[sub.id]}
+									class:active={isSectionActive(sub.basePath)}
+									on:click={() => toggleSection(sub.id)}
+								>
+									<span class="admin-sub-label">{sub.label}</span>
+									<span class="admin-sub-chevron">{expandedSections[sub.id] ? '▾' : '›'}</span>
+								</button>
+
+								{#if expandedSections[sub.id]}
+									<ul class="nav-children admin-children">
+										{#each sub.children as child, i (i)}
+											<li>
+												<a
+													href="{base}{child.href}"
+													class="nav-child-link"
+													class:active={isActive(child.href)}
+													class:disabled={child.href === '#'}
+												>
+													{child.label}
+												</a>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</nav>
 	</aside>
 
@@ -336,6 +441,64 @@
 		pointer-events: none;
 	}
 
+	/* Divider */
+	.nav-divider {
+		height: 1px;
+		background-color: #334155;
+		margin: 0.75rem 1rem;
+	}
+
+	/* Admin Sub-sections */
+	.admin-subsections {
+		padding: 0.25rem 0;
+	}
+
+	.admin-sub {
+		margin-bottom: 0.1rem;
+	}
+
+	.admin-sub-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 0.35rem 1rem 0.35rem 3.25rem;
+		border: none;
+		background: none;
+		color: #94a3b8;
+		font-size: 0.85rem;
+		cursor: pointer;
+		text-align: left;
+		transition: all 0.15s;
+	}
+
+	.admin-sub-header:hover {
+		color: white;
+		background-color: #334155;
+	}
+
+	.admin-sub-header.active {
+		color: #cbd5e1;
+	}
+
+	.admin-sub-header.expanded {
+		color: #e2e8f0;
+	}
+
+	.admin-sub-label {
+		font-weight: 500;
+	}
+
+	.admin-sub-chevron {
+		font-size: 0.75rem;
+		color: #64748b;
+	}
+
+	.admin-children .nav-child-link {
+		padding-left: 4.25rem;
+		font-size: 0.8rem;
+	}
+
 	/* Main Content */
 	.main-content {
 		flex: 1;
@@ -354,7 +517,9 @@
 		.sidebar .nav-chevron,
 		.sidebar .nav-children,
 		.sidebar .logo-text,
-		.sidebar .logo-sub {
+		.sidebar .logo-sub,
+		.sidebar .nav-divider,
+		.sidebar .admin-subsections {
 			display: none;
 		}
 
