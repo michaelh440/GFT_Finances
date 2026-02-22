@@ -14,6 +14,7 @@
 			children: [
 				{ label: 'Classes', href: '/hsi/classes' },
 				{ label: 'Students', href: '/hsi/students' },
+				{ label: 'Teachers', href: '/hsi/teachers' },
 				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
 				{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
@@ -31,6 +32,7 @@
 				{ label: 'Shows', href: '/shows' },
 				{ label: 'Patrons', href: '/shows/patrons' },
 				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
+				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
 				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
 				{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
 				{ label: 'Shows Financial Reports', href: '/shows/reports' }
