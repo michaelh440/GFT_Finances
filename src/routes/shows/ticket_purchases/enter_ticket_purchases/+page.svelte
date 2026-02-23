@@ -8,6 +8,11 @@
 
 	let activeTab = 'manual';
 
+	// Submission state (prevents double-clicks)
+	let manualSubmitting = false;
+	let uploadSubmitting = false;
+	let importSubmitting = false;
+
 	// ============================================================
 	// MANUAL ENTRY STATE
 	// ============================================================
@@ -28,6 +33,7 @@
 			amount_paid: 0,
 			purchase_date: new Date().toISOString().split('T')[0],
 			payment_method: '',
+			promotion_id: '',
 			notes: ''
 		};
 	}
@@ -38,6 +44,7 @@
 		newRow.show_code = last?.show_code || '';
 		newRow.show_date = last?.show_date || '';
 		newRow.payment_method = last?.payment_method || '';
+		newRow.promotion_id = last?.promotion_id || '';
 		rows = [...rows, newRow];
 	}
 
@@ -52,7 +59,7 @@
 		const show = data.shows.find((s) => s.show_code === row.show_code);
 		if (show && row.tickets_purchased > 0) {
 			rows[index].amount_paid = show.standard_ticket_price * row.tickets_purchased;
-			rows = rows; // trigger reactivity
+			rows = rows;
 		}
 	}
 
@@ -72,8 +79,12 @@
 	let csvRows = [];
 	/** @type {string[]} */
 	let csvEventNames = [];
+	/** @type {string[]} */
+	let csvDiscountCodes = [];
 	/** @type {Record<string, string>} */
 	let mappings = {};
+	/** @type {Record<string, string>} */
+	let promoMappings = {};
 	let csvParsed = false;
 	let csvSummary = { totalRows: 0, rowsWithNames: 0, rowsAnonymous: 0 };
 	let skipAnonymous = false;
@@ -88,10 +99,32 @@
 		'HSI Showcase'
 	];
 
+	// Known promotion-style event names (not real shows)
+	const promoEventNames = [
+		'Summer Ticket Sale',
+		'Winter Ticket Sale',
+		'Holiday Ticket Sale',
+		'Ticket Sale'
+	];
+
+	/**
+	 * Check if an event name looks like a promotion rather than a real show
+	 * @param {string} name
+	 * @returns {boolean}
+	 */
+	function isPromoEvent(name) {
+		const lower = name.toLowerCase();
+		return promoEventNames.some((p) => lower.includes(p.toLowerCase())) ||
+			lower.includes('ticket sale') ||
+			lower.includes('gift card') ||
+			lower.includes('season pass');
+	}
+
 	// Initialize mappings when csv_upload returns data
 	$: if (form?.action === 'csv_upload' && form.success && !csvParsed) {
 		csvRows = form.rows;
 		csvEventNames = form.eventNames;
+		csvDiscountCodes = form.discountCodes || [];
 		csvSummary = {
 			totalRows: form.totalRows,
 			rowsWithNames: form.rowsWithNames,
@@ -99,15 +132,33 @@
 		};
 		csvParsed = true;
 
-		// Auto-map
+		// Auto-map events
 		mappings = {};
+		promoMappings = {};
 		for (const eventName of csvEventNames) {
 			if (classEventNames.includes(eventName)) {
 				mappings[eventName] = '__skip__';
 				continue;
 			}
+			// Promo events: don't auto-map to a show, leave unmapped for user to decide
+			if (isPromoEvent(eventName)) {
+				mappings[eventName] = '';
+				// Auto-map promo event to a matching promotion by name
+				const promoMatch = (data.promotions || []).find(
+					(p) => p.promotion_name.toLowerCase() === eventName.toLowerCase()
+				);
+				if (promoMatch) {
+					promoMappings['__event__' + eventName] = promoMatch.promotion_id.toString();
+				}
+				continue;
+			}
 			const match = data.shows.find((s) => s.show_name.toLowerCase() === eventName.toLowerCase());
 			mappings[eventName] = match ? match.show_code : '';
+		}
+
+		// Initialize discount code promo mappings
+		for (const code of csvDiscountCodes) {
+			promoMappings[code] = '';
 		}
 	}
 
@@ -135,10 +186,21 @@
 		return acc;
 	}, {});
 
+	// Count rows per discount code
+	$: rowCountByCode = csvRows.reduce((/** @type {Record<string, number>} */ acc, r) => {
+		if (r.discountCode) acc[r.discountCode] = (acc[r.discountCode] || 0) + 1;
+		return acc;
+	}, {});
+
+	// Check if any promo mapping is set
+	$: hasAnyPromoMapping = Object.values(promoMappings).some((v) => v && v !== '');
+
 	function resetCsv() {
 		csvRows = [];
 		csvEventNames = [];
+		csvDiscountCodes = [];
 		mappings = {};
+		promoMappings = {};
 		csvParsed = false;
 		csvSummary = { totalRows: 0, rowsWithNames: 0, rowsAnonymous: 0 };
 	}
@@ -170,16 +232,8 @@
 			<div>✓ {form.message}</div>
 			{#if form.action === 'csv_import'}
 				<div class="import-stats">
-					<span class="stat-badge stat-imported">{form.imported} imported</span>
-					{#if form.patronsCreated > 0}
-						<span class="stat-badge stat-patrons">{form.patronsCreated} new patrons</span>
-					{/if}
-					{#if form.anonymousImported > 0}
-						<span class="stat-badge stat-anon">{form.anonymousImported} anonymous</span>
-					{/if}
-					{#if form.skipped > 0}
-						<span class="stat-badge stat-skipped">{form.skipped} skipped</span>
-					{/if}
+					Imported: {form.imported} · Skipped: {form.skipped} · New Patrons: {form.patronsCreated}
+					{#if form.anonymousImported > 0} · Anonymous: {form.anonymousImported}{/if}
 				</div>
 				{#if form.errors && form.errors.length > 0}
 					<details class="results-details">
@@ -213,7 +267,13 @@
 	<!-- MANUAL ENTRY TAB -->
 	<!-- ============================================================ -->
 	{#if activeTab === 'manual'}
-		<form method="POST" action="?/manual" use:enhance>
+		<form method="POST" action="?/manual" use:enhance={() => {
+			manualSubmitting = true;
+			return async ({ update }) => {
+				manualSubmitting = false;
+				await update();
+			};
+		}}>
 			<input type="hidden" name="row_count" value={rows.length} />
 
 			<div class="table-wrapper">
@@ -227,6 +287,7 @@
 							<th>Amount</th>
 							<th>Purchased</th>
 							<th>Payment</th>
+							<th>Promo</th>
 							<th class="col-actions"></th>
 						</tr>
 					</thead>
@@ -297,6 +358,14 @@
 									</select>
 								</td>
 								<td>
+									<select name="promotion_id_{i}" bind:value={row.promotion_id} class="input-select input-sm-select">
+										<option value="">—</option>
+										{#each data.promotions || [] as promo (promo.promotion_id)}
+											<option value={promo.promotion_id}>{promo.promotion_name}</option>
+										{/each}
+									</select>
+								</td>
+								<td>
 									<input type="hidden" name="notes_{i}" value={row.notes} />
 									<div class="row-actions">
 										{#if i === rows.length - 1}
@@ -314,7 +383,9 @@
 			</div>
 
 			<div class="form-actions">
-				<button type="submit" class="btn-primary">Save Ticket Purchases</button>
+				<button type="submit" class="btn-primary" disabled={manualSubmitting}>
+					{manualSubmitting ? 'Saving...' : 'Save Ticket Purchases'}
+				</button>
 				<button type="button" class="btn-secondary" on:click={addRow}>+ Add Another Row</button>
 			</div>
 		</form>
@@ -331,15 +402,23 @@
 					<h2>Upload CSV File</h2>
 					<p class="hint">
 						Upload a CSZ Past Event Sales report CSV file. The importer will parse event names,
-						ticket quantities, amounts, and patron info. You'll map each event to a show before importing.
+						ticket quantities, amounts, patron info, and discount codes. You'll map each event to a show before importing.
 					</p>
 
-					<form method="POST" action="?/csv_upload" enctype="multipart/form-data" use:enhance>
+					<form method="POST" action="?/csv_upload" enctype="multipart/form-data" use:enhance={() => {
+						uploadSubmitting = true;
+						return async ({ update }) => {
+							uploadSubmitting = false;
+							await update();
+						};
+					}}>
 						<div class="upload-area">
 							<input type="file" name="csv_file" accept=".csv" required />
 						</div>
 						<div class="form-actions">
-							<button type="submit" class="btn-primary">Upload & Parse</button>
+							<button type="submit" class="btn-primary" disabled={uploadSubmitting}>
+								{uploadSubmitting ? 'Parsing...' : 'Upload & Parse'}
+							</button>
 						</div>
 					</form>
 				</div>
@@ -365,14 +444,20 @@
 							<span class="summary-value">{csvEventNames.length}</span>
 							<span class="summary-label">Unique Events</span>
 						</div>
+						{#if csvDiscountCodes.length > 0}
+							<div class="summary-item">
+								<span class="summary-value">{csvDiscountCodes.length}</span>
+								<span class="summary-label">Discount Codes</span>
+							</div>
+						{/if}
 					</div>
 				</div>
 
 				<div class="card">
 					<h2>Map Events to Shows</h2>
 					<p class="hint">
-						Map each CSV event name to a show in your database. Events marked "Skip" will be
-						excluded. Class-related events are auto-skipped.
+						Map each CSV event name to a show in your database. Promotion-style events (like "Summer Ticket Sale")
+						should be mapped to the show the tickets are redeemable for. Class-related events are auto-skipped.
 					</p>
 
 					<div class="mapping-status">
@@ -395,11 +480,14 @@
 						</thead>
 						<tbody>
 							{#each csvEventNames as eventName (eventName)}
-								<tr class:dimmed={mappings[eventName] === '__skip__'}>
+								<tr class:dimmed={mappings[eventName] === '__skip__'} class:promo-row={isPromoEvent(eventName)}>
 									<td class="event-name">
 										{eventName}
+										{#if isPromoEvent(eventName)}
+											<span class="promo-tag">Promotion</span>
+										{/if}
 										{#if classEventNames.includes(eventName) && mappings[eventName] === '__skip__'}
-											<span class="auto-skip-tag">auto-skipped (class)</span>
+											<span class="class-tag">Class</span>
 										{/if}
 									</td>
 									<td class="col-right">{rowCountByEvent[eventName] || 0}</td>
@@ -409,10 +497,14 @@
 										<select bind:value={mappings[eventName]} class="mapping-select">
 											<option value="">— Select Show —</option>
 											<option value="__skip__">⊘ Skip this event</option>
-											{#each data.shows as show (show.show_code)}
-												<option value={show.show_code}>
-													{show.show_name} ({show.show_code})
-												</option>
+											{#each formats as fmt (fmt)}
+												<optgroup label={fmt}>
+													{#each showsByFormat[fmt] as show (show.show_code)}
+														<option value={show.show_code}>
+															{show.show_name}
+														</option>
+													{/each}
+												</optgroup>
 											{/each}
 										</select>
 									</td>
@@ -421,6 +513,78 @@
 						</tbody>
 					</table>
 				</div>
+
+				<!-- Promotion Mapping -->
+				{#if csvDiscountCodes.length > 0 || csvEventNames.some(isPromoEvent)}
+					<div class="card">
+						<h2>Map Promotions</h2>
+						<p class="hint">
+							Optionally tag ticket purchases with a promotion. Event-based promotions (like "Summer Ticket Sale")
+							and CSV discount codes (like CSZBDAY, HSL) can each be linked to a promotion in your database.
+							Leave blank to import without a promotion tag.
+						</p>
+
+						<!-- Event-level promotions -->
+						{#if csvEventNames.some(isPromoEvent)}
+							<h3 class="section-subhead">Promotion Events</h3>
+							<table>
+								<thead>
+									<tr>
+										<th>Event Name</th>
+										<th class="col-right">Rows</th>
+										<th>Link to Promotion</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each csvEventNames.filter(isPromoEvent) as eventName (eventName)}
+										<tr>
+											<td class="event-name">{eventName}</td>
+											<td class="col-right">{rowCountByEvent[eventName] || 0}</td>
+											<td>
+												<select bind:value={promoMappings['__event__' + eventName]} class="mapping-select">
+													<option value="">— No Promotion —</option>
+													{#each data.promotions || [] as promo (promo.promotion_id)}
+														<option value={promo.promotion_id.toString()}>{promo.promotion_name}</option>
+													{/each}
+												</select>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						{/if}
+
+						<!-- Discount code promotions -->
+						{#if csvDiscountCodes.length > 0}
+							<h3 class="section-subhead">Discount Codes</h3>
+							<table>
+								<thead>
+									<tr>
+										<th>Discount Code</th>
+										<th class="col-right">Rows</th>
+										<th>Link to Promotion</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each csvDiscountCodes as code (code)}
+										<tr>
+											<td class="event-name"><code>{code}</code></td>
+											<td class="col-right">{rowCountByCode[code] || 0}</td>
+											<td>
+												<select bind:value={promoMappings[code]} class="mapping-select">
+													<option value="">— No Promotion —</option>
+													{#each data.promotions || [] as promo (promo.promotion_id)}
+														<option value={promo.promotion_id.toString()}>{promo.promotion_name}</option>
+													{/each}
+												</select>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="card">
 					<h2>Import Options</h2>
@@ -433,24 +597,31 @@
 				</div>
 
 				<form method="POST" action="?/csv_import" use:enhance={() => {
+					importSubmitting = true;
 					return async ({ result, update }) => {
+						importSubmitting = false;
 						if (result.type === 'success' && result.data?.success) {
 							resetCsv();
-							await update();
-						} else {
-							await update();
 						}
+						await update();
 					};
 				}}>
 					<input type="hidden" name="rows_json" value={JSON.stringify(csvRows)} />
 					<input type="hidden" name="mappings_json" value={JSON.stringify(mappings)} />
+					<input type="hidden" name="promo_mappings_json" value={JSON.stringify(promoMappings)} />
 					<input type="hidden" name="skip_anonymous" value={skipAnonymous.toString()} />
 
 					<div class="form-actions">
-						<button type="submit" class="btn-primary" disabled={mappedEventCount === 0}>
-							Import {mappedEventCount > 0 ? '' : '(map at least one event)'}
+						<button type="submit" class="btn-primary" disabled={mappedEventCount === 0 || importSubmitting}>
+							{#if importSubmitting}
+								Importing...
+							{:else if mappedEventCount > 0}
+								Import
+							{:else}
+								Import (map at least one event)
+							{/if}
 						</button>
-						<button type="button" class="btn-secondary" on:click={resetCsv}>Start Over</button>
+						<button type="button" class="btn-secondary" on:click={resetCsv} disabled={importSubmitting}>Start Over</button>
 					</div>
 				</form>
 			{/if}
@@ -486,6 +657,15 @@
 		margin: 0 0 1rem 0;
 	}
 
+	h3.section-subhead {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #374151;
+		margin: 1.25rem 0 0.5rem 0;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+
 	.subtitle {
 		color: #6b7280;
 		margin: 0.25rem 0 0 0;
@@ -510,6 +690,12 @@
 		background-color: #fef2f2;
 		color: #991b1b;
 		border: 1px solid #fecaca;
+	}
+
+	.import-stats {
+		font-size: 0.85rem;
+		font-weight: 400;
+		margin-top: 0.25rem;
 	}
 
 	.results-details {
@@ -753,8 +939,13 @@
 		transition: background-color 0.2s;
 	}
 
-	.btn-secondary:hover {
+	.btn-secondary:hover:not(:disabled) {
 		background-color: #d1d5db;
+	}
+
+	.btn-secondary:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	/* ============================================================ */
@@ -790,7 +981,7 @@
 
 	.summary-grid {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 		gap: 1rem;
 	}
 
@@ -846,45 +1037,43 @@
 		font-weight: 500;
 	}
 
+	.promo-tag {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 0.25rem;
+		font-size: 0.65rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		background-color: #fef3c7;
+		color: #92400e;
+		margin-left: 0.4rem;
+		vertical-align: middle;
+	}
+
+	.class-tag {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 0.25rem;
+		font-size: 0.65rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		background-color: #e0e7ff;
+		color: #4338ca;
+		margin-left: 0.4rem;
+		vertical-align: middle;
+	}
+
+	tr.promo-row {
+		background-color: #fffbeb;
+	}
+
 	.col-right {
 		text-align: right;
 	}
 
 	tr.dimmed {
-		opacity: 0.55;
+		opacity: 0.5;
 	}
-
-	tr.dimmed:hover {
-		opacity: 0.85;
-	}
-
-	.auto-skip-tag {
-		display: inline-block;
-		font-size: 0.7rem;
-		color: #9ca3af;
-		font-weight: 400;
-		font-style: italic;
-		margin-left: 0.5rem;
-	}
-
-	.import-stats {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.stat-badge {
-		padding: 0.2rem 0.6rem;
-		border-radius: 9999px;
-		font-size: 0.8rem;
-		font-weight: 500;
-	}
-
-	.stat-imported { background: #dcfce7; color: #166534; }
-	.stat-patrons { background: #dbeafe; color: #1e40af; }
-	.stat-anon { background: #fef3c7; color: #92400e; }
-	.stat-skipped { background: #f3f4f6; color: #6b7280; }
 
 	.mapping-select {
 		padding: 0.4rem 0.5rem;
@@ -918,6 +1107,15 @@
 		width: 1rem;
 		height: 1rem;
 		cursor: pointer;
+	}
+
+	code {
+		background: #f3f4f6;
+		padding: 0.15rem 0.35rem;
+		border-radius: 0.25rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: #374151;
 	}
 
 	@media (max-width: 768px) {

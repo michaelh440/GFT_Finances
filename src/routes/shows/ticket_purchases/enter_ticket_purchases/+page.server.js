@@ -17,16 +17,23 @@ export const load = async () => {
 			ORDER BY last_name ASC, first_name ASC
 		`;
 
+		const promotions = await sql`
+			SELECT promotion_id, promotion_name, discount_type, discount_value, start_date, end_date, is_active
+			FROM promotions
+			ORDER BY promotion_name ASC
+		`;
+
 		return {
 			shows: shows.map((s) => ({
 				...s,
 				standard_ticket_price: Number(s.standard_ticket_price || 0)
 			})),
-			patrons
+			patrons,
+			promotions
 		};
 	} catch (error) {
 		console.error('Error loading form data:', error);
-		return { shows: [], patrons: [] };
+		return { shows: [], patrons: [], promotions: [] };
 	}
 };
 
@@ -37,7 +44,6 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 	const cleanEmail = email || null;
 	const cleanPhone = phone || null;
 
-	// Try exact match on name + email
 	const exact = await sql`
 		SELECT patron_id FROM patrons
 		WHERE LOWER(first_name) = ${firstName.toLowerCase()}
@@ -50,7 +56,6 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 	`;
 
 	if (exact.length > 0) {
-		// Update phone if we have one and they don't
 		if (cleanPhone) {
 			await sql`
 				UPDATE patrons SET phone = COALESCE(NULLIF(phone, ''), ${cleanPhone}), updated_at = CURRENT_TIMESTAMP
@@ -60,7 +65,6 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 		return { id: exact[0].patron_id, created: false };
 	}
 
-	// Try email match only (if email exists)
 	if (cleanEmail) {
 		const emailMatch = await sql`
 			SELECT patron_id FROM patrons WHERE LOWER(email) = LOWER(${cleanEmail}) LIMIT 1
@@ -70,7 +74,6 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 		}
 	}
 
-	// Create new
 	const [newPatron] = await sql`
 		INSERT INTO patrons (first_name, last_name, email, phone)
 		VALUES (${firstName}, ${lastName}, ${cleanEmail}, ${cleanPhone})
@@ -105,6 +108,7 @@ export const actions = {
 				const purchaseDate = formData.get(`purchase_date_${i}`) || null;
 				const paymentMethod = formData.get(`payment_method_${i}`) || null;
 				const notes = (formData.get(`notes_${i}`) || '').trim() || null;
+				const promotionId = parseInt(formData.get(`promotion_id_${i}`)) || null;
 
 				if (!showCode || !showDate) {
 					skipped++;
@@ -120,7 +124,6 @@ export const actions = {
 						continue;
 					}
 				} else {
-					// New patron inline
 					const firstName = (formData.get(`first_name_${i}`) || '').trim();
 					const lastName = (formData.get(`last_name_${i}`) || '').trim();
 					const email = (formData.get(`email_${i}`) || '').trim();
@@ -139,10 +142,10 @@ export const actions = {
 				await sql`
 					INSERT INTO show_tickets (
 						patron_id, show_code, show_date, tickets_purchased,
-						amount_paid, purchase_date, payment_method, notes
+						amount_paid, purchase_date, payment_method, notes, promotion_id
 					) VALUES (
 						${patronId}, ${showCode}, ${showDate}, ${ticketsPurchased},
-						${amountPaid}, ${purchaseDate}, ${paymentMethod}, ${notes}
+						${amountPaid}, ${purchaseDate}, ${paymentMethod}, ${notes}, ${promotionId}
 					)
 				`;
 
@@ -176,7 +179,7 @@ export const actions = {
 
 		try {
 			const text = await file.text();
-			const { rows, eventNames } = parseCSZReport(text);
+			const { rows, eventNames, discountCodes } = parseCSZReport(text);
 
 			if (rows.length === 0) {
 				return { success: false, error: 'No valid data rows found in the CSV.' };
@@ -187,6 +190,7 @@ export const actions = {
 				action: 'csv_upload',
 				rows,
 				eventNames,
+				discountCodes,
 				totalRows: rows.length,
 				rowsWithNames: rows.filter((r) => r.firstName || r.lastName).length,
 				rowsAnonymous: rows.filter((r) => !r.firstName && !r.lastName).length
@@ -197,21 +201,23 @@ export const actions = {
 		}
 	},
 
-	// CSV Import: save with event-to-show mappings
+	// CSV Import: save with event-to-show mappings + promotion mappings
 	csv_import: async ({ request }) => {
 		const formData = await request.formData();
 		const rowsJson = formData.get('rows_json')?.toString();
 		const mappingsJson = formData.get('mappings_json')?.toString();
+		const promoMappingsJson = formData.get('promo_mappings_json')?.toString();
 		const skipAnonymous = formData.get('skip_anonymous') === 'true';
 
 		if (!rowsJson || !mappingsJson) {
 			return { success: false, error: 'Missing import data. Please re-upload.' };
 		}
 
-		let rows, mappings;
+		let rows, mappings, promoMappings;
 		try {
 			rows = JSON.parse(rowsJson);
 			mappings = JSON.parse(mappingsJson);
+			promoMappings = promoMappingsJson ? JSON.parse(promoMappingsJson) : {};
 		} catch {
 			return { success: false, error: 'Invalid import data. Please re-upload.' };
 		}
@@ -226,13 +232,11 @@ export const actions = {
 			for (const row of rows) {
 				const showCode = mappings[row.eventName];
 
-				// Skip unmapped / skipped events
 				if (!showCode || showCode === '__skip__') {
 					skipped++;
 					continue;
 				}
 
-				// Handle anonymous buyers (no name at all)
 				const isAnonymous = !row.firstName && !row.lastName;
 				if (isAnonymous && skipAnonymous) {
 					skipped++;
@@ -243,7 +247,6 @@ export const actions = {
 					let patronId = null;
 
 					if (!isAnonymous) {
-						// Has a name — find or create patron
 						const result = await findOrCreatePatron(
 							row.firstName, row.lastName,
 							row.email || null,
@@ -252,15 +255,29 @@ export const actions = {
 						patronId = result.id;
 						if (result.created) patronsCreated++;
 					}
-					// Anonymous rows get patron_id = NULL
+
+					// Determine promotion_id:
+					// 1. If the event itself is mapped as a promotion (e.g. "Summer Ticket Sale" → promo)
+					// 2. If the row's discount code is mapped to a promotion
+					let promotionId = null;
+
+					// Check event-level promotion mapping first
+					if (promoMappings['__event__' + row.eventName]) {
+						promotionId = parseInt(promoMappings['__event__' + row.eventName]) || null;
+					}
+
+					// Then check discount code mapping (row-level takes precedence)
+					if (row.discountCode && promoMappings[row.discountCode]) {
+						promotionId = parseInt(promoMappings[row.discountCode]) || null;
+					}
 
 					await sql`
 						INSERT INTO show_tickets (
 							patron_id, show_code, show_date, tickets_purchased,
-							amount_paid, purchase_date, payment_method
+							amount_paid, purchase_date, payment_method, promotion_id
 						) VALUES (
 							${patronId}, ${showCode}, ${row.showDate}, ${row.qty},
-							${row.itemTotal}, ${row.purchaseDate}, ${'Online'}
+							${row.itemTotal}, ${row.purchaseDate}, ${'Online'}, ${promotionId}
 						)
 					`;
 					imported++;
@@ -295,9 +312,9 @@ function parseCSZReport(text) {
 	const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 	const rows = [];
 	const eventNamesSet = new Set();
+	const discountCodesSet = new Set();
 
 	for (const line of lines) {
-		// Only process data rows (start with "number.")
 		if (!line.match(/^"[0-9]+\./)) continue;
 
 		const fields = parseCSVLine(line);
@@ -310,12 +327,13 @@ function parseCSZReport(text) {
 		const eventName = fields[5] || '';
 		const eventDateStr = fields[7] || '';
 		const qty = parseInt(fields[8]) || 0;
+		const discountCode = fields[9] || '';
+		const discountValue = parseFloat(fields[10]) || 0;
 		const dateCreated = fields[12] || '';
 		const itemTotal = parseFloat(fields[14]) || 0;
 
 		if (!eventName) continue;
 
-		// Parse event date
 		let showDate = null;
 		if (eventDateStr) {
 			const match = eventDateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -324,7 +342,6 @@ function parseCSZReport(text) {
 			}
 		}
 
-		// Parse purchase date
 		let purchaseDate = null;
 		if (dateCreated) {
 			const match = dateCreated.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -334,6 +351,9 @@ function parseCSZReport(text) {
 		}
 
 		eventNamesSet.add(eventName);
+		if (discountCode) {
+			discountCodesSet.add(discountCode);
+		}
 
 		rows.push({
 			firstName,
@@ -344,13 +364,16 @@ function parseCSZReport(text) {
 			showDate,
 			qty,
 			purchaseDate,
-			itemTotal
+			itemTotal,
+			discountCode,
+			discountValue
 		});
 	}
 
 	return {
 		rows,
-		eventNames: [...eventNamesSet].sort()
+		eventNames: [...eventNamesSet].sort(),
+		discountCodes: [...discountCodesSet].sort()
 	};
 }
 
