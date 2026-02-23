@@ -64,7 +64,7 @@
 			basePath: '/admin/hsi',
 			children: 
 			[
-				{ label: 'Coming Soon', href: '#' }	
+				{ label: 'Promotions', href: '/promotions' }	
 			
 			]
 		},
