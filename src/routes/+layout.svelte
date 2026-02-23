@@ -16,9 +16,9 @@
 				{ label: 'Students', href: '/hsi/students' },
 				{ label: 'Teachers', href: '/hsi/teachers' },
 				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				{ label: 'Registration Funnel', href: '/hsi/registrations' },
+				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
-				{ label: 'Class Financial Reports', href: '/hsi/reports' }
+				//{ label: 'Class Financial Reports', href: '/hsi/reports' }
 				
 			]
 		},
@@ -31,11 +31,12 @@
 			children: [
 				{ label: 'Shows', href: '/shows' },
 				{ label: 'Patrons', href: '/shows/patrons' },
+				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
 				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
 				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
 				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
 				{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
-				{ label: 'Shows Financial Reports', href: '/shows/reports' }
+				//{ label: 'Shows Financial Reports', href: '/shows/reports' }
 			]
 		},
 		{
@@ -53,6 +54,21 @@
 			icon: '💼',
 			basePath: '/corp',
 			children: [{ label: 'Coming Soon', href: '#' }]
+		},
+		{
+			id: 'reporting',
+			label: 'Reporting',
+			fullName: 'Reporting',
+			icon: '📊',
+			basePath: '/',
+			children: 
+			[
+				{ label: 'Registration Funnel', href: '/hsi/registrations' },	
+				{ label: 'Class Financial Reports', href: '/hsi/reports' },
+				{ label: 'Shows Financial Reports', href: '/shows/reports' },
+				{ label: 'Patron Zip Code Analytics', href: '/shows/patrons/zip_analytics' },
+				{ label: 'Coming Soon', href: '#' }
+			]
 		}
 	];
 
