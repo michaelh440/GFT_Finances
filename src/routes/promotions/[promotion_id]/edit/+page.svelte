@@ -8,7 +8,9 @@
 
 	$: promotion = data.promotion;
 	$: shows = data.shows || [];
+	$: classes = data.classes || [];
 	$: linkedShowCodes = data.linkedShowCodes || [];
+	$: linkedClassCodes = data.linkedClassCodes || [];
 
 	let submitting = false;
 
@@ -20,6 +22,15 @@
 		return acc;
 	}, {});
 	$: formats = Object.keys(showsByFormat).sort();
+
+	// Group classes by track
+	$: classesByTrack = classes.reduce((acc, c) => {
+		const track = c.track || 'Other';
+		if (!acc[track]) acc[track] = [];
+		acc[track].push(c);
+		return acc;
+	}, {});
+	$: tracks = Object.keys(classesByTrack).sort();
 
 	const discountTypes = [
 		{ value: '', label: '— Select —' },
@@ -137,6 +148,28 @@
 												checked={linkedShowCodes.includes(show.show_code)}
 											/>
 											{show.show_name}
+										</label>
+									{/each}
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="form-group full-width">
+						<label>Linked Classes <span class="help-text">(optional — select which classes this promotion applies to)</span></label>
+						<div class="show-checkboxes">
+							{#each tracks as track (track)}
+								<div class="show-group">
+									<span class="show-group-label">{track}</span>
+									{#each classesByTrack[track] as cls (cls.class_code)}
+										<label class="show-check">
+											<input
+												type="checkbox"
+												name="class_codes"
+												value={cls.class_code}
+												checked={linkedClassCodes.includes(cls.class_code)}
+											/>
+											{cls.class_name}
 										</label>
 									{/each}
 								</div>

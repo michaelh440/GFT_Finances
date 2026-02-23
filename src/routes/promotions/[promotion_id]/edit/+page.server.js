@@ -6,7 +6,7 @@ export const load = async ({ params }) => {
 	const promotionId = parseInt(params.promotion_id);
 
 	if (isNaN(promotionId)) {
-		return { promotion: null, shows: [], linkedShowCodes: [] };
+		return { promotion: null, shows: [], classes: [], linkedShowCodes: [], linkedClassCodes: [] };
 	}
 
 	try {
@@ -18,7 +18,7 @@ export const load = async ({ params }) => {
 		`;
 
 		if (!promotion) {
-			return { promotion: null, shows: [], linkedShowCodes: [] };
+			return { promotion: null, shows: [], classes: [], linkedShowCodes: [], linkedClassCodes: [] };
 		}
 
 		const shows = await sql`
@@ -27,8 +27,19 @@ export const load = async ({ params }) => {
 			ORDER BY format ASC, show_name ASC
 		`;
 
+		const classes = await sql`
+			SELECT class_code, class_name, track
+			FROM classes WHERE is_active = true
+			ORDER BY track ASC, class_name ASC
+		`;
+
 		const linkedShows = await sql`
 			SELECT show_code FROM promotion_shows
+			WHERE promotion_id = ${promotionId}
+		`;
+
+		const linkedClasses = await sql`
+			SELECT class_code FROM promotion_classes
 			WHERE promotion_id = ${promotionId}
 		`;
 
@@ -40,11 +51,13 @@ export const load = async ({ params }) => {
 				end_date: promotion.end_date ? promotion.end_date.toISOString().split('T')[0] : ''
 			},
 			shows,
-			linkedShowCodes: linkedShows.map((s) => s.show_code)
+			classes,
+			linkedShowCodes: linkedShows.map((s) => s.show_code),
+			linkedClassCodes: linkedClasses.map((c) => c.class_code)
 		};
 	} catch (error) {
 		console.error('Error loading promotion for edit:', error);
-		return { promotion: null, shows: [], linkedShowCodes: [] };
+		return { promotion: null, shows: [], classes: [], linkedShowCodes: [], linkedClassCodes: [] };
 	}
 };
 
@@ -61,6 +74,7 @@ export const actions = {
 		const end_date = (formData.get('end_date') || '').toString().trim() || null;
 		const is_active = formData.get('is_active') === 'true';
 		const show_codes = formData.getAll('show_codes').map((s) => s.toString());
+		const class_codes = formData.getAll('class_codes').map((s) => s.toString());
 
 		if (!promotion_name) {
 			return fail(400, { error: 'Promotion name is required.' });

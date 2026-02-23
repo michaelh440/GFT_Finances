@@ -29,6 +29,15 @@ export const load = async ({ params }) => {
 			ORDER BY s.show_name ASC
 		`;
 
+		// Linked classes
+		const linkedClasses = await sql`
+			SELECT pc.class_code, c.class_name, c.track
+			FROM promotion_classes pc
+			JOIN classes c ON c.class_code = pc.class_code
+			WHERE pc.promotion_id = ${promotionId}
+			ORDER BY c.track ASC, c.class_name ASC
+		`;
+
 		// Ticket stats by show
 		const showStats = await sql`
 			SELECT
@@ -80,6 +89,7 @@ export const load = async ({ params }) => {
 				created_at: promotion.created_at ? promotion.created_at.toISOString().split('T')[0] : null
 			},
 			linkedShows,
+			linkedClasses,
 			showStats: showStats.map((s) => ({
 				...s,
 				standard_ticket_price: Number(s.standard_ticket_price || 0),

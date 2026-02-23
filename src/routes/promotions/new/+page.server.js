@@ -9,10 +9,15 @@ export const load = async () => {
 			FROM shows WHERE is_active = true
 			ORDER BY format ASC, show_name ASC
 		`;
-		return { shows };
+		const classes = await sql`
+			SELECT class_code, class_name, track
+			FROM classes WHERE is_active = true
+			ORDER BY track ASC, class_name ASC
+		`;
+		return { shows, classes };
 	} catch (error) {
-		console.error('Error loading shows:', error);
-		return { shows: [] };
+		console.error('Error loading data:', error);
+		return { shows: [], classes: [] };
 	}
 };
 
@@ -27,6 +32,7 @@ export const actions = {
 		const start_date = (formData.get('start_date') || '').toString().trim() || null;
 		const end_date = (formData.get('end_date') || '').toString().trim() || null;
 		const show_codes = formData.getAll('show_codes').map((s) => s.toString());
+		const class_codes = formData.getAll('class_codes').map((s) => s.toString());
 
 		if (!promotion_name) {
 			return fail(400, { error: 'Promotion name is required.' });
@@ -46,6 +52,17 @@ export const actions = {
 				if (code) {
 					await sql`
 						INSERT INTO promotion_shows (promotion_id, show_code)
+						VALUES (${newPromo.promotion_id}, ${code})
+						ON CONFLICT DO NOTHING
+					`;
+				}
+			}
+
+			// Link classes
+			for (const code of class_codes) {
+				if (code) {
+					await sql`
+						INSERT INTO promotion_classes (promotion_id, class_code)
 						VALUES (${newPromo.promotion_id}, ${code})
 						ON CONFLICT DO NOTHING
 					`;

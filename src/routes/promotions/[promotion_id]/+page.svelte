@@ -9,6 +9,7 @@
 	$: totals = data.totals || {};
 	$: discountTotals = data.discountTotals || {};
 	$: linkedShows = data.linkedShows || [];
+	$: linkedClasses = data.linkedClasses || [];
 
 	const discountTypeLabels = {
 		flat: 'Flat Amount Off',
@@ -113,6 +114,16 @@
 					<div class="linked-shows">
 						{#each linkedShows as ls (ls.show_code)}
 							<a href="{base}/shows/{ls.show_code}" class="show-chip">{ls.show_name}</a>
+						{/each}
+					</div>
+				</div>
+			{/if}
+			{#if linkedClasses.length > 0}
+				<div class="desc-section">
+					<span class="info-label">Linked Classes ({linkedClasses.length})</span>
+					<div class="linked-shows">
+						{#each linkedClasses as lc (lc.class_code)}
+							<span class="class-chip">{lc.class_name}</span>
 						{/each}
 					</div>
 				</div>
@@ -241,6 +252,7 @@
 	.linked-shows { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
 	.show-chip { display: inline-block; padding: 0.25rem 0.75rem; background: #f3f4f6; border-radius: 9999px; font-size: 0.8rem; color: #3b82f6; text-decoration: none; font-weight: 500; transition: background 0.2s; }
 	.show-chip:hover { background: #e5e7eb; }
+	.class-chip { display: inline-block; padding: 0.25rem 0.75rem; background: #e0e7ff; border-radius: 9999px; font-size: 0.8rem; color: #4338ca; font-weight: 500; }
 
 	.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
 	.stat-card { background: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); text-align: center; display: flex; flex-direction: column; gap: 0.2rem; }
