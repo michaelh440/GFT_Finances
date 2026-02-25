@@ -63,7 +63,8 @@
 			basePath: '/',
 			children: 
 			[
-				{ label: 'Registration Funnel', href: '/hsi/registrations' },	
+				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },	
+				{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Class Financial Reports', href: '/hsi/reports' },
 				{ label: 'Shows Financial Reports', href: '/shows/reports' },
 				{ label: 'Patron Zip Code Analytics', href: '/shows/patrons/zip_analytics' },
