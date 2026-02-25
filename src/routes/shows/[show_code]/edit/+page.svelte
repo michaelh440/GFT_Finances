@@ -86,6 +86,8 @@
 						<select id="audience_type" name="audience_type" value={audience_type}>
 							<option value="">— Select —</option>
 							<option value="All Ages">All Ages</option>
+							<option value="Pre-Teen">Pre-Teen</option>
+							<option value="Teenagers">Teenagers</option>
 							<option value="18+">18+</option>
 							<option value="21+">21+</option>
 							<option value="Family">Family</option>
