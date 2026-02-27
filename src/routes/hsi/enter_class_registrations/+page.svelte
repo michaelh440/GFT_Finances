@@ -1,6 +1,7 @@
 <!-- src/routes/hsi/enter_class_registrations/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  import { base } from '$app/paths';
 
   export let data;
   export let form;
@@ -344,7 +345,7 @@
       <h1>Enter Class Registrations</h1>
       <p class="subtitle">Add or import student registrations</p>
     </div>
-    <a href="/hsi" class="btn-secondary">Back to Classes</a>
+    <a href="{base}/hsi/classes" class="btn-secondary">Back to Classes</a>
   </header>
 
   {#if form?.success}

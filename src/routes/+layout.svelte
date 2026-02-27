@@ -16,6 +16,7 @@
 				{ label: 'Students', href: '/hsi/students' },
 				{ label: 'Teachers', href: '/hsi/teachers' },
 				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+				{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
 				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
 				//{ label: 'Class Financial Reports', href: '/hsi/reports' }

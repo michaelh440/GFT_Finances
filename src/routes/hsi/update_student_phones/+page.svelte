@@ -228,7 +228,7 @@
 <div class="container" data-sveltekit-reload>
   <header>
     <div>
-      <a href="{base}/hsi" class="breadcrumb">← HSI</a>
+      <a href="{base}/hsi/classes" class="breadcrumb">← HSI</a>
       <h1>Update Student Phone Numbers</h1>
       <p class="subtitle">Import phone and mobile numbers from CSV registration files</p>
     </div>
