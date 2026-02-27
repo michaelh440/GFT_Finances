@@ -38,43 +38,90 @@ export const load = async () => {
 };
 
 // ============================================================
-// CSV PARSING — auto-detects old (16 field) vs new (22 field) format
+// CSV PARSING — auto-detects old (16 field) vs new (22 field) vs v2 (23 field) format
 // ============================================================
 
 function parseCSZReport(text) {
-	const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+	// Normalize line endings
+	text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+	// Rebuild lines respecting quoted fields (handles newlines inside quotes)
+	const rawLines = [];
+	let current = '';
+	let inQuotes = false;
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+		if (char === '"') {
+			inQuotes = !inQuotes;
+			current += char;
+		} else if (char === '\n' && !inQuotes) {
+			if (current.trim()) rawLines.push(current);
+			current = '';
+		} else {
+			current += char;
+		}
+	}
+	if (current.trim()) rawLines.push(current);
+
 	const rows = [];
 	const eventNamesSet = new Set();
 	const discountCodesSet = new Set();
 	let detectedFormat = null;
 
-	for (const line of lines) {
+	for (const line of rawLines) {
 		if (!line.match(/^"[0-9]+\./)) continue;
 
 		const fields = parseCSVLine(line);
 
 		// Auto-detect format on first data row
-		// v2 = 23 fields (has AcctID + address)
+		// v3 = 24 fields (AcctID + address + Mobile Phone)
+		// v2 = 23 fields (AcctID + address, no Mobile Phone)
 		// new = 22 fields (address, no AcctID)
 		// old = 16 fields (no address, no AcctID)
 		if (detectedFormat === null) {
-			if (fields.length >= 23) {
+			if (fields.length >= 24) {
+				detectedFormat = 'v3';
+			} else if (fields.length >= 23) {
 				detectedFormat = 'v2';
-				console.log('[csv_parse] Detected V2 format (23 fields, with AcctID + address)');
 			} else if (fields.length >= 21) {
 				detectedFormat = 'new';
-				console.log('[csv_parse] Detected NEW format (22 fields, with address, no AcctID)');
 			} else if (fields.length >= 15) {
 				detectedFormat = 'old';
-				console.log('[csv_parse] Detected OLD format (16 fields, no address)');
 			} else {
-				console.log('[csv_parse] Unknown format, fields:', fields.length);
 				continue;
 			}
+			console.log(`[csv_parse] Detected ${detectedFormat} format (${fields.length} fields)`);
 		}
 
 		let row;
-		if (detectedFormat === 'v2') {
+		if (detectedFormat === 'v3') {
+			// 0:Rec, 1:AcctID, 2:First, 3:Last, 4:Address, 5:Address2, 6:City, 7:State, 8:Zip, 9:Country,
+			// 10:Email, 11:Phone, 12:MobilePhone, 13:EventName, 14:Venue, 15:EventDate, 16:Qty, 17:DiscountCode,
+			// 18:DiscountValue, 19:Orders, 20:DateCreated, 21:DateScanned, 22:ItemTotal
+			if (fields.length < 23) continue;
+			const acctId = (fields[1] || '').trim();
+			row = {
+				acctId: acctId && acctId !== '0' ? acctId : '',
+				firstName: fields[2] || '',
+				lastName: fields[3] || '',
+				address_line1: fields[4] || '',
+				address_line2: fields[5] || '',
+				city: fields[6] || '',
+				state: fields[7] || '',
+				zip_code: fields[8] || '',
+				country: fields[9] || '',
+				email: fields[10] || '',
+				phone: (fields[11] || '').trim(),
+				mobile_phone: (fields[12] || '').trim(),
+				eventName: fields[13] || '',
+				eventDateStr: fields[15] || '',
+				qty: parseInt(fields[16]) || 0,
+				discountCode: fields[17] || '',
+				discountValue: parseFloat(fields[18]) || 0,
+				dateCreated: fields[20] || '',
+				itemTotal: parseFloat(fields[22]) || 0
+			};
+		} else if (detectedFormat === 'v2') {
 			// 0:Rec, 1:AcctID, 2:First, 3:Last, 4:Address, 5:Address2, 6:City, 7:State, 8:Zip, 9:Country,
 			// 10:Email, 11:Phone, 12:EventName, 13:Venue, 14:EventDate, 15:Qty, 16:DiscountCode,
 			// 17:DiscountValue, 18:Orders, 19:DateCreated, 20:DateScanned, 21:ItemTotal
@@ -92,6 +139,7 @@ function parseCSZReport(text) {
 				country: fields[9] || '',
 				email: fields[10] || '',
 				phone: (fields[11] || '').trim(),
+				mobile_phone: '',
 				eventName: fields[12] || '',
 				eventDateStr: fields[14] || '',
 				qty: parseInt(fields[15]) || 0,
@@ -101,9 +149,6 @@ function parseCSZReport(text) {
 				itemTotal: parseFloat(fields[21]) || 0
 			};
 		} else if (detectedFormat === 'new') {
-			// 0:Rec, 1:First, 2:Last, 3:Address, 4:Address2, 5:City, 6:State, 7:Zip, 8:Country,
-			// 9:Email, 10:Phone, 11:EventName, 12:Venue, 13:EventDate, 14:Qty, 15:DiscountCode,
-			// 16:DiscountValue, 17:Orders, 18:DateCreated, 19:DateScanned, 20:ItemTotal
 			if (fields.length < 21) continue;
 			row = {
 				acctId: '',
@@ -117,6 +162,7 @@ function parseCSZReport(text) {
 				country: fields[8] || '',
 				email: fields[9] || '',
 				phone: (fields[10] || '').trim(),
+				mobile_phone: '',
 				eventName: fields[11] || '',
 				eventDateStr: fields[13] || '',
 				qty: parseInt(fields[14]) || 0,
@@ -126,9 +172,6 @@ function parseCSZReport(text) {
 				itemTotal: parseFloat(fields[20]) || 0
 			};
 		} else {
-			// 0:Rec, 1:First, 2:Last, 3:Email, 4:Phone, 5:EventName, 6:Venue,
-			// 7:EventDate, 8:Qty, 9:DiscountCode, 10:DiscountValue, 11:Orders,
-			// 12:DateCreated, 13:DateScanned, 14:ItemTotal
 			if (fields.length < 15) continue;
 			row = {
 				acctId: '',
@@ -136,6 +179,7 @@ function parseCSZReport(text) {
 				lastName: fields[2] || '',
 				email: fields[3] || '',
 				phone: fields[4] || '',
+				mobile_phone: '',
 				eventName: fields[5] || '',
 				eventDateStr: fields[7] || '',
 				qty: parseInt(fields[8]) || 0,
@@ -152,9 +196,9 @@ function parseCSZReport(text) {
 			};
 		}
 
-		// Clean phone
+		// Clean phone fields
 		if (row.phone === ' ' || row.phone === '') row.phone = '';
-
+		if (row.mobile_phone === ' ' || row.mobile_phone === '') row.mobile_phone = '';
 		if (!row.eventName) continue;
 
 		// Parse dates
@@ -206,87 +250,10 @@ function parseCSVLine(line) {
 }
 
 // ============================================================
-// PATRON MATCHING
+// ACTIONS
 // ============================================================
 
 const norm = (s) => (s || '').toLowerCase().trim();
-
-/**
- * Find potential patron matches for a CSV row.
- * AcctID match = 100% confidence (definitive).
- * Returns array of { patron, matchType, confidence } sorted by confidence.
- */
-function findPatronMatches(row, allPatrons) {
-	const matches = [];
-	const rowFirst = norm(row.firstName);
-	const rowLast = norm(row.lastName);
-	const rowEmail = norm(row.email);
-	const rowPhone = norm(row.phone);
-	const rowAcctId = (row.acctId || '').trim();
-
-	for (const p of allPatrons) {
-		const pFirst = norm(p.first_name);
-		const pLast = norm(p.last_name);
-		const pEmail = norm(p.email);
-		const pPhone = norm(p.phone);
-		const pAcctId = (p.vbo_account_id || '').trim();
-
-		let matchType = '';
-		let confidence = 0;
-
-		// VBO Account ID match (definitive)
-		if (rowAcctId && pAcctId && rowAcctId === pAcctId) {
-			matchType = 'acctid';
-			confidence = 100;
-		}
-		// Exact name + email
-		else if (pFirst === rowFirst && pLast === rowLast && rowEmail && pEmail === rowEmail) {
-			matchType = 'name+email';
-			confidence = 95;
-		}
-		// Name + phone
-		else if (pFirst === rowFirst && pLast === rowLast && rowPhone && pPhone && pPhone === rowPhone) {
-			matchType = 'name+phone';
-			confidence = 85;
-		}
-		// Exact name only
-		else if (pFirst === rowFirst && pLast === rowLast) {
-			matchType = 'name';
-			confidence = 80;
-		}
-		// Last name + email
-		else if (pLast === rowLast && rowEmail && pEmail === rowEmail) {
-			matchType = 'lastname+email';
-			confidence = 75;
-		}
-		// Email only
-		else if (rowEmail && pEmail && pEmail === rowEmail) {
-			matchType = 'email';
-			confidence = 70;
-		}
-
-		if (matchType) {
-			matches.push({
-				patron_id: p.patron_id,
-				first_name: p.first_name,
-				last_name: p.last_name,
-				email: p.email || '',
-				phone: p.phone || '',
-				vbo_account_id: p.vbo_account_id || '',
-				matchType,
-				confidence
-			});
-		}
-	}
-
-	// Sort by confidence desc
-	matches.sort((a, b) => b.confidence - a.confidence);
-	return matches;
-}
-
-// ============================================================
-// ACTIONS
-// ============================================================
 
 export const actions = {
 	// Manual row entry (unchanged)
@@ -373,7 +340,7 @@ export const actions = {
 		}
 	},
 
-	// Step 1: Parse CSV → return data + event names for mapping
+	// Step 1: Parse CSV → return data + event names for mapping (client-side mapping UI)
 	csv_upload: async ({ request }) => {
 		const formData = await request.formData();
 		const file = formData.get('csv_file');
@@ -409,8 +376,9 @@ export const actions = {
 		}
 	},
 
-	// Step 2: After event mapping, detect patron conflicts
-	csv_detect_conflicts: async ({ request }) => {
+	// Step 2: After event mapping, match patrons and return results for review
+	// (Mirrors the student registration csv_check pattern)
+	csv_check: async ({ request }) => {
 		const formData = await request.formData();
 		const rowsJson = formData.get('rows_json')?.toString();
 		const mappingsJson = formData.get('mappings_json')?.toString();
@@ -429,17 +397,9 @@ export const actions = {
 		}
 
 		try {
-			// Load all patrons including vbo_account_id
-			const allPatrons = await sql`
-				SELECT patron_id, first_name, last_name, email, phone, vbo_account_id
-				FROM patrons
-				ORDER BY last_name, first_name
-			`;
+			const matchResults = [];
 
-			console.log(`[csv_conflicts] Checking ${rows.length} rows against ${allPatrons.length} patrons`);
-
-			// Find unique patron entries that need resolution
-			// Use AcctID as primary key if available, fallback to name+email
+			// Deduplicate patrons — same person may have multiple ticket rows
 			const patronMap = new Map();
 			for (const row of rows) {
 				const showCode = mappings[row.eventName];
@@ -449,7 +409,6 @@ export const actions = {
 				if (isAnonymous && skipAnonymous) continue;
 				if (isAnonymous) continue;
 
-				// Dedup key: use AcctID if available, otherwise name+email
 				const acctId = (row.acctId || '').trim();
 				const key = acctId
 					? `acct:${acctId}`
@@ -460,105 +419,174 @@ export const actions = {
 				}
 			}
 
-			const conflicts = [];
-			const autoMatched = [];
-			let acctIdMatched = 0;
-
+			// Match each unique patron against the database
 			for (const [key, row] of patronMap) {
+				const email = norm(row.email);
+				const firstName = (row.firstName || '').trim();
+				const lastName = (row.lastName || '').trim();
+				const phone = (row.phone || '').trim();
 				const acctId = (row.acctId || '').trim();
-				const matches = findPatronMatches(row, allPatrons);
 
-				// AcctID match = definitive, auto-resolve
-				if (acctId && matches.length > 0 && matches[0].matchType === 'acctid') {
-					autoMatched.push({
-						key,
-						acctId,
-						csvName: `${row.firstName} ${row.lastName}`,
-						csvEmail: row.email || '',
-						csvPhone: row.phone || '',
-						patron_id: matches[0].patron_id,
-						matchType: 'acctid'
-					});
-					acctIdMatched++;
+				let matchType = 'new';
+				let dbPatron = null;
+
+				// 1. Try AcctID match (definitive)
+				if (acctId) {
+					const acctMatch = await sql`
+						SELECT patron_id, first_name, last_name, email, phone, mobile_phone, vbo_account_id,
+						       address_line1, city, state, zip_code
+						FROM patrons
+						WHERE vbo_account_id = ${acctId}
+						LIMIT 1
+					`;
+					if (acctMatch.length > 0) {
+						dbPatron = mapPatronRow(acctMatch[0]);
+						matchType = 'acctid_match';
+					}
 				}
-				// Single high-confidence match without AcctID
-				else if (matches.length === 1 && matches[0].confidence >= 95) {
-					autoMatched.push({
-						key,
-						acctId,
-						csvName: `${row.firstName} ${row.lastName}`,
-						csvEmail: row.email || '',
-						csvPhone: row.phone || '',
-						patron_id: matches[0].patron_id,
-						matchType: matches[0].matchType
-					});
+
+				// 2. Try email match
+				if (!dbPatron && email) {
+					const emailMatch = await sql`
+						SELECT patron_id, first_name, last_name, email, phone, mobile_phone, vbo_account_id,
+						       address_line1, city, state, zip_code
+						FROM patrons
+						WHERE LOWER(TRIM(email)) = ${email}
+						LIMIT 1
+					`;
+					if (emailMatch.length > 0) {
+						dbPatron = mapPatronRow(emailMatch[0]);
+						matchType = 'email_match';
+					}
 				}
-				// Ambiguous matches — user decides
-				else if (matches.length > 0) {
-					conflicts.push({
-						key,
-						acctId,
-						csvName: `${row.firstName} ${row.lastName}`,
-						csvEmail: row.email || '',
-						csvPhone: row.phone || '',
-						csvAddress: [row.address_line1, row.city, row.state, row.zip_code].filter(Boolean).join(', '),
-						matches: matches.slice(0, 5)
-					});
+
+				// 3. Try name match
+				if (!dbPatron && firstName && lastName) {
+					const nameMatch = await sql`
+						SELECT patron_id, first_name, last_name, email, phone, mobile_phone, vbo_account_id,
+						       address_line1, city, state, zip_code
+						FROM patrons
+						WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase()}
+						  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase()}
+						LIMIT 1
+					`;
+					if (nameMatch.length > 0) {
+						dbPatron = mapPatronRow(nameMatch[0]);
+						matchType = 'name_match';
+					}
 				}
-				// No match — will be new patron
-				else {
-					autoMatched.push({
-						key,
-						acctId,
-						csvName: `${row.firstName} ${row.lastName}`,
-						csvEmail: row.email || '',
-						csvPhone: row.phone || '',
-						patron_id: null,
-						matchType: 'new'
-					});
+
+				// Check for existing ticket for this patron+show (to detect duplicates)
+				let existingTicket = null;
+				if (dbPatron) {
+					const showCode = mappings[row.eventName];
+					if (showCode && row.showDate) {
+						const ticketMatch = await sql`
+							SELECT ticket_id, show_code, show_date, tickets_purchased, amount_paid
+							FROM show_tickets
+							WHERE patron_id = ${dbPatron.patron_id}
+							  AND show_code = ${showCode}
+							  AND show_date = ${row.showDate}
+							LIMIT 1
+						`;
+						if (ticketMatch.length > 0) {
+							existingTicket = {
+								ticket_id: ticketMatch[0].ticket_id,
+								show_code: ticketMatch[0].show_code,
+								show_date: ticketMatch[0].show_date
+									? ticketMatch[0].show_date.toISOString().split('T')[0]
+									: null,
+								tickets_purchased: Number(ticketMatch[0].tickets_purchased),
+								amount_paid: Number(ticketMatch[0].amount_paid)
+							};
+						}
+					}
 				}
+
+				// Build field diffs for review
+				const diffs = [];
+				if (dbPatron) {
+					if (firstName && norm(firstName) !== norm(dbPatron.first_name)) {
+						diffs.push({ field: 'first_name', db: dbPatron.first_name, csv: firstName });
+					}
+					if (lastName && norm(lastName) !== norm(dbPatron.last_name)) {
+						diffs.push({ field: 'last_name', db: dbPatron.last_name, csv: lastName });
+					}
+					if (email && norm(email) !== norm(dbPatron.email)) {
+						diffs.push({ field: 'email', db: dbPatron.email || '', csv: row.email });
+					}
+					if (phone && norm(phone) !== norm(dbPatron.phone)) {
+						diffs.push({ field: 'phone', db: dbPatron.phone || '', csv: phone });
+					}
+					const csvMobile = (row.mobile_phone || '').trim();
+					if (csvMobile && norm(csvMobile) !== norm(dbPatron.mobile_phone)) {
+						diffs.push({ field: 'mobile_phone', db: dbPatron.mobile_phone || '', csv: csvMobile });
+					}
+					// Address diffs — only if CSV has data and DB is empty
+					if (row.address_line1 && !dbPatron.address_line1) {
+						diffs.push({ field: 'address', db: '(empty)', csv: [row.address_line1, row.city, row.state, row.zip_code].filter(Boolean).join(', ') });
+					}
+				}
+
+				matchResults.push({
+					key,
+					csv: {
+						first_name: firstName,
+						last_name: lastName,
+						email: row.email || '',
+						phone,
+						mobile_phone: (row.mobile_phone || '').trim(),
+						acct_id: acctId,
+						address_line1: row.address_line1 || '',
+						city: row.city || '',
+						state: row.state || '',
+						zip_code: row.zip_code || ''
+					},
+					matchType,
+					dbPatron,
+					existingTicket,
+					diffs
+				});
 			}
-
-			console.log(`[csv_conflicts] ${autoMatched.length} auto-resolved (${acctIdMatched} by AcctID), ${conflicts.length} need user input`);
-			console.log(`[csv_conflicts] Auto-resolved: ${autoMatched.filter(a => a.patron_id).length} existing, ${autoMatched.filter(a => !a.patron_id).length} new`);
 
 			return {
 				success: true,
-				action: 'csv_detect_conflicts',
-				conflicts,
-				autoMatched,
-				autoMatchedExisting: autoMatched.filter((a) => a.patron_id).length,
-				autoMatchedNew: autoMatched.filter((a) => !a.patron_id).length,
-				acctIdMatched,
-				conflictCount: conflicts.length
+				action: 'csv_check',
+				matchResults
 			};
 		} catch (error) {
-			console.error('Error detecting conflicts:', error);
-			return { success: false, error: 'Conflict detection failed: ' + error.message };
+			console.error('Error checking patrons:', error);
+			return { success: false, error: 'Patron matching failed: ' + error.message };
 		}
 	},
 
-	// Step 3: Final import with resolved patron decisions
-	csv_import: async ({ request }) => {
+	// Step 3: Final import with patron decisions
+	csv_confirm: async ({ request }) => {
 		const formData = await request.formData();
 		const rowsJson = formData.get('rows_json')?.toString();
 		const mappingsJson = formData.get('mappings_json')?.toString();
 		const promoMappingsJson = formData.get('promo_mappings_json')?.toString();
-		const resolutionsJson = formData.get('resolutions_json')?.toString();
+		const decisionsJson = formData.get('decisions_json')?.toString();
 		const skipAnonymous = formData.get('skip_anonymous') === 'true';
 
-		if (!rowsJson || !mappingsJson) {
+		if (!rowsJson || !mappingsJson || !decisionsJson) {
 			return { success: false, error: 'Missing import data. Please re-upload.' };
 		}
 
-		let rows, mappings, promoMappings, resolutions;
+		let rows, mappings, promoMappings, decisions;
 		try {
 			rows = JSON.parse(rowsJson);
 			mappings = JSON.parse(mappingsJson);
 			promoMappings = promoMappingsJson ? JSON.parse(promoMappingsJson) : {};
-			resolutions = resolutionsJson ? JSON.parse(resolutionsJson) : {};
+			decisions = JSON.parse(decisionsJson);
 		} catch {
-			return { success: false, error: 'Invalid import data. Please re-upload.' };
+			return { success: false, error: 'Invalid import data.' };
+		}
+
+		// Build a lookup from patron key → decision
+		const decisionMap = {};
+		for (const d of decisions) {
+			decisionMap[d.key] = d;
 		}
 
 		let imported = 0;
@@ -566,10 +594,13 @@ export const actions = {
 		let patronsCreated = 0;
 		let patronsUpdated = 0;
 		let anonymousImported = 0;
-		const skippedRows = []; // For the downloadable CSV
+		const skippedRows = [];
 		const errors = [];
 
 		try {
+			// Cache patron_id lookups so we don't create duplicates within the same import
+			const patronCache = {};
+
 			for (const row of rows) {
 				const showCode = mappings[row.eventName];
 
@@ -581,7 +612,7 @@ export const actions = {
 
 				const isAnonymous = !row.firstName && !row.lastName;
 				if (isAnonymous && skipAnonymous) {
-					skippedRows.push({ ...row, skipReason: 'Anonymous row (skip anonymous enabled)' });
+					skippedRows.push({ ...row, skipReason: 'Anonymous (skip enabled)' });
 					skipped++;
 					continue;
 				}
@@ -596,39 +627,66 @@ export const actions = {
 					let patronId = null;
 
 					if (!isAnonymous) {
-						// Build key matching the conflict detection format
 						const acctId = (row.acctId || '').trim();
 						const key = acctId
 							? `acct:${acctId}`
 							: `name:${norm(row.firstName)}|${norm(row.lastName)}|${norm(row.email)}`;
-						const resolution = resolutions[key];
 
-						if (resolution) {
-							if (resolution.action === 'skip') {
-								skippedRows.push({ ...row, skipReason: 'User chose to skip patron' });
-								skipped++;
-								continue;
-							} else if (resolution.action === 'use_existing') {
-								patronId = resolution.patron_id;
-								// Update address data on the existing patron if we have new data
-								if (row.address_line1 || row.city || row.zip_code) {
-									await updatePatronAddress(patronId, row);
-									patronsUpdated++;
-								}
-							} else if (resolution.action === 'create_new') {
-								patronId = await createPatronWithAddress(row);
-								patronsCreated++;
-							} else if (resolution.action === 'update_existing') {
-								patronId = resolution.patron_id;
-								await updatePatronFull(patronId, row);
-								patronsUpdated++;
-							}
+						// Check cache first
+						if (patronCache[key]) {
+							patronId = patronCache[key];
 						} else {
-							// No explicit resolution — auto-match or create
-							const result = await findOrCreatePatronWithAddress(row);
-							patronId = result.id;
-							if (result.created) patronsCreated++;
-							if (result.updated) patronsUpdated++;
+							const decision = decisionMap[key];
+
+							if (decision) {
+								if (decision.action === 'skip') {
+									skippedRows.push({ ...row, skipReason: 'Patron skipped by user' });
+									skipped++;
+									continue;
+								} else if (decision.action === 'use_existing' && decision.patron_id) {
+									patronId = decision.patron_id;
+									// Fill in address/phone/acctId if empty
+									await fillPatronData(patronId, row);
+								} else if (decision.action === 'update_existing' && decision.patron_id) {
+									patronId = decision.patron_id;
+									await updatePatronFull(patronId, row);
+									patronsUpdated++;
+								} else {
+									// 'create_new' or no decision — auto-match or create
+									const result = await findOrCreatePatronWithAddress(row);
+									patronId = result.id;
+									if (result.created) patronsCreated++;
+									if (result.updated) patronsUpdated++;
+								}
+							} else {
+								// No decision for this key — auto-match or create
+								const result = await findOrCreatePatronWithAddress(row);
+								patronId = result.id;
+								if (result.created) patronsCreated++;
+								if (result.updated) patronsUpdated++;
+							}
+
+							if (patronId) patronCache[key] = patronId;
+						}
+
+						// Apply field updates if user checked them
+						const decision = decisionMap[key];
+						if (decision && decision.updateFields && decision.updateFields.length > 0 && patronId) {
+							for (const field of decision.updateFields) {
+								if (field === 'first_name') {
+									await sql`UPDATE patrons SET first_name = ${row.firstName}, updated_at = CURRENT_TIMESTAMP WHERE patron_id = ${patronId}`;
+								} else if (field === 'last_name') {
+									await sql`UPDATE patrons SET last_name = ${row.lastName}, updated_at = CURRENT_TIMESTAMP WHERE patron_id = ${patronId}`;
+								} else if (field === 'email') {
+									await sql`UPDATE patrons SET email = ${row.email || ''}, updated_at = CURRENT_TIMESTAMP WHERE patron_id = ${patronId}`;
+								} else if (field === 'phone') {
+									await sql`UPDATE patrons SET phone = ${row.phone}, updated_at = CURRENT_TIMESTAMP WHERE patron_id = ${patronId}`;
+								} else if (field === 'mobile_phone') {
+									await sql`UPDATE patrons SET mobile_phone = ${row.mobile_phone || ''}, updated_at = CURRENT_TIMESTAMP WHERE patron_id = ${patronId}`;
+								} else if (field === 'address') {
+									await fillPatronData(patronId, row);
+								}
+							}
 						}
 					}
 
@@ -654,28 +712,21 @@ export const actions = {
 					if (isAnonymous) anonymousImported++;
 				} catch (rowError) {
 					const label = isAnonymous ? 'Anonymous' : `${row.firstName} ${row.lastName}`;
-					const errMsg = `${label} / ${row.eventName}: ${rowError.message}`;
-					errors.push(errMsg);
+					errors.push(`${label} / ${row.eventName}: ${rowError.message}`);
 					skippedRows.push({ ...row, skipReason: `Error: ${rowError.message}` });
 					skipped++;
 				}
 			}
 
-			// Build skip CSV content
+			// Build skip CSV
 			let skipCsvContent = '';
 			if (skippedRows.length > 0) {
 				const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Event', 'Show Date', 'Qty', 'Amount', 'Skip Reason'];
 				skipCsvContent = headers.map((h) => `"${h}"`).join(',') + '\n';
 				for (const sr of skippedRows) {
 					const vals = [
-						sr.firstName || '',
-						sr.lastName || '',
-						sr.email || '',
-						sr.phone || '',
-						sr.eventName || '',
-						sr.showDate || '',
-						sr.qty || '',
-						sr.itemTotal || '',
+						sr.firstName || '', sr.lastName || '', sr.email || '', sr.phone || '',
+						sr.eventName || '', sr.showDate || '', sr.qty || '', sr.itemTotal || '',
 						sr.skipReason || ''
 					];
 					skipCsvContent += vals.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
@@ -684,7 +735,7 @@ export const actions = {
 
 			return {
 				success: true,
-				action: 'csv_import',
+				action: 'csv_confirm',
 				imported,
 				skipped,
 				patronsCreated,
@@ -693,7 +744,7 @@ export const actions = {
 				errors: errors.slice(0, 20),
 				skipCsvContent,
 				skippedCount: skippedRows.length,
-				message: `Imported ${imported} ticket purchases. ${patronsCreated} new patrons created, ${patronsUpdated} patrons updated.`
+				message: `Imported ${imported} ticket purchase${imported !== 1 ? 's' : ''}. ${patronsCreated} new patron${patronsCreated !== 1 ? 's' : ''} created, ${patronsUpdated} updated.`
 			};
 		} catch (error) {
 			console.error('Error importing tickets:', error);
@@ -703,35 +754,65 @@ export const actions = {
 };
 
 // ============================================================
-// PATRON CRUD HELPERS
+// PATRON HELPERS
 // ============================================================
 
-/**
- * Robustly find or create a patron. Uses a multi-tier lookup then
- * INSERT ... ON CONFLICT to handle race conditions and edge cases.
- * NEVER throws on duplicate — always returns a patron_id.
- */
-async function findOrCreatePatron(firstName, lastName, email, phone, acctId) {
-	const cleanEmail = email || null;
-	const cleanPhone = phone || null;
-	const cleanAcctId = (acctId || '').trim() || null;
+function mapPatronRow(r) {
+	return {
+		patron_id: r.patron_id,
+		first_name: r.first_name,
+		last_name: r.last_name,
+		email: r.email || '',
+		phone: r.phone || '',
+		mobile_phone: r.mobile_phone || '',
+		vbo_account_id: r.vbo_account_id || '',
+		address_line1: r.address_line1 || '',
+		city: r.city || '',
+		state: r.state || '',
+		zip_code: r.zip_code || ''
+	};
+}
 
-	const patronId = await lookupPatron(firstName, lastName, cleanEmail, cleanPhone, cleanAcctId);
-	if (patronId) {
-		// Update phone/acctId if missing
-		if (cleanPhone || cleanAcctId) {
-			await sql`
-				UPDATE patrons SET
-					phone = CASE WHEN (phone IS NULL OR phone = '') AND ${cleanPhone || ''} != '' THEN ${cleanPhone} ELSE phone END,
-					vbo_account_id = CASE WHEN (vbo_account_id IS NULL OR vbo_account_id = '') AND ${cleanAcctId || ''} != '' THEN ${cleanAcctId} ELSE vbo_account_id END,
-					updated_at = CURRENT_TIMESTAMP
-				WHERE patron_id = ${patronId}
-			`;
-		}
-		return { id: patronId, created: false };
-	}
+async function fillPatronData(patronId, row) {
+	const cleanPhone = row.phone || '';
+	const cleanMobile = row.mobile_phone || '';
+	const cleanAcctId = (row.acctId || '').trim();
+	await sql`
+		UPDATE patrons SET
+			address_line1 = CASE WHEN (address_line1 IS NULL OR address_line1 = '') AND ${row.address_line1 || ''} != '' THEN ${row.address_line1 || ''} ELSE address_line1 END,
+			address_line2 = CASE WHEN (address_line2 IS NULL OR address_line2 = '') AND ${row.address_line2 || ''} != '' THEN ${row.address_line2 || ''} ELSE address_line2 END,
+			city = CASE WHEN (city IS NULL OR city = '') AND ${row.city || ''} != '' THEN ${row.city || ''} ELSE city END,
+			state = CASE WHEN (state IS NULL OR state = '') AND ${row.state || ''} != '' THEN ${row.state || ''} ELSE state END,
+			zip_code = CASE WHEN (zip_code IS NULL OR zip_code = '') AND ${row.zip_code || ''} != '' THEN ${row.zip_code || ''} ELSE zip_code END,
+			country = CASE WHEN (country IS NULL OR country = '') AND ${row.country || ''} != '' THEN ${row.country || ''} ELSE country END,
+			phone = CASE WHEN (phone IS NULL OR phone = '') AND ${cleanPhone} != '' THEN ${cleanPhone} ELSE phone END,
+			mobile_phone = CASE WHEN (mobile_phone IS NULL OR mobile_phone = '') AND ${cleanMobile} != '' THEN ${cleanMobile} ELSE mobile_phone END,
+			vbo_account_id = CASE WHEN (vbo_account_id IS NULL OR vbo_account_id = '') AND ${cleanAcctId} != '' THEN ${cleanAcctId} ELSE vbo_account_id END,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE patron_id = ${patronId}
+	`;
+}
 
-	return await safeInsertPatron(firstName, lastName, cleanEmail, cleanPhone, null, null, null, null, null, null, cleanAcctId);
+async function updatePatronFull(patronId, row) {
+	const cleanAcctId = (row.acctId || '').trim() || null;
+	const cleanMobile = (row.mobile_phone || '').trim();
+	await sql`
+		UPDATE patrons SET
+			first_name = ${row.firstName},
+			last_name = ${row.lastName},
+			email = CASE WHEN ${row.email || ''} != '' THEN ${row.email} ELSE email END,
+			phone = CASE WHEN ${row.phone || ''} != '' THEN ${row.phone} ELSE phone END,
+			mobile_phone = CASE WHEN ${cleanMobile} != '' THEN ${cleanMobile} ELSE mobile_phone END,
+			address_line1 = CASE WHEN ${row.address_line1 || ''} != '' THEN ${row.address_line1} ELSE address_line1 END,
+			address_line2 = CASE WHEN ${row.address_line2 || ''} != '' THEN ${row.address_line2} ELSE address_line2 END,
+			city = CASE WHEN ${row.city || ''} != '' THEN ${row.city} ELSE city END,
+			state = CASE WHEN ${row.state || ''} != '' THEN ${row.state} ELSE state END,
+			zip_code = CASE WHEN ${row.zip_code || ''} != '' THEN ${row.zip_code} ELSE zip_code END,
+			country = CASE WHEN ${row.country || ''} != '' THEN ${row.country} ELSE country END,
+			vbo_account_id = CASE WHEN ${cleanAcctId || ''} != '' THEN ${cleanAcctId} ELSE vbo_account_id END,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE patron_id = ${patronId}
+	`;
 }
 
 async function findOrCreatePatronWithAddress(row) {
@@ -741,87 +822,67 @@ async function findOrCreatePatronWithAddress(row) {
 
 	const patronId = await lookupPatron(row.firstName, row.lastName, cleanEmail, cleanPhone, cleanAcctId);
 	if (patronId) {
-		// Fill in address data and acctId if empty
 		let updated = false;
 		if (row.address_line1 || row.city || row.zip_code || cleanPhone || cleanAcctId) {
-			await sql`
-				UPDATE patrons SET
-					address_line1 = CASE WHEN (address_line1 IS NULL OR address_line1 = '') AND ${row.address_line1 || ''} != '' THEN ${row.address_line1 || ''} ELSE address_line1 END,
-					address_line2 = CASE WHEN (address_line2 IS NULL OR address_line2 = '') AND ${row.address_line2 || ''} != '' THEN ${row.address_line2 || ''} ELSE address_line2 END,
-					city = CASE WHEN (city IS NULL OR city = '') AND ${row.city || ''} != '' THEN ${row.city || ''} ELSE city END,
-					state = CASE WHEN (state IS NULL OR state = '') AND ${row.state || ''} != '' THEN ${row.state || ''} ELSE state END,
-					zip_code = CASE WHEN (zip_code IS NULL OR zip_code = '') AND ${row.zip_code || ''} != '' THEN ${row.zip_code || ''} ELSE zip_code END,
-					country = CASE WHEN (country IS NULL OR country = '') AND ${row.country || ''} != '' THEN ${row.country || ''} ELSE country END,
-					phone = CASE WHEN (phone IS NULL OR phone = '') AND ${cleanPhone || ''} != '' THEN ${cleanPhone || ''} ELSE phone END,
-					vbo_account_id = CASE WHEN (vbo_account_id IS NULL OR vbo_account_id = '') AND ${cleanAcctId || ''} != '' THEN ${cleanAcctId || ''} ELSE vbo_account_id END,
-					updated_at = CURRENT_TIMESTAMP
-				WHERE patron_id = ${patronId}
-			`;
+			await fillPatronData(patronId, row);
 			updated = true;
 		}
 		return { id: patronId, created: false, updated };
 	}
 
-	const result = await safeInsertPatron(
+	return await safeInsertPatron(
 		row.firstName, row.lastName, cleanEmail, cleanPhone,
 		row.address_line1, row.address_line2, row.city, row.state, row.zip_code, row.country,
 		cleanAcctId
 	);
-	return { ...result, updated: false };
 }
 
-async function createPatronWithAddress(row) {
-	const cleanAcctId = (row.acctId || '').trim() || null;
-	const result = await safeInsertPatron(
-		row.firstName, row.lastName, row.email || null, row.phone || null,
-		row.address_line1, row.address_line2, row.city, row.state, row.zip_code, row.country,
-		cleanAcctId
-	);
-	return result.id;
+async function findOrCreatePatron(firstName, lastName, email, phone) {
+	const cleanEmail = email || null;
+	const cleanPhone = phone || null;
+
+	const patronId = await lookupPatron(firstName, lastName, cleanEmail, cleanPhone, null);
+	if (patronId) {
+		if (cleanPhone) {
+			await sql`
+				UPDATE patrons SET
+					phone = CASE WHEN (phone IS NULL OR phone = '') AND ${cleanPhone} != '' THEN ${cleanPhone} ELSE phone END,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE patron_id = ${patronId}
+			`;
+		}
+		return { id: patronId, created: false };
+	}
+
+	return await safeInsertPatron(firstName, lastName, cleanEmail, cleanPhone, null, null, null, null, null, null, null);
 }
 
-/**
- * Multi-tier patron lookup:
- * 0. VBO Account ID (if provided) — definitive match
- * 1. Exact name + email
- * 2. Email only (if provided)
- * 3. Name only
- * 4. Name + phone
- * Returns patron_id or null.
- */
 async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	const fLower = firstName.toLowerCase().trim();
 	const lLower = lastName.toLowerCase().trim();
 
 	// 0. VBO Account ID — definitive
 	if (acctId) {
-		const acctMatch = await sql`
-			SELECT patron_id FROM patrons
-			WHERE vbo_account_id = ${acctId}
-			LIMIT 1
-		`;
+		const acctMatch = await sql`SELECT patron_id FROM patrons WHERE vbo_account_id = ${acctId} LIMIT 1`;
 		if (acctMatch.length > 0) return acctMatch[0].patron_id;
 	}
 
 	// 1. Exact name + email
-	const exact = await sql`
-		SELECT patron_id FROM patrons
-		WHERE LOWER(TRIM(first_name)) = ${fLower}
-			AND LOWER(TRIM(last_name)) = ${lLower}
-			AND (
-				(email IS NULL AND ${email}::text IS NULL)
-				OR LOWER(TRIM(email)) = LOWER(TRIM(${email}))
-			)
-		LIMIT 1
-	`;
-	if (exact.length > 0) return exact[0].patron_id;
+	if (email) {
+		const exact = await sql`
+			SELECT patron_id FROM patrons
+			WHERE LOWER(TRIM(first_name)) = ${fLower}
+			  AND LOWER(TRIM(last_name)) = ${lLower}
+			  AND LOWER(TRIM(email)) = LOWER(TRIM(${email}))
+			LIMIT 1
+		`;
+		if (exact.length > 0) return exact[0].patron_id;
+	}
 
 	// 2. Email only
 	if (email) {
 		const emailMatch = await sql`
-			SELECT patron_id FROM patrons
-			WHERE LOWER(TRIM(email)) = LOWER(TRIM(${email}))
-			LIMIT 1
+			SELECT patron_id FROM patrons WHERE LOWER(TRIM(email)) = LOWER(TRIM(${email})) LIMIT 1
 		`;
 		if (emailMatch.length > 0) return emailMatch[0].patron_id;
 	}
@@ -829,31 +890,14 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	// 3. Name only
 	const nameMatch = await sql`
 		SELECT patron_id FROM patrons
-		WHERE LOWER(TRIM(first_name)) = ${fLower}
-			AND LOWER(TRIM(last_name)) = ${lLower}
+		WHERE LOWER(TRIM(first_name)) = ${fLower} AND LOWER(TRIM(last_name)) = ${lLower}
 		LIMIT 1
 	`;
 	if (nameMatch.length > 0) return nameMatch[0].patron_id;
 
-	// 4. Name + phone
-	if (phone) {
-		const phoneMatch = await sql`
-			SELECT patron_id FROM patrons
-			WHERE LOWER(TRIM(first_name)) = ${fLower}
-				AND LOWER(TRIM(last_name)) = ${lLower}
-				AND TRIM(phone) = TRIM(${phone})
-			LIMIT 1
-		`;
-		if (phoneMatch.length > 0) return phoneMatch[0].patron_id;
-	}
-
 	return null;
 }
 
-/**
- * Insert a patron, handling duplicate key gracefully.
- * If the insert fails due to unique constraint, finds and returns the existing patron.
- */
 async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2, city, state, zip, country, acctId) {
 	try {
 		const [newPatron] = await sql`
@@ -866,68 +910,27 @@ async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2,
 			)
 			RETURNING patron_id
 		`;
-		return { id: newPatron.patron_id, created: true };
+		return { id: newPatron.patron_id, created: true, updated: false };
 	} catch (err) {
-		// Unique constraint violation — find the existing patron
 		if (err.code === '23505') {
-			console.log(`[safeInsertPatron] Duplicate caught for "${firstName} ${lastName}" (${email}) acctId=${acctId}, looking up existing...`);
 			const patronId = await lookupPatron(firstName, lastName, email, phone, acctId);
 			if (patronId) {
-				// Store AcctID on the existing patron if we have it and they don't
 				if (acctId) {
 					await sql`
 						UPDATE patrons SET vbo_account_id = COALESCE(vbo_account_id, ${acctId}), updated_at = CURRENT_TIMESTAMP
 						WHERE patron_id = ${patronId} AND (vbo_account_id IS NULL OR vbo_account_id = '')
 					`;
 				}
-				return { id: patronId, created: false };
+				return { id: patronId, created: false, updated: false };
 			}
-			// Last resort: broader search
 			const [fallback] = await sql`
 				SELECT patron_id FROM patrons
 				WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase().trim()}
-					AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
-				ORDER BY patron_id ASC
-				LIMIT 1
+				  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
+				ORDER BY patron_id ASC LIMIT 1
 			`;
-			if (fallback) {
-				return { id: fallback.patron_id, created: false };
-			}
+			if (fallback) return { id: fallback.patron_id, created: false, updated: false };
 		}
 		throw err;
 	}
-}
-
-async function updatePatronAddress(patronId, row) {
-	await sql`
-		UPDATE patrons SET
-			address_line1 = CASE WHEN (address_line1 IS NULL OR address_line1 = '') AND ${row.address_line1 || ''} != '' THEN ${row.address_line1 || ''} ELSE address_line1 END,
-			address_line2 = CASE WHEN (address_line2 IS NULL OR address_line2 = '') AND ${row.address_line2 || ''} != '' THEN ${row.address_line2 || ''} ELSE address_line2 END,
-			city = CASE WHEN (city IS NULL OR city = '') AND ${row.city || ''} != '' THEN ${row.city || ''} ELSE city END,
-			state = CASE WHEN (state IS NULL OR state = '') AND ${row.state || ''} != '' THEN ${row.state || ''} ELSE state END,
-			zip_code = CASE WHEN (zip_code IS NULL OR zip_code = '') AND ${row.zip_code || ''} != '' THEN ${row.zip_code || ''} ELSE zip_code END,
-			country = CASE WHEN (country IS NULL OR country = '') AND ${row.country || ''} != '' THEN ${row.country || ''} ELSE country END,
-			updated_at = CURRENT_TIMESTAMP
-		WHERE patron_id = ${patronId}
-	`;
-}
-
-async function updatePatronFull(patronId, row) {
-	const cleanAcctId = (row.acctId || '').trim() || null;
-	await sql`
-		UPDATE patrons SET
-			first_name = ${row.firstName},
-			last_name = ${row.lastName},
-			email = CASE WHEN ${row.email || ''} != '' THEN ${row.email} ELSE email END,
-			phone = CASE WHEN ${row.phone || ''} != '' THEN ${row.phone} ELSE phone END,
-			address_line1 = CASE WHEN ${row.address_line1 || ''} != '' THEN ${row.address_line1} ELSE address_line1 END,
-			address_line2 = CASE WHEN ${row.address_line2 || ''} != '' THEN ${row.address_line2} ELSE address_line2 END,
-			city = CASE WHEN ${row.city || ''} != '' THEN ${row.city} ELSE city END,
-			state = CASE WHEN ${row.state || ''} != '' THEN ${row.state} ELSE state END,
-			zip_code = CASE WHEN ${row.zip_code || ''} != '' THEN ${row.zip_code} ELSE zip_code END,
-			country = CASE WHEN ${row.country || ''} != '' THEN ${row.country} ELSE country END,
-			vbo_account_id = CASE WHEN ${cleanAcctId || ''} != '' THEN ${cleanAcctId} ELSE vbo_account_id END,
-			updated_at = CURRENT_TIMESTAMP
-		WHERE patron_id = ${patronId}
-	`;
 }
