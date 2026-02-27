@@ -367,7 +367,7 @@ export const actions = {
 				totalRows: rows.length,
 				rowsWithNames: rows.filter((r) => r.firstName || r.lastName).length,
 				rowsAnonymous: rows.filter((r) => !r.firstName && !r.lastName).length,
-				hasAddressData: format === 'new' || format === 'v2',
+				hasAddressData: format === 'new' || format === 'v2' || format === 'v3',
 				hasAcctIds
 			};
 		} catch (error) {

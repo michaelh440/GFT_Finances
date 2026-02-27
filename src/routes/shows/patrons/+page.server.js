@@ -26,6 +26,18 @@ export const load = async ({ url }) => {
 			? sql`AND ${conditions.reduce((a, b) => sql`${a} AND ${b}`)}`
 			: sql``;
 
+		// Same conditions but using st2/s2 aliases for use inside subqueries
+		const conditions2 = [];
+		if (showCode) conditions2.push(sql`st2.show_code = ${showCode}`);
+		if (format) conditions2.push(sql`s2.format = ${format}`);
+		if (audienceType) conditions2.push(sql`s2.audience_type = ${audienceType}`);
+		if (dayOfWeek) conditions2.push(sql`s2.day_of_week = ${dayOfWeek}`);
+		if (selectedYears.length > 0) conditions2.push(sql`EXTRACT(YEAR FROM st2.purchase_date)::int IN ${sql(selectedYears)}`);
+
+		const ticketWhere2 = conditions2.length > 0
+			? sql`AND ${conditions2.reduce((a, b) => sql`${a} AND ${b}`)}`
+			: sql``;
+
 		const searchWhere = search
 			? sql`AND (
 				LOWER(p.first_name) LIKE ${`%${search.toLowerCase()}%`}
@@ -74,12 +86,12 @@ export const load = async ({ url }) => {
 		const [stats] = await sql`
 			SELECT
 				COUNT(DISTINCT p.patron_id)::int AS total_patrons,
-				COUNT(DISTINCT CASE 
+				COUNT(DISTINCT CASE
 					WHEN (
-						SELECT COUNT(*) FROM show_tickets st2 
+						SELECT COUNT(*) FROM show_tickets st2
 						JOIN shows s2 ON s2.show_code = st2.show_code
-						WHERE st2.patron_id = p.patron_id AND 1=1 ${ticketWhere}
-					) > 1 THEN p.patron_id 
+						WHERE st2.patron_id = p.patron_id AND 1=1 ${ticketWhere2}
+					) > 1 THEN p.patron_id
 				END)::int AS repeat_patrons,
 				COUNT(DISTINCT st.ticket_id)::int AS total_transactions,
 				COALESCE(SUM(st.tickets_purchased), 0)::int AS total_tickets,
