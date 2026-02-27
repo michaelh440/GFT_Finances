@@ -1,9 +1,8 @@
 <!-- src/routes/shows/patrons/+page.svelte -->
 <script>
 	import { base } from '$app/paths';
-	import { goto } from '$app/navigation';
 
-	/** @type {{ patrons: any[], stats: any, pagination: any, search: string }} */
+	/** @type {{ patrons: any[], stats: any, pagination: any, search: string, shows: any[], formats: string[], audiences: string[], days: string[], years: number[], filters: any }} */
 	export let data;
 
 	$: patrons = data.patrons || [];
@@ -12,35 +11,81 @@
 
 	let searchTerm = '';
 
+	// Filter state
+	let selectedShowCode = 'all';
+	let selectedFormat = 'all';
+	let selectedAudience = 'all';
+	let selectedDay = 'all';
+	let selectedYears = [];
+
+	// Available filter options from server
+	$: availableYears = (data.years || []).sort((a, b) => b - a);
+
+	// Init filters from URL on data change
+	$: {
+		if (data.filters?.showCode) selectedShowCode = data.filters.showCode; else selectedShowCode = 'all';
+		if (data.filters?.format) selectedFormat = data.filters.format; else selectedFormat = 'all';
+		if (data.filters?.audienceType) selectedAudience = data.filters.audienceType; else selectedAudience = 'all';
+		if (data.filters?.dayOfWeek) selectedDay = data.filters.dayOfWeek; else selectedDay = 'all';
+		const urlYears = (data.filters?.years || '').split(',').filter(Boolean);
+		if (urlYears.length > 0) {
+			selectedYears = urlYears;
+		} else {
+			selectedYears = [];
+		}
+	}
+
 	// Sync search from URL
 	$: if (data.search !== undefined) {
 		searchTerm = data.search || '';
 	}
 
-	/**
-	 * @param {number} [page]
-	 */
-	function buildParams(page) {
+	$: hasFilters = selectedShowCode !== 'all' || selectedFormat !== 'all' || selectedAudience !== 'all' || selectedDay !== 'all' || selectedYears.length > 0;
+
+	function toggleYear(y) {
+		const str = y.toString();
+		if (selectedYears.includes(str)) {
+			selectedYears = selectedYears.filter(v => v !== str);
+		} else {
+			selectedYears = [...selectedYears, str];
+		}
+	}
+
+	function buildFilterParams(page) {
 		const params = new URLSearchParams();
+		if (selectedShowCode !== 'all') params.set('show', selectedShowCode);
+		if (selectedFormat !== 'all') params.set('format', selectedFormat);
+		if (selectedAudience !== 'all') params.set('audience', selectedAudience);
+		if (selectedDay !== 'all') params.set('day', selectedDay);
+		if (selectedYears.length > 0) params.set('years', selectedYears.join(','));
 		if (searchTerm) params.set('search', searchTerm);
 		if (page && page > 1) params.set('page', page.toString());
 		return params.toString();
 	}
 
+	function applyFilters() {
+		const qs = buildFilterParams(1);
+		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
+	}
+
+	function clearFilters() {
+		window.location.href = `${base}/shows/patrons`;
+	}
+
 	function applySearch() {
-		const qs = buildParams(1);
-		goto(`${base}/shows/patrons${qs ? '?' + qs : ''}`, { invalidateAll: true });
+		const qs = buildFilterParams(1);
+		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
 	}
 
 	function clearSearch() {
 		searchTerm = '';
-		goto(`${base}/shows/patrons`, { invalidateAll: true });
+		window.location.href = `${base}/shows/patrons`;
 	}
 
 	/** @param {number} page */
 	function goToPage(page) {
-		const qs = buildParams(page);
-		goto(`${base}/shows/patrons${qs ? '?' + qs : ''}`, { invalidateAll: true });
+		const qs = buildFilterParams(page);
+		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
 	}
 
 	/**
@@ -82,7 +127,7 @@
 	<title>Patrons | B&C Financial Tracker</title>
 </svelte:head>
 
-<div class="container">
+<div class="container" data-sveltekit-reload>
 	<header>
 		<h1>Patrons</h1>
 		<div class="header-actions">
@@ -90,6 +135,88 @@
 			<a href="{base}/shows/patrons/new" class="btn-primary">Add Patron</a>
 		</div>
 	</header>
+
+	<!-- Filter Section — matches geo analytics layout -->
+	<div class="filter-section">
+		<div class="filter-row">
+			<div class="filter-group">
+				<label for="showSelect">Show:</label>
+				<select id="showSelect" bind:value={selectedShowCode} class="filter-select">
+					<option value="all">All Shows</option>
+					{#each data.shows || [] as show}
+						<option value={show.show_code}>{show.show_name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="formatSelect">Format:</label>
+				<select id="formatSelect" bind:value={selectedFormat} class="filter-select">
+					<option value="all">All Formats</option>
+					{#each data.formats || [] as f}
+						<option value={f}>{f}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="audienceSelect">Audience:</label>
+				<select id="audienceSelect" bind:value={selectedAudience} class="filter-select">
+					<option value="all">All Audiences</option>
+					{#each data.audiences || [] as a}
+						<option value={a}>{a}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="daySelect">Day of Week:</label>
+				<select id="daySelect" bind:value={selectedDay} class="filter-select">
+					<option value="all">All Days</option>
+					{#each data.days || [] as d}
+						<option value={d}>{d}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<!-- Year Filter Section -->
+	{#if availableYears.length > 0}
+		<h2 class="section-title">Years To Include in Analysis</h2>
+		<div class="filter-section">
+			<div class="filter-row">
+				<div class="filter-group">
+					<span class="filter-heading">Years to Display:</span>
+					<div class="year-checkboxes">
+						{#each availableYears as y (y)}
+							<label class="checkbox-label">
+								<input type="checkbox" checked={selectedYears.includes(y.toString())} on:change={() => toggleYear(y)} />
+								<span>{y}</span>
+							</label>
+						{/each}
+					</div>
+				</div>
+				<div class="filter-actions">
+					<button class="btn-apply" on:click={applyFilters}>Apply Filters</button>
+					{#if hasFilters}
+						<button class="btn-clear" on:click={clearFilters}>Clear All</button>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{:else}
+		<div class="filter-section">
+			<div class="filter-row">
+				<div class="filter-actions">
+					<button class="btn-apply" on:click={applyFilters}>Apply Filters</button>
+					{#if hasFilters}
+						<button class="btn-clear" on:click={clearFilters}>Clear All</button>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Summary Stats -->
 	<div class="stats-row">
@@ -122,6 +249,7 @@
 		{/if}
 	</div>
 
+	<!-- Search & Table -->
 	<div class="toolbar">
 		<div class="search-row">
 			<input
@@ -148,7 +276,7 @@
 	<div class="table-wrapper">
 		{#if patrons.length === 0}
 			<p class="empty-state">
-				{data.search ? 'No patrons match your search.' : 'No patrons found. Add your first patron to get started.'}
+				{data.search ? 'No patrons match your search.' : hasFilters ? 'No patrons match the selected filters.' : 'No patrons found. Add your first patron to get started.'}
 			</p>
 		{:else}
 			<table>
@@ -226,7 +354,7 @@
 
 <style>
 	.container {
-		max-width: 1200px;
+		max-width: 1400px;
 		margin: 0 auto;
 		padding: 2rem;
 	}
@@ -280,6 +408,61 @@
 	.btn-secondary-link:hover {
 		background-color: #d1d5db;
 	}
+
+	/* Filter Section — matches geo analytics layout */
+	.filter-section {
+		background: white;
+		padding: 1.25rem 1.5rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+		margin-bottom: 1.5rem;
+	}
+	.filter-row {
+		display: flex;
+		gap: 2rem;
+		align-items: flex-end;
+		flex-wrap: wrap;
+	}
+	.filter-group { display: flex; flex-direction: column; gap: 0.35rem; }
+	.filter-group label, .filter-heading {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.filter-select {
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.85rem;
+		color: #1a202c;
+		background: white;
+		min-width: 180px;
+	}
+	.filter-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+	.section-title {
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: #374151;
+		margin: 0 0 0.75rem 0;
+	}
+
+	.year-checkboxes { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+	.checkbox-label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; color: #374151; cursor: pointer; white-space: nowrap; }
+	.checkbox-label input[type="checkbox"] { accent-color: #6366f1; cursor: pointer; }
+
+	.filter-actions {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+		margin-left: auto;
+	}
+	.btn-apply { padding: 0.5rem 1.5rem; background-color: #6366f1; color: white; border: none; border-radius: 0.375rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+	.btn-apply:hover { background-color: #4f46e5; }
+	.btn-clear { background: none; border: none; color: #6366f1; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
+	.btn-clear:hover { text-decoration: underline; }
 
 	/* Stats */
 	.stats-row {
@@ -414,6 +597,7 @@
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
 		border-bottom: 2px solid #e5e7eb;
+		white-space: nowrap;
 	}
 
 	td {
@@ -421,6 +605,7 @@
 		border-bottom: 1px solid #f3f4f6;
 		color: #1a202c;
 		vertical-align: middle;
+		font-size: 0.85rem;
 	}
 
 	tr:last-child td {
@@ -528,6 +713,9 @@
 			align-items: flex-start;
 		}
 
+		.filter-row { flex-direction: column; gap: 1rem; }
+		.filter-select { min-width: 100%; }
+
 		.toolbar {
 			flex-direction: column;
 			align-items: flex-start;
@@ -541,8 +729,7 @@
 			font-size: 0.875rem;
 		}
 
-		th,
-		td {
+		th, td {
 			padding: 0.5rem 0.75rem;
 		}
 
