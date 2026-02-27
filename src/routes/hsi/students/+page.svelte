@@ -7,6 +7,7 @@
 	 * @property {string} last_name
 	 * @property {string} email
 	 * @property {string} phone
+	 * @property {string} mobile_phone
 	 * @property {number} registration_count
 	 * @property {string} account_date
 	 * @property {string} last_class_date
@@ -55,7 +56,8 @@
 			(s.first_name && s.first_name.toLowerCase().includes(q)) ||
 			(s.last_name && s.last_name.toLowerCase().includes(q)) ||
 			(s.email && s.email.toLowerCase().includes(q)) ||
-			(s.phone && s.phone.includes(q))
+			(s.phone && s.phone.includes(q)) ||
+			(s.mobile_phone && s.mobile_phone.includes(q))
 		);
 	});
 
@@ -139,6 +141,7 @@
 						Email{sortIndicator('email')}
 					</th>
 					<th>Phone</th>
+					<th>Mobile</th>
 					<th class="sortable col-center" on:click={() => toggleSort('registration_count')}>
 						Classes{sortIndicator('registration_count')}
 					</th>
@@ -155,7 +158,7 @@
 			<tbody>
 				{#if pagedStudents.length === 0}
 					<tr>
-						<td colspan="8" class="empty-state">
+						<td colspan="9" class="empty-state">
 							{searchQuery ? 'No students match your search.' : 'No students found.'}
 						</td>
 					</tr>
@@ -163,11 +166,14 @@
 					{#each pagedStudents as student (student.student_id)}
 						<tr class:inactive={!student.is_active}>
 							<td class="student-name">
-								{student.first_name || ''}
-								{student.last_name || ''}
+								<a href="{base}/hsi/students/{student.student_id}" class="student-link">
+									{student.first_name || ''}
+									{student.last_name || ''}
+								</a>
 							</td>
 							<td class="student-email">{student.email || '—'}</td>
 							<td>{student.phone || '—'}</td>
+							<td>{student.mobile_phone || '—'}</td>
 							<td class="col-center">
 								<span class="count-badge">{student.registration_count}</span>
 							</td>
@@ -347,6 +353,15 @@
 
 	.student-name {
 		font-weight: 500;
+	}
+
+	.student-link {
+		color: #3b82f6;
+		text-decoration: none;
+	}
+
+	.student-link:hover {
+		text-decoration: underline;
 	}
 
 	.student-email {

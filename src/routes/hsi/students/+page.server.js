@@ -10,6 +10,7 @@ export const load = async () => {
         s.last_name,
         s.email,
         s.phone,
+        s.mobile_phone,
         s.gender,
         s.age,
         s.account_date,
