@@ -71,9 +71,9 @@ export const actions = {
 
 			throw redirect(303, `/promotions/${newPromo.promotion_id}`);
 		} catch (err) {
-			if (err.status === 303) throw err;
+			if (/** @type {any} */ (err).status === 303) throw err;
 			console.error('Error creating promotion:', err);
-			return fail(500, { error: 'Failed to create promotion: ' + err.message });
+			return fail(500, { error: 'Failed to create promotion: ' + (err instanceof Error ? err.message : String(err)) });
 		}
 	}
 };

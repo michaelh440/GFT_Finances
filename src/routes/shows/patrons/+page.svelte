@@ -16,10 +16,11 @@
 	let selectedFormat = 'all';
 	let selectedAudience = 'all';
 	let selectedDay = 'all';
+	/** @type {string[]} */
 	let selectedYears = [];
 
 	// Available filter options from server
-	$: availableYears = (data.years || []).sort((a, b) => b - a);
+	$: availableYears = (data.years || []).sort((/** @type {number} */ a, /** @type {number} */ b) => b - a);
 
 	// Init filters from URL on data change
 	$: {
@@ -42,6 +43,7 @@
 
 	$: hasFilters = selectedShowCode !== 'all' || selectedFormat !== 'all' || selectedAudience !== 'all' || selectedDay !== 'all' || selectedYears.length > 0;
 
+	/** @param {any} y */
 	function toggleYear(y) {
 		const str = y.toString();
 		if (selectedYears.includes(str)) {
@@ -51,6 +53,7 @@
 		}
 	}
 
+	/** @param {number} page */
 	function buildFilterParams(page) {
 		const params = new URLSearchParams();
 		if (selectedShowCode !== 'all') params.set('show', selectedShowCode);
@@ -257,7 +260,7 @@
 				placeholder="Search by name or email..."
 				bind:value={searchTerm}
 				class="search-input"
-				on:keydown={(e) => e.key === 'Enter' && applySearch()}
+				on:keydown={(/** @type {any} */ e) => e.key === 'Enter' && applySearch()}
 			/>
 			{#if searchTerm}
 				<button class="btn-search" on:click={applySearch}>Search</button>

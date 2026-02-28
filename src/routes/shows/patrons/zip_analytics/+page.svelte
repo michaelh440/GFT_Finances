@@ -4,11 +4,14 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
+	/** @type {any} */
 	export let data;
 
 	let showCode = data.filters?.showCode || '';
 	let year = data.filters?.year || '';
+	/** @type {HTMLCanvasElement} */
 	let chartCanvas;
+	/** @type {any} */
 	let chart;
 	let mounted = false;
 	let showAll = false;
@@ -16,23 +19,24 @@
 	$: hasFilters = data.filters?.showCode || data.filters?.year;
 
 	// Group shows by format
-	$: showsByFormat = (data.shows || []).reduce((acc, s) => {
+	$: showsByFormat = (data.shows || []).reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 
 	// Chart data: top N zip codes by patron count
-	$: chartZips = data.zipData.filter((z) => z.zip_code !== 'Unknown');
+	$: chartZips = (data.zipData || []).filter((/** @type {any} */ z) => z.zip_code !== 'Unknown');
 	$: displayZips = showAll ? chartZips : chartZips.slice(0, 25);
-	$: unknownEntry = data.zipData.find((z) => z.zip_code === 'Unknown');
+	$: unknownEntry = (data.zipData || []).find((/** @type {any} */ z) => z.zip_code === 'Unknown');
 
 	// Totals
-	$: totalPatrons = data.zipData.reduce((sum, z) => sum + z.patron_count, 0);
-	$: totalTickets = data.zipData.reduce((sum, z) => sum + z.tickets_sold, 0);
-	$: totalRevenue = data.zipData.reduce((sum, z) => sum + z.revenue, 0);
+	$: totalPatrons = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.patron_count, 0);
+	$: totalTickets = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.tickets_sold, 0);
+	$: totalRevenue = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.revenue, 0);
+	$: totalTransactions = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.transaction_count, 0);
 
 	onMount(() => { mounted = true; });
 
@@ -40,20 +44,21 @@
 		renderChart(displayZips);
 	}
 
+	/** @param {any[]} zips */
 	async function renderChart(zips) {
 		const Chart = (await import('chart.js/auto')).default;
 
 		if (chart) chart.destroy();
 
-		const labels = zips.map((z) => {
+		const labels = zips.map((/** @type {any} */ z) => {
 			const loc = z.city ? `${z.zip_code} (${z.city})` : z.zip_code;
 			return loc;
 		});
-		const patronCounts = zips.map((z) => z.patron_count);
-		const ticketCounts = zips.map((z) => z.tickets_sold);
+		const patronCounts = zips.map((/** @type {any} */ z) => z.patron_count);
+		const ticketCounts = zips.map((/** @type {any} */ z) => z.tickets_sold);
 
 		const canvasHeight = Math.max(400, zips.length * 28);
-		chartCanvas.parentElement.style.height = canvasHeight + 'px';
+		if (chartCanvas.parentElement) chartCanvas.parentElement.style.height = canvasHeight + 'px';
 
 		chart = new Chart(chartCanvas, {
 			type: 'bar',
@@ -82,7 +87,7 @@
 					legend: { position: 'top' },
 					tooltip: {
 						callbacks: {
-							afterBody: function (context) {
+							afterBody: function (/** @type {any} */ context) {
 								const idx = context[0].dataIndex;
 								const z = zips[idx];
 								return `Revenue: $${z.revenue.toLocaleString()}`;
@@ -116,6 +121,7 @@
 		window.location.href = `${base}/shows/patrons/zip_analytics`;
 	}
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
@@ -198,7 +204,7 @@
 		</div>
 	</div>
 
-	{#if data.zipData.length === 0}
+	{#if (data.zipData || []).length === 0}
 		<div class="card">
 			<p class="empty-state">
 				No zip code data available yet. <a href="{base}/shows/patrons/update_patrons">Upload patron address data</a> to see analytics.
@@ -238,7 +244,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.zipData as z, i (z.zip_code + z.city)}
+						{#each (data.zipData || []) as z, i (z.zip_code + z.city)}
 							<tr class:unknown={z.zip_code === 'Unknown'}>
 								<td class="zip-cell">
 									{z.zip_code}
@@ -260,7 +266,7 @@
 						<tr>
 							<td colspan="3" class="total-label">Total</td>
 							<td class="col-right total-value">{totalPatrons}</td>
-							<td class="col-right total-value">{data.zipData.reduce((s, z) => s + z.transaction_count, 0)}</td>
+							<td class="col-right total-value">{totalTransactions}</td>
 							<td class="col-right total-value">{totalTickets}</td>
 							<td class="col-right total-value">{formatCurrency(totalRevenue)}</td>
 							<td></td>

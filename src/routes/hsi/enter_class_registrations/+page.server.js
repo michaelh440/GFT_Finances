@@ -26,7 +26,7 @@ export const actions = {
   // Manual row entry
   manual: async ({ request }) => {
     const formData = await request.formData();
-    const rowCount = parseInt(formData.get('row_count')) || 0;
+    const rowCount = parseInt((formData.get('row_count') || '').toString()) || 0;
 
     if (rowCount === 0) {
       return { success: false, error: 'No data to save.' };
@@ -39,14 +39,14 @@ export const actions = {
 
     try {
       for (let i = 0; i < rowCount; i++) {
-        const firstName = (formData.get(`first_name_${i}`) || '').trim();
-        const lastName = (formData.get(`last_name_${i}`) || '').trim();
-        const email = (formData.get(`email_${i}`) || '').trim().toLowerCase();
-        const phone = (formData.get(`phone_${i}`) || '').trim();
-        const classCode = formData.get(`class_code_${i}`);
-        const classDate = formData.get(`class_date_${i}`);
-        const registrationDate = formData.get(`registration_date_${i}`);
-        const amountPaid = parseFloat(formData.get(`amount_paid_${i}`)) || 0;
+        const firstName = (formData.get(`first_name_${i}`) || '').toString().trim();
+        const lastName = (formData.get(`last_name_${i}`) || '').toString().trim();
+        const email = (formData.get(`email_${i}`) || '').toString().trim().toLowerCase();
+        const phone = (formData.get(`phone_${i}`) || '').toString().trim();
+        const classCode = (formData.get(`class_code_${i}`) || '').toString();
+        const classDate = (formData.get(`class_date_${i}`) || '').toString();
+        const registrationDate = (formData.get(`registration_date_${i}`) || '').toString();
+        const amountPaid = parseFloat((formData.get(`amount_paid_${i}`) || '').toString()) || 0;
 
         if (!email || !classCode || !classDate) {
           skipped++;
@@ -73,16 +73,16 @@ export const actions = {
       };
     } catch (error) {
       console.error('Error saving registrations:', error);
-      return { success: false, error: 'Failed to save registrations: ' + error.message };
+      return { success: false, error: 'Failed to save registrations: ' + (error instanceof Error ? error.message : String(error)) };
     }
   },
 
   // CSV Step 1: Check for matches and session
   csv_check: async ({ request }) => {
     const formData = await request.formData();
-    const csvData = formData.get('csv_data');
-    const classCode = formData.get('csv_class_code');
-    const classDate = formData.get('csv_class_date');
+    const csvData = (formData.get('csv_data') || '').toString();
+    const classCode = (formData.get('csv_class_code') || '').toString();
+    const classDate = (formData.get('csv_class_date') || '').toString();
 
     if (!csvData || !classCode || !classDate) {
       return { success: false, error: 'CSV data, class, and class date are required.' };
@@ -113,7 +113,9 @@ export const actions = {
       }
 
       // Check student matches
+      /** @type {any[]} */
       const rows = JSON.parse(csvData);
+      /** @type {any[]} */
       const matchResults = [];
 
       for (let i = 0; i < rows.length; i++) {
@@ -297,18 +299,18 @@ export const actions = {
       };
     } catch (error) {
       console.error('Error checking CSV:', error);
-      return { success: false, error: 'Failed to check CSV: ' + error.message };
+      return { success: false, error: 'Failed to check CSV: ' + (error instanceof Error ? error.message : String(error)) };
     }
   },
 
   // CSV Step 2: Confirm and save with user decisions
   csv_confirm: async ({ request }) => {
     const formData = await request.formData();
-    const decisionsJson = formData.get('decisions');
-    const classCode = formData.get('csv_class_code');
-    const classDate = formData.get('csv_class_date');
-    const sessionName = formData.get('session_name');
-    const existingSessionId = formData.get('existing_session_id');
+    const decisionsJson = (formData.get('decisions') || '').toString();
+    const classCode = (formData.get('csv_class_code') || '').toString();
+    const classDate = (formData.get('csv_class_date') || '').toString();
+    const sessionName = (formData.get('session_name') || '').toString();
+    const existingSessionId = (formData.get('existing_session_id') || '').toString();
 
     if (!decisionsJson || !classCode || !classDate) {
       return { success: false, error: 'Missing required data.' };
@@ -343,6 +345,7 @@ export const actions = {
         sessionId = newSession[0].session_id;
       }
 
+      /** @type {any[]} */
       const decisions = JSON.parse(decisionsJson);
       let saved = 0;
       let updated = 0;
@@ -477,11 +480,19 @@ export const actions = {
       };
     } catch (error) {
       console.error('Error confirming CSV import:', error);
-      return { success: false, error: 'Failed to save: ' + error.message };
+      return { success: false, error: 'Failed to save: ' + (error instanceof Error ? error.message : String(error)) };
     }
   }
 };
 
+/**
+ * @param {string} email
+ * @param {string} firstName
+ * @param {string} lastName
+ * @param {string|null} phone
+ * @param {string|null} acctId
+ * @param {any} addressData
+ */
 async function findOrCreateStudent(email, firstName, lastName, phone, acctId, addressData) {
   // 1. Try AcctID match first
   if (acctId) {
@@ -548,7 +559,7 @@ async function findOrCreateStudent(email, firstName, lastName, phone, acctId, ad
     `;
     return { id: newStudent[0].student_id, created: true };
   } catch (err) {
-    if (err.code === '23505') {
+    if (/** @type {any} */ (err).code === '23505') {
       // Unique constraint — find and return existing
       const fallback = await sql`
         SELECT student_id FROM students

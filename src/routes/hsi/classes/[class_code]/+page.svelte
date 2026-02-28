@@ -57,8 +57,7 @@
 	 */
 	function formatDate(dateStr) {
 		if (!dateStr) return '—';
-		const str = typeof dateStr === 'string' ? dateStr : dateStr.toISOString().split('T')[0];
-		const d = new Date(str + 'T12:00:00');
+		const d = new Date(dateStr + 'T12:00:00');
 		if (isNaN(d.getTime())) return '—';
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}

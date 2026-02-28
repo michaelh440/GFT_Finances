@@ -81,7 +81,7 @@ export const actions = {
 		} catch (error) {
 			console.error('Error updating show:', error);
 
-			if (error.code === '23505') {
+			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A show with that name already exists.',
 					values: { show_name, format, audience_type, day_of_week, standard_ticket_price, description, is_active }

@@ -3,32 +3,38 @@
   import { enhance } from '$app/forms';
   import { base } from '$app/paths';
 
+  /** @type {any} */
   export let data;
+  /** @type {any} */
   export let form;
 
   // CSV State
+  /** @type {File | null} */
   let csvFile = null;
+  /** @type {any[]} */
   let csvParsed = [];
   let csvPreview = false;
   let csvDataJson = '';
 
   // Review state
   let reviewMode = false;
+  /** @type {any[]} */
   let matchResults = [];
+  /** @type {any[]} */
   let decisions = [];
 
   // Summary counts
-  $: matchedCount = matchResults.filter(r => r.matchType !== 'not_found').length;
-  $: notFoundCount = matchResults.filter(r => r.matchType === 'not_found').length;
-  $: changesCount = matchResults.filter(r => r.hasChanges).length;
-  $: noChangeCount = matchResults.filter(r => r.matchType !== 'not_found' && !r.hasChanges).length;
+  $: matchedCount = matchResults.filter((/** @type {any} */ r) => r.matchType !== 'not_found').length;
+  $: notFoundCount = matchResults.filter((/** @type {any} */ r) => r.matchType === 'not_found').length;
+  $: changesCount = matchResults.filter((/** @type {any} */ r) => r.hasChanges).length;
+  $: noChangeCount = matchResults.filter((/** @type {any} */ r) => r.matchType !== 'not_found' && !r.hasChanges).length;
 
   // When form returns from csv_check, populate review
   $: if (form?.action === 'csv_check' && form?.success) {
     matchResults = form.matchResults;
     reviewMode = true;
     // Default: update all fields that differ
-    decisions = matchResults.map(r => ({
+    decisions = matchResults.map((/** @type {any} */ r) => ({
       index: r.index,
       student_id: r.dbStudent?.student_id || null,
       action: r.matchType === 'not_found' ? 'skip' : (r.hasChanges ? 'update' : 'skip'),
@@ -50,21 +56,24 @@
     csvFile = null;
   }
 
+  /** @param {any} event */
   function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
     csvFile = file;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (/** @type {any} */ e) => {
       parseCSV(e.target.result);
     };
     reader.readAsText(file);
   }
 
+  /** @param {string} text */
   function parseCSV(text) {
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
+    /** @type {string[]} */
     const rawLines = [];
     let current = '';
     let inQuotes = false;
@@ -87,7 +96,7 @@
       return;
     }
 
-    const header = parseCSVLine(rawLines[0]).map(h =>
+    const header = parseCSVLine(rawLines[0]).map((/** @type {string} */ h) =>
       h.replace(/["'\r\n]+/g, '').trim().toLowerCase()
     );
 
@@ -107,6 +116,7 @@
       return;
     }
 
+    /** @type {any[]} */
     const parsed = [];
     for (let i = 1; i < rawLines.length; i++) {
       const cols = parseCSVLine(rawLines[i]);
@@ -138,7 +148,9 @@
     decisions = [];
   }
 
+  /** @param {string} line @returns {string[]} */
   function parseCSVLine(line) {
+    /** @type {string[]} */
     const result = [];
     let current = '';
     let inQuotes = false;
@@ -157,23 +169,26 @@
     return result;
   }
 
+  /** @param {string[]} header @param {string[]} names @returns {number} */
   function findCol(header, names) {
     for (const name of names) {
       const idx = header.indexOf(name);
       if (idx !== -1) return idx;
     }
     for (const name of names) {
-      const idx = header.findIndex(h => h.includes(name));
+      const idx = header.findIndex((/** @type {string} */ h) => h.includes(name));
       if (idx !== -1) return idx;
     }
     return -1;
   }
 
+  /** @param {any} val @returns {string} */
   function cleanVal(val) {
     if (val === undefined || val === null) return '';
     return val.replace(/^["'\s]+|["'\s]+$/g, '').replace(/^\d+\.\s*$/, '').trim();
   }
 
+  /** @param {any} val @returns {string} */
   function cleanPhone(val) {
     if (val === undefined || val === null) return '';
     val = val.replace(/^["'\s]+|["'\s]+$/g, '').trim();
@@ -181,8 +196,9 @@
     return val;
   }
 
+  /** @param {string} phone @returns {string} */
   function formatPhoneDisplay(phone) {
-    if (!phone) return '—';
+    if (!phone) return '\u2014';
     // Normalize to digits only
     const digits = phone.replace(/[^0-9]/g, '');
     if (digits.length === 10) {
@@ -194,12 +210,14 @@
     return phone;
   }
 
+  /** @param {number} idx */
   function togglePhoneUpdate(idx) {
     decisions[idx].updatePhone = !decisions[idx].updatePhone;
     decisions[idx].action = (decisions[idx].updatePhone || decisions[idx].updateMobile) ? 'update' : 'skip';
     decisions = [...decisions];
   }
 
+  /** @param {number} idx */
   function toggleMobileUpdate(idx) {
     decisions[idx].updateMobile = !decisions[idx].updateMobile;
     decisions[idx].action = (decisions[idx].updatePhone || decisions[idx].updateMobile) ? 'update' : 'skip';
@@ -207,7 +225,7 @@
   }
 
   function selectAll() {
-    decisions = decisions.map((d, i) => {
+    decisions = decisions.map((/** @type {any} */ d, /** @type {number} */ i) => {
       const r = matchResults[i];
       if (r.matchType === 'not_found') return d;
       return { ...d, updatePhone: r.phoneDiff, updateMobile: r.mobileDiff, action: r.hasChanges ? 'update' : 'skip' };
@@ -215,10 +233,10 @@
   }
 
   function deselectAll() {
-    decisions = decisions.map(d => ({ ...d, updatePhone: false, updateMobile: false, action: 'skip' }));
+    decisions = decisions.map((/** @type {any} */ d) => ({ ...d, updatePhone: false, updateMobile: false, action: 'skip' }));
   }
 
-  $: updateCount = decisions.filter(d => d.action === 'update').length;
+  $: updateCount = decisions.filter((/** @type {any} */ d) => d.action === 'update').length;
 </script>
 
 <svelte:head>

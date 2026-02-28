@@ -9,6 +9,7 @@
   let activeTab = 'manual';
 
   // ---- Manual Entry State ----
+  /** @type {any[]} */
   let rows = [createRow()];
 
   function createRow() {
@@ -33,41 +34,52 @@
     rows = [...rows, newRow];
   }
 
+  /** @param {any} id */
   function removeRow(id) {
     if (rows.length <= 1) return;
     rows = rows.filter(r => r.id !== id);
   }
 
   // Group classes by track for dropdown
-  $: classesByTrack = data.classes.reduce((acc, c) => {
+  $: classesByTrack = data.classes.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
     const track = c.track || 'Other';
     if (!acc[track]) acc[track] = [];
     acc[track].push(c);
     return acc;
-  }, {});
+  }, /** @type {Record<string, any[]>} */ ({}));
   $: tracks = Object.keys(classesByTrack).sort();
 
   // ---- CSV Upload State ----
   let csvClassCode = '';
   let csvClassDate = '';
+  /** @type {File|null} */
   let csvFile = null;
+  /** @type {any[]} */
   let csvParsed = [];
   let csvPreview = false;
   let csvDataJson = '';
   let reviewMode = false;
+  /** @type {any[]} */
   let matchResults = [];
+  /** @type {any[]} */
   let decisions = [];
   let sessionName = '';
+  /** @type {string|null} */
   let existingSessionId = null;
+  /** @type {any} */
   let sessionInfo = null;
 
   // Decisions are built fresh at submit time in the enhance callback
 
   // Auto-generate session name when class or date change
+  /**
+   * @param {string} classCode
+   * @param {string} dateStr
+   */
   function generateSessionName(classCode, dateStr) {
     if (!classCode || !dateStr) return '';
-    const classObj = data.classes.find(c => c.class_code === classCode);
-    const className = classObj ? classObj.class_name : classCode;
+    const classObj = data.classes.find((/** @type {any} */ c) => c.class_code === classCode);
+    const className = classObj ? /** @type {any} */ (classObj).class_name : classCode;
     const d = new Date(dateStr + 'T12:00:00');
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${monthNames[d.getMonth()]} ${d.getFullYear()} ${className}`;
@@ -77,9 +89,11 @@
     sessionName = generateSessionName(csvClassCode, csvClassDate);
   }
 
+  /** @type {{ date: string|null, classCode: string|null }|null} */
   let filenameParsed = null;
 
   // Map level names in filenames to class codes
+  /** @type {Record<string, string>} */
   const levelToClassCode = {
     '1': 'CT1', 'level 1': 'CT1', 'level1': 'CT1',
     '2': 'CT2', 'level 2': 'CT2', 'level2': 'CT2',
@@ -88,6 +102,7 @@
     'agt1': 'AGT1', 'agt 1': 'AGT1'
   };
 
+  /** @param {string} filename */
   function parseFilename(filename) {
     // Remove extension
     const name = filename.replace(/\.[^.]+$/, '').replace(/_/g, ' ').trim();
@@ -136,6 +151,7 @@
     return { date: detectedDate, classCode: detectedClass };
   }
 
+  /** @param {any} event */
   function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -153,12 +169,13 @@
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (/** @type {any} */ e) => {
       parseCSV(e.target.result);
     };
     reader.readAsText(file);
   }
 
+  /** @param {string} text */
   function parseCSV(text) {
     // Normalize line endings and handle quoted fields that span lines
     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -272,6 +289,7 @@
     csvDataJson = JSON.stringify(parsed);
   }
 
+  /** @param {string} line */
   function parseCSVLine(line) {
     const result = [];
     let current = '';
@@ -292,6 +310,10 @@
     return result;
   }
 
+  /**
+   * @param {string[]} header
+   * @param {string[]} names
+   */
   function findCol(header, names) {
     for (const name of names) {
       const idx = header.indexOf(name);
@@ -305,17 +327,20 @@
     return -1;
   }
 
+  /** @param {any} val */
   function cleanVal(val) {
     if (val === undefined || val === null) return '';
     return val.replace(/^["'\s]+|["'\s]+$/g, '').replace(/^\d+\.\s*$/, '').trim();
   }
 
+  /** @param {any} val */
   function cleanAmount(val) {
     if (val === undefined || val === null) return 0;
     val = val.replace(/[^0-9.\-]/g, '');
     return parseFloat(val) || 0;
   }
 
+  /** @param {any} val */
   function cleanDate(val) {
     if (val === undefined || val === null || !val.trim()) return '';
     val = val.replace(/^["'\s]+|["'\s]+$/g, '').trim();
@@ -329,6 +354,7 @@
     return val;
   }
 
+  /** @param {number} index */
   function removeCsvRow(index) {
     csvParsed = csvParsed.filter((_, i) => i !== index);
     csvDataJson = JSON.stringify(csvParsed);
@@ -350,12 +376,12 @@
 
   {#if form?.success}
     <div class="alert alert-success">
-      <div>✓ {form.message}</div>
-      {#if form.results && form.results.length > 0}
+      <div>✓ {form?.message}</div>
+      {#if form?.results && form?.results.length > 0}
         <details class="results-details">
-          <summary>{form.results.length} students processed</summary>
+          <summary>{form?.results.length} students processed</summary>
           <ul>
-            {#each form.results as r}
+            {#each (form?.results || []) as r}
               <li>{r.name} ({r.email}) — <span class="tag {r.status === 'new student' ? 'tag-new' : 'tag-existing'}">{r.status}</span></li>
             {/each}
           </ul>
@@ -365,7 +391,7 @@
   {/if}
 
   {#if form?.error}
-    <div class="alert alert-error">✗ {form.error}</div>
+    <div class="alert alert-error">✗ {form?.error}</div>
   {/if}
 
   <!-- Tab Navigation -->
@@ -513,13 +539,14 @@
         <!-- Step 1: Preview and Check -->
         <form method="POST" action="?/csv_check" use:enhance={() => {
           return async ({ result }) => {
-            if (result.type === 'success' && result.data?.action === 'csv_check') {
-              matchResults = result.data.matchResults;
+            if (result.type === 'success' && /** @type {any} */ (result.data)?.action === 'csv_check') {
+              const resultData = /** @type {any} */ (result.data);
+              matchResults = resultData.matchResults;
               reviewMode = true;
 
               // Handle session info from server
-              if (result.data.sessionInfo?.exists) {
-                sessionInfo = result.data.sessionInfo;
+              if (resultData.sessionInfo?.exists) {
+                sessionInfo = resultData.sessionInfo;
                 existingSessionId = sessionInfo.session_id;
                 sessionName = sessionInfo.session_name;
               } else {
@@ -555,8 +582,8 @@
                 }
                 return { action: 'skip', updateStudentFields, updateRegFields, updateFields: [] };
               });
-            } else if (result.type === 'success' && result.data?.error) {
-              form = result.data;
+            } else if (result.type === 'success' && /** @type {any} */ (result.data)?.error) {
+              form = /** @type {any} */ (result.data);
             }
           };
         }}>

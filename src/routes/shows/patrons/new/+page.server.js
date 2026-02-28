@@ -27,11 +27,11 @@ export const actions = {
 
 			throw redirect(303, `/shows/patrons/${newPatron.patron_id}`);
 		} catch (error) {
-			if (error.status === 303) throw error;
+			if (/** @type {any} */ (error).status === 303) throw error;
 
 			console.error('Error creating patron:', error);
 
-			if (error.code === '23505') {
+			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A patron with that name and email already exists.',
 					values: { first_name, last_name, email, phone }

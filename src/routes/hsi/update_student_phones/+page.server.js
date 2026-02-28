@@ -16,7 +16,7 @@ export const actions = {
     }
 
     try {
-      const rows = JSON.parse(csvData);
+      const rows = JSON.parse(csvData.toString());
       const matchResults = [];
 
       for (let i = 0; i < rows.length; i++) {
@@ -106,6 +106,7 @@ export const actions = {
         let mobileDiff = false;
 
         if (dbStudent) {
+          /** @param {string} p */
           const normalizePhone = (p) => (p || '').replace(/[^0-9]/g, '').slice(-10);
           const dbPhoneNorm = normalizePhone(dbStudent.phone);
           const dbMobileNorm = normalizePhone(dbStudent.mobile_phone);
@@ -135,7 +136,7 @@ export const actions = {
       };
     } catch (error) {
       console.error('Error checking CSV:', error);
-      return { success: false, error: 'Failed to process CSV: ' + error.message };
+      return { success: false, error: 'Failed to process CSV: ' + (error instanceof Error ? error.message : String(error)) };
     }
   },
 
@@ -149,7 +150,7 @@ export const actions = {
     }
 
     try {
-      const decisions = JSON.parse(decisionsJson);
+      const decisions = JSON.parse(decisionsJson.toString());
       let updatedPhone = 0;
       let updatedMobile = 0;
       let skipped = 0;
@@ -195,7 +196,7 @@ export const actions = {
       };
     } catch (error) {
       console.error('Error applying updates:', error);
-      return { success: false, error: 'Failed to update: ' + error.message };
+      return { success: false, error: 'Failed to update: ' + (error instanceof Error ? error.message : String(error)) };
     }
   }
 };

@@ -3,6 +3,7 @@
 	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 
+	/** @type {any} */
 	export let data;
 	export let form;
 
@@ -13,21 +14,21 @@
 	$: classes = data.classes || [];
 
 	// Group shows by format
-	$: showsByFormat = shows.reduce((acc, s) => {
+	$: showsByFormat = shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 
 	// Group classes by track
-	$: classesByTrack = classes.reduce((acc, c) => {
+	$: classesByTrack = classes.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
 		const track = c.track || 'Other';
 		if (!acc[track]) acc[track] = [];
 		acc[track].push(c);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: tracks = Object.keys(classesByTrack).sort();
 
 	const discountTypes = [
@@ -40,12 +41,14 @@
 		{ value: 'other', label: 'Other' }
 	];
 
+	/** @param {string} type */
 	function valueLabel(type) {
 		if (type === 'flat' || type === 'fixed_price') return 'Amount ($)';
 		if (type === 'percentage') return 'Percentage (%)';
 		return 'Value';
 	}
 
+	/** @param {string} type */
 	function needsValue(type) {
 		return type && type !== 'bogo' && type !== 'comp' && type !== 'other';
 	}

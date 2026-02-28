@@ -2,23 +2,30 @@
 <script>
 	import { base } from '$app/paths';
 
+	/** @type {any} */
 	export let data;
 
 	$: teacher = data.teacher;
+	/** @type {any[]} */
 	$: sessions = data.sessions || [];
+	/** @type {Record<string, any>} */
 	$: stats = data.stats || {};
+	/** @type {any[]} */
 	$: surveyStats = data.surveyStats || [];
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
 
+	/** @param {string} dateStr */
 	function formatDate(dateStr) {
-		if (!dateStr) return '—';
+		if (!dateStr) return '\u2014';
 		const d = new Date(dateStr + 'T12:00:00');
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
+	/** @param {string} type @param {number} value */
 	function ratingLabel(type, value) {
 		if (type === 'likert') {
 			const labels = ['', 'Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
@@ -28,6 +35,7 @@
 		return '';
 	}
 
+	/** @param {string} type @returns {number} */
 	function ratingMax(type) {
 		if (type === 'rating_1_10') return 10;
 		return 5;

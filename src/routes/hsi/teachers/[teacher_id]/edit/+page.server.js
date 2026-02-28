@@ -54,12 +54,12 @@ export const actions = {
 
 			throw redirect(303, `/hsi/teachers/${teacherId}`);
 		} catch (err) {
-			if (err.status === 303) throw err;
-			if (err.code === '23505') {
+			if (/** @type {any} */ (err).status === 303) throw err;
+			if (/** @type {any} */ (err).code === '23505') {
 				return { success: false, error: 'A teacher with this name and email already exists.' };
 			}
 			console.error('Error updating teacher:', err);
-			return { success: false, error: 'Failed to update teacher: ' + err.message };
+			return { success: false, error: 'Failed to update teacher: ' + (err instanceof Error ? err.message : String(err)) };
 		}
 	}
 };

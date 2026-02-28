@@ -41,11 +41,13 @@ export const load = async () => {
 // CSV PARSING — auto-detects old (16 field) vs new (22 field) vs v2 (23 field) format
 // ============================================================
 
+/** @param {string} text */
 function parseCSZReport(text) {
 	// Normalize line endings
 	text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
 	// Rebuild lines respecting quoted fields (handles newlines inside quotes)
+	/** @type {string[]} */
 	const rawLines = [];
 	let current = '';
 	let inQuotes = false;
@@ -63,9 +65,11 @@ function parseCSZReport(text) {
 	}
 	if (current.trim()) rawLines.push(current);
 
+	/** @type {any[]} */
 	const rows = [];
 	const eventNamesSet = new Set();
 	const discountCodesSet = new Set();
+	/** @type {string | null} */
 	let detectedFormat = null;
 
 	for (const line of rawLines) {
@@ -93,6 +97,7 @@ function parseCSZReport(text) {
 			console.log(`[csv_parse] Detected ${detectedFormat} format (${fields.length} fields)`);
 		}
 
+		/** @type {any} */
 		let row;
 		if (detectedFormat === 'v3') {
 			// 0:Rec, 1:AcctID, 2:First, 3:Last, 4:Address, 5:Address2, 6:City, 7:State, 8:Zip, 9:Country,
@@ -223,6 +228,7 @@ function parseCSZReport(text) {
 	};
 }
 
+/** @param {string} str */
 function parseDate(str) {
 	if (!str) return null;
 	const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -230,7 +236,9 @@ function parseDate(str) {
 	return `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
 }
 
+/** @param {string} line */
 function parseCSVLine(line) {
+	/** @type {string[]} */
 	const result = [];
 	let current = '';
 	let inQuotes = false;
@@ -253,13 +261,13 @@ function parseCSVLine(line) {
 // ACTIONS
 // ============================================================
 
-const norm = (s) => (s || '').toLowerCase().trim();
+const norm = (/** @type {any} */ s) => (s || '').toLowerCase().trim();
 
 export const actions = {
 	// Manual row entry (unchanged)
 	manual: async ({ request }) => {
 		const formData = await request.formData();
-		const rowCount = parseInt(formData.get('row_count')) || 0;
+		const rowCount = parseInt((formData.get('row_count') || '').toString()) || 0;
 
 		if (rowCount === 0) {
 			return { success: false, error: 'No data to save.' };
@@ -268,19 +276,20 @@ export const actions = {
 		let saved = 0;
 		let skipped = 0;
 		let newPatrons = 0;
+		/** @type {any[]} */
 		const results = [];
 
 		try {
 			for (let i = 0; i < rowCount; i++) {
-				const mode = formData.get(`mode_${i}`) || 'existing';
-				const showCode = formData.get(`show_code_${i}`);
-				const showDate = formData.get(`show_date_${i}`);
-				const ticketsPurchased = parseInt(formData.get(`tickets_purchased_${i}`)) || 1;
-				const amountPaid = parseFloat(formData.get(`amount_paid_${i}`)) || 0;
-				const purchaseDate = formData.get(`purchase_date_${i}`) || null;
-				const paymentMethod = formData.get(`payment_method_${i}`) || null;
-				const notes = (formData.get(`notes_${i}`) || '').trim() || null;
-				const promotionId = parseInt(formData.get(`promotion_id_${i}`)) || null;
+				const mode = (formData.get(`mode_${i}`) || 'existing').toString();
+				const showCode = (formData.get(`show_code_${i}`) || '').toString();
+				const showDate = (formData.get(`show_date_${i}`) || '').toString();
+				const ticketsPurchased = parseInt((formData.get(`tickets_purchased_${i}`) || '').toString()) || 1;
+				const amountPaid = parseFloat((formData.get(`amount_paid_${i}`) || '').toString()) || 0;
+				const purchaseDate = (formData.get(`purchase_date_${i}`) || '').toString() || null;
+				const paymentMethod = (formData.get(`payment_method_${i}`) || '').toString() || null;
+				const notes = (formData.get(`notes_${i}`) || '').toString().trim() || null;
+				const promotionId = parseInt((formData.get(`promotion_id_${i}`) || '').toString()) || null;
 
 				if (!showCode || !showDate) {
 					skipped++;
@@ -290,16 +299,16 @@ export const actions = {
 				let patronId;
 
 				if (mode === 'existing') {
-					patronId = parseInt(formData.get(`patron_id_${i}`)) || 0;
+					patronId = parseInt((formData.get(`patron_id_${i}`) || '').toString()) || 0;
 					if (!patronId) {
 						skipped++;
 						continue;
 					}
 				} else {
-					const firstName = (formData.get(`first_name_${i}`) || '').trim();
-					const lastName = (formData.get(`last_name_${i}`) || '').trim();
-					const email = (formData.get(`email_${i}`) || '').trim();
-					const phone = (formData.get(`phone_${i}`) || '').trim();
+					const firstName = (formData.get(`first_name_${i}`) || '').toString().trim();
+					const lastName = (formData.get(`last_name_${i}`) || '').toString().trim();
+					const email = (formData.get(`email_${i}`) || '').toString().trim();
+					const phone = (formData.get(`phone_${i}`) || '').toString().trim();
 
 					if (!firstName || !lastName) {
 						skipped++;
@@ -336,7 +345,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error saving ticket purchases:', error);
-			return { success: false, error: 'Failed to save: ' + error.message };
+			return { success: false, error: 'Failed to save: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	},
 
@@ -372,7 +381,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error parsing CSV:', error);
-			return { success: false, error: 'Failed to parse CSV: ' + error.message };
+			return { success: false, error: 'Failed to parse CSV: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	},
 
@@ -397,6 +406,7 @@ export const actions = {
 		}
 
 		try {
+			/** @type {any[]} */
 			const matchResults = [];
 
 			// Deduplicate patrons — same person may have multiple ticket rows
@@ -504,6 +514,7 @@ export const actions = {
 				}
 
 				// Build field diffs for review
+				/** @type {any[]} */
 				const diffs = [];
 				if (dbPatron) {
 					if (firstName && norm(firstName) !== norm(dbPatron.first_name)) {
@@ -556,7 +567,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error checking patrons:', error);
-			return { success: false, error: 'Patron matching failed: ' + error.message };
+			return { success: false, error: 'Patron matching failed: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	},
 
@@ -584,6 +595,7 @@ export const actions = {
 		}
 
 		// Build a lookup from patron key → decision
+		/** @type {Record<string, any>} */
 		const decisionMap = {};
 		for (const d of decisions) {
 			decisionMap[d.key] = d;
@@ -594,11 +606,14 @@ export const actions = {
 		let patronsCreated = 0;
 		let patronsUpdated = 0;
 		let anonymousImported = 0;
+		/** @type {any[]} */
 		const skippedRows = [];
+		/** @type {string[]} */
 		const errors = [];
 
 		try {
 			// Cache patron_id lookups so we don't create duplicates within the same import
+			/** @type {Record<string, any>} */
 			const patronCache = {};
 
 			for (const row of rows) {
@@ -711,9 +726,10 @@ export const actions = {
 					imported++;
 					if (isAnonymous) anonymousImported++;
 				} catch (rowError) {
+					const rowErrMsg = rowError instanceof Error ? rowError.message : String(rowError);
 					const label = isAnonymous ? 'Anonymous' : `${row.firstName} ${row.lastName}`;
-					errors.push(`${label} / ${row.eventName}: ${rowError.message}`);
-					skippedRows.push({ ...row, skipReason: `Error: ${rowError.message}` });
+					errors.push(`${label} / ${row.eventName}: ${rowErrMsg}`);
+					skippedRows.push({ ...row, skipReason: `Error: ${rowErrMsg}` });
 					skipped++;
 				}
 			}
@@ -748,7 +764,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error importing tickets:', error);
-			return { success: false, error: 'Import failed: ' + error.message };
+			return { success: false, error: 'Import failed: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	}
 };
@@ -757,6 +773,7 @@ export const actions = {
 // PATRON HELPERS
 // ============================================================
 
+/** @param {any} r */
 function mapPatronRow(r) {
 	return {
 		patron_id: r.patron_id,
@@ -773,6 +790,10 @@ function mapPatronRow(r) {
 	};
 }
 
+/**
+ * @param {any} patronId
+ * @param {any} row
+ */
 async function fillPatronData(patronId, row) {
 	const cleanPhone = row.phone || '';
 	const cleanMobile = row.mobile_phone || '';
@@ -793,6 +814,10 @@ async function fillPatronData(patronId, row) {
 	`;
 }
 
+/**
+ * @param {any} patronId
+ * @param {any} row
+ */
 async function updatePatronFull(patronId, row) {
 	const cleanAcctId = (row.acctId || '').trim() || null;
 	const cleanMobile = (row.mobile_phone || '').trim();
@@ -815,6 +840,7 @@ async function updatePatronFull(patronId, row) {
 	`;
 }
 
+/** @param {any} row */
 async function findOrCreatePatronWithAddress(row) {
 	const cleanEmail = row.email || null;
 	const cleanPhone = row.phone || null;
@@ -837,6 +863,12 @@ async function findOrCreatePatronWithAddress(row) {
 	);
 }
 
+/**
+ * @param {string} firstName
+ * @param {string} lastName
+ * @param {string} email
+ * @param {string} phone
+ */
 async function findOrCreatePatron(firstName, lastName, email, phone) {
 	const cleanEmail = email || null;
 	const cleanPhone = phone || null;
@@ -857,6 +889,13 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 	return await safeInsertPatron(firstName, lastName, cleanEmail, cleanPhone, null, null, null, null, null, null, null);
 }
 
+/**
+ * @param {string} firstName
+ * @param {string} lastName
+ * @param {string|null} email
+ * @param {string|null} phone
+ * @param {string|null} acctId
+ */
 async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	const fLower = firstName.toLowerCase().trim();
 	const lLower = lastName.toLowerCase().trim();
@@ -898,6 +937,19 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	return null;
 }
 
+/**
+ * @param {string} firstName
+ * @param {string} lastName
+ * @param {string|null} email
+ * @param {string|null} phone
+ * @param {string|null} addr1
+ * @param {string|null} addr2
+ * @param {string|null} city
+ * @param {string|null} state
+ * @param {string|null} zip
+ * @param {string|null} country
+ * @param {string|null} acctId
+ */
 async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2, city, state, zip, country, acctId) {
 	try {
 		const [newPatron] = await sql`
@@ -912,7 +964,7 @@ async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2,
 		`;
 		return { id: newPatron.patron_id, created: true, updated: false };
 	} catch (err) {
-		if (err.code === '23505') {
+		if (/** @type {any} */ (err).code === '23505') {
 			const patronId = await lookupPatron(firstName, lastName, email, phone, acctId);
 			if (patronId) {
 				if (acctId) {

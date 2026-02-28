@@ -71,6 +71,7 @@ export const actions = {
 			let matchByNamePhone = 0;
 
 			// Helper: normalize for comparison
+			/** @param {string} s */
 			const norm = (s) => (s || '').toLowerCase().trim();
 
 			for (const row of uniqueRows) {
@@ -207,7 +208,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error parsing CSV:', error);
-			return { success: false, error: 'Failed to parse CSV: ' + error.message };
+			return { success: false, error: 'Failed to parse CSV: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	},
 
@@ -279,7 +280,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error applying updates:', error);
-			return { success: false, error: 'Update failed: ' + error.message };
+			return { success: false, error: 'Update failed: ' + (error instanceof Error ? error.message : String(error)) };
 		}
 	}
 };
@@ -288,6 +289,7 @@ export const actions = {
  * Parse the updated CSZ report CSV with address columns
  * Columns: Rec, First Name, Last Name, Address, Address 2, City, State/Province, ZipCode, Country, Email, Phone, Event Name, ...
  */
+/** @param {string} text */
 function parseUpdatedCSZ(text) {
 	const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 	const rows = [];
@@ -359,6 +361,7 @@ function parseUpdatedCSZ(text) {
 	return rows;
 }
 
+/** @param {string} line */
 function parseCSVLine(line) {
 	const result = [];
 	let current = '';

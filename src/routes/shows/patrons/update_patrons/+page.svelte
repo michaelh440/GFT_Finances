@@ -3,6 +3,7 @@
 	import { base } from '$app/paths';
 	import { enhance } from '$app/forms';
 
+	/** @type {any} */
 	export let data;
 	export let form;
 
@@ -12,7 +13,9 @@
 
 	// Parsed data from CSV
 	$: csvUploaded = form?.action === 'csv_upload' && form?.success;
+	/** @type {any[]} */
 	$: matched = form?.matched || [];
+	/** @type {any[]} */
 	$: unmatched = form?.unmatched || [];
 	$: updateApplied = form?.action === 'apply_updates' && form?.success;
 
@@ -67,7 +70,7 @@
 
 	{#if updateApplied}
 		<div class="alert alert-success">
-			✓ Updated {form.updated} patron{form.updated !== 1 ? 's' : ''}{form.skipped > 0 ? `, skipped ${form.skipped} with no new data` : ''}.
+			✓ Updated {form?.updated} patron{form?.updated !== 1 ? 's' : ''}{(form?.skipped || 0) > 0 ? `, skipped ${form?.skipped} with no new data` : ''}.
 			<a href="{base}/shows/patrons/update_patrons" class="alert-link">Upload another file</a>
 		</div>
 	{/if}
@@ -110,17 +113,17 @@
 			<h2>CSV Preview</h2>
 			<div class="preview-stats">
 				<span class="preview-stat">
-					<strong>{form.totalParsed}</strong> unique patrons in CSV
+					<strong>{form?.totalParsed}</strong> unique patrons in CSV
 				</span>
 				<span class="preview-stat matched">
-					<strong>{form.matchedCount}</strong> matched to existing patrons
+					<strong>{form?.matchedCount}</strong> matched to existing patrons
 				</span>
 				<span class="preview-stat new-data">
-					<strong>{form.withNewData}</strong> with new address data to add
+					<strong>{form?.withNewData}</strong> with new address data to add
 				</span>
-				{#if form.unmatchedCount > 0}
+				{#if (form?.unmatchedCount || 0) > 0}
 					<span class="preview-stat unmatched">
-						<strong>{form.unmatchedCount}</strong> not found in database
+						<strong>{form?.unmatchedCount}</strong> not found in database
 					</span>
 				{/if}
 			</div>

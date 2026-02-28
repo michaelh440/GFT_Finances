@@ -18,6 +18,7 @@
 	// Auto-generate show code from show name
 	let codeManuallyEdited = false;
 
+	/** @param {any} e */
 	function handleNameInput(e) {
 		if (!codeManuallyEdited) {
 			show_code = e.target.value

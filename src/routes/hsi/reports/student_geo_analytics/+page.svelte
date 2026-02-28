@@ -5,9 +5,11 @@
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
+	/** @type {any} */
 	export let data;
 
 	let mounted = false;
+	/** @type {Record<string, any>} */
 	let charts = {};
 
 	// Global filters
@@ -15,7 +17,9 @@
 	let selectedTrack = 'all';
 
 	// Monthly filters (year checkboxes)
+	/** @type {any[]} */
 	let availableYears = [];
+	/** @type {string[]} */
 	let selectedYears = [];
 
 	// Chart view
@@ -25,21 +29,21 @@
 	let sortBy = 'students';
 
 	// Get unique tracks
-	$: uniqueTracks = [...new Set((data.classes || []).map(c => c.track).filter(Boolean))].sort();
+	$: uniqueTracks = [...new Set((data.classes || []).map((/** @type {any} */ c) => c.track).filter(Boolean))].sort();
 
 	// Group classes by track for optgroup display
-	$: classesByTrack = (data.classes || []).reduce((acc, c) => {
+	$: classesByTrack = (data.classes || []).reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
 		const t = c.track || 'Other';
 		if (!acc[t]) acc[t] = [];
 		acc[t].push(c);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: trackList = Object.keys(classesByTrack).sort();
 
 	// Extract available years from data
 	$: {
-		const yrs = (data.years || []).map(y => typeof y === 'number' ? y : parseInt(y)).filter(y => !isNaN(y));
-		availableYears = yrs.sort((a, b) => b - a);
+		const yrs = (data.years || []).map((/** @type {any} */ y) => typeof y === 'number' ? y : parseInt(y)).filter((/** @type {any} */ y) => !isNaN(y));
+		availableYears = yrs.sort((/** @type {number} */ a, /** @type {number} */ b) => b - a);
 		// Initialize: if URL had years, use those; otherwise select all
 		if (selectedYears.length === 0 && availableYears.length > 0) {
 			const urlYears = (data.filters?.years || '').split(',').filter(Boolean);
@@ -51,22 +55,22 @@
 	}
 
 	// Sorted + filtered display data (server already filtered, just sort here)
-	$: knownZips = (data.zipData || []).filter(z => z.zip_code !== 'Unknown')
-		.sort((a, b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
+	$: knownZips = (data.zipData || []).filter((/** @type {any} */ z) => z.zip_code !== 'Unknown')
+		.sort((/** @type {any} */ a, /** @type {any} */ b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
 	$: displayZips = showAllZip ? knownZips : knownZips.slice(0, 20);
-	$: knownCities = (data.cityData || []).filter(c => c.city !== 'Unknown')
-		.sort((a, b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
+	$: knownCities = (data.cityData || []).filter((/** @type {any} */ c) => c.city !== 'Unknown')
+		.sort((/** @type {any} */ a, /** @type {any} */ b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
 	$: displayCities = showAllCity ? knownCities : knownCities.slice(0, 15);
-	$: knownStates = (data.stateData || []).filter(s => s.state !== 'Unknown')
-		.sort((a, b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
+	$: knownStates = (data.stateData || []).filter((/** @type {any} */ s) => s.state !== 'Unknown')
+		.sort((/** @type {any} */ a, /** @type {any} */ b) => sortBy === 'registrations' ? b.registration_count - a.registration_count : b.student_count - a.student_count);
 
 	// Stats
 	$: totalStudents = data.stats?.total_students || 0;
-	$: totalRevenue = (data.zipData || []).reduce((s, z) => s + z.revenue, 0);
-	$: totalRegs = (data.zipData || []).reduce((s, z) => s + z.registration_count, 0);
+	$: totalRevenue = (data.zipData || []).reduce((/** @type {number} */ s, /** @type {any} */ z) => s + z.revenue, 0);
+	$: totalRegs = (data.zipData || []).reduce((/** @type {number} */ s, /** @type {any} */ z) => s + z.registration_count, 0);
 
 	onMount(() => { mounted = true; });
-	onDestroy(() => { Object.values(charts).forEach(c => { if (c) c.destroy(); }); });
+	onDestroy(() => { Object.values(charts).forEach((/** @type {any} */ c) => { if (c) c.destroy(); }); });
 
 	// Chart rendering
 	$: if (browser && mounted && activeView === 'zip') {
@@ -79,15 +83,17 @@
 		setTimeout(() => renderStateChart(knownStates), 150);
 	}
 
+	/** @param {string} canvasId @param {any} config */
 	function createChart(canvasId, config) {
 		if (charts[canvasId]) charts[canvasId].destroy();
-		const canvas = document.getElementById(canvasId);
+		const canvas = /** @type {HTMLCanvasElement | null} */ (document.getElementById(canvasId));
 		if (!canvas) return null;
 		const chart = new Chart(canvas, config);
 		charts[canvasId] = chart;
 		return chart;
 	}
 
+	/** @param {any[]} zips */
 	function renderZipChart(zips) {
 		if (!zips || zips.length === 0) return;
 		const container = document.getElementById('zipChartContainer');
@@ -96,10 +102,10 @@
 		createChart('zipChart', {
 			type: 'bar',
 			data: {
-				labels: zips.map(z => z.city ? `${z.zip_code} (${z.city})` : z.zip_code),
+				labels: zips.map((/** @type {any} */ z) => z.city ? `${z.zip_code} (${z.city})` : z.zip_code),
 				datasets: [
-					{ label: 'Students', data: zips.map(z => z.student_count), backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 3 },
-					{ label: 'Registrations', data: zips.map(z => z.registration_count), backgroundColor: 'rgba(16, 185, 129, 0.6)', borderRadius: 3 }
+					{ label: 'Students', data: zips.map((/** @type {any} */ z) => z.student_count), backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 3 },
+					{ label: 'Registrations', data: zips.map((/** @type {any} */ z) => z.registration_count), backgroundColor: 'rgba(16, 185, 129, 0.6)', borderRadius: 3 }
 				]
 			},
 			options: {
@@ -108,7 +114,7 @@
 					legend: { position: 'top' },
 					tooltip: {
 						callbacks: {
-							afterBody: function(ctx) {
+							afterBody: function(/** @type {any} */ ctx) {
 								const z = zips[ctx[0].dataIndex];
 								return 'Revenue: ' + formatCurrency(z.revenue);
 							}
@@ -123,6 +129,7 @@
 		});
 	}
 
+	/** @param {any[]} cities */
 	function renderCityChart(cities) {
 		if (!cities || cities.length === 0) return;
 		const container = document.getElementById('cityChartContainer');
@@ -131,10 +138,10 @@
 		createChart('cityChart', {
 			type: 'bar',
 			data: {
-				labels: cities.map(c => c.state ? `${c.city}, ${c.state}` : c.city),
+				labels: cities.map((/** @type {any} */ c) => c.state ? `${c.city}, ${c.state}` : c.city),
 				datasets: [
-					{ label: 'Students', data: cities.map(c => c.student_count), backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 3 },
-					{ label: 'Registrations', data: cities.map(c => c.registration_count), backgroundColor: 'rgba(16, 185, 129, 0.6)', borderRadius: 3 }
+					{ label: 'Students', data: cities.map((/** @type {any} */ c) => c.student_count), backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 3 },
+					{ label: 'Registrations', data: cities.map((/** @type {any} */ c) => c.registration_count), backgroundColor: 'rgba(16, 185, 129, 0.6)', borderRadius: 3 }
 				]
 			},
 			options: {
@@ -148,15 +155,16 @@
 		});
 	}
 
+	/** @param {any[]} states */
 	function renderStateChart(states) {
 		if (!states || states.length === 0) return;
 
 		createChart('stateChart', {
 			type: 'doughnut',
 			data: {
-				labels: states.map(s => s.state),
+				labels: states.map((/** @type {any} */ s) => s.state),
 				datasets: [{
-					data: states.map(s => s.student_count),
+					data: states.map((/** @type {any} */ s) => s.student_count),
 					backgroundColor: [
 						'#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
 						'#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
@@ -170,7 +178,7 @@
 					legend: { position: 'right', labels: { font: { size: 12 } } },
 					tooltip: {
 						callbacks: {
-							label: function(ctx) {
+							label: function(/** @type {any} */ ctx) {
 								const s = states[ctx.dataIndex];
 								return s.state + ': ' + s.student_count + ' students, ' + s.city_count + ' cities';
 							}
@@ -181,10 +189,11 @@
 		});
 	}
 
+	/** @param {any} y */
 	function toggleYear(y) {
 		const str = y.toString();
 		if (selectedYears.includes(str)) {
-			selectedYears = selectedYears.filter(v => v !== str);
+			selectedYears = selectedYears.filter((/** @type {string} */ v) => v !== str);
 		} else {
 			selectedYears = [...selectedYears, str];
 		}
@@ -206,10 +215,12 @@
 		window.location.href = `${base}/hsi/reports/student_geo_analytics`;
 	}
 
+	/** @param {string} tab */
 	function switchTab(tab) {
 		activeView = tab;
 	}
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}

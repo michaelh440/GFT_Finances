@@ -2,6 +2,7 @@
 <script>
 	import { base } from '$app/paths';
 
+	/** @type {any} */
 	export let data;
 
 	let searchQuery = '';
@@ -11,6 +12,7 @@
 	let pageSize = 25;
 	let showInactive = true;
 
+	/** @param {string} field */
 	function toggleSort(field) {
 		if (sortField === field) {
 			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -21,12 +23,13 @@
 		currentPage = 1;
 	}
 
+	/** @param {string} field */
 	function sortIndicator(field) {
 		if (sortField !== field) return '';
 		return sortDirection === 'asc' ? ' ▲' : ' ▼';
 	}
 
-	$: filteredPromotions = (data.promotions || []).filter((p) => {
+	$: filteredPromotions = (data.promotions || []).filter((/** @type {any} */ p) => {
 		if (!showInactive && !p.is_active) return false;
 		if (!searchQuery) return true;
 		const q = searchQuery.toLowerCase();
@@ -36,7 +39,7 @@
 		);
 	});
 
-	$: sortedPromotions = [...filteredPromotions].sort((a, b) => {
+	$: sortedPromotions = [...filteredPromotions].sort((/** @type {any} */ a, /** @type {any} */ b) => {
 		let aVal = a[sortField];
 		let bVal = b[sortField];
 		if (aVal == null) aVal = '';
@@ -54,6 +57,7 @@
 
 	$: { searchQuery; showInactive; currentPage = 1; }
 
+	/** @type {Record<string, string>} */
 	const discountTypeLabels = {
 		flat: 'Flat $',
 		percentage: 'Percentage',
@@ -63,6 +67,10 @@
 		other: 'Other'
 	};
 
+	/**
+	 * @param {string} type
+	 * @param {any} value
+	 */
 	function formatDiscount(type, value) {
 		if (value == null) return '—';
 		if (type === 'flat') return `-$${value.toFixed(2)}`;
@@ -73,16 +81,19 @@
 		return value.toString();
 	}
 
+	/** @param {string} dateStr */
 	function formatDate(dateStr) {
 		if (!dateStr) return '—';
 		const d = new Date(dateStr + 'T12:00:00');
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
 
+	/** @param {any} promo */
 	function dateStatus(promo) {
 		if (!promo.start_date && !promo.end_date) return 'ongoing';
 		const now = new Date().toISOString().split('T')[0];

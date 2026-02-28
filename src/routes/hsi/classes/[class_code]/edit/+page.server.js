@@ -81,7 +81,7 @@ export const actions = {
 		} catch (error) {
 			console.error('Error updating class:', error);
 
-			if (error.code === '23505') {
+			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A class with that name already exists.',
 					values: { class_name, class_type, student_type, standard_price, track, description, is_active }

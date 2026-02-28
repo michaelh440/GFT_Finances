@@ -2,6 +2,7 @@
 <script>
 	import { base } from '$app/paths';
 
+	/** @type {any} */
 	export let data;
 
 	$: tickets = data.tickets || [];
@@ -18,14 +19,15 @@
 	$: hasFilters = data.filters?.showCode || data.filters?.year || data.filters?.dateFrom || data.filters?.dateTo || data.filters?.patronSearch || data.filters?.paymentMethod;
 
 	// Group shows by format for dropdown
-	$: showsByFormat = (data.shows || []).reduce((acc, s) => {
+	$: showsByFormat = (data.shows || []).reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 
+	/** @param {number} page */
 	function buildUrl(page) {
 		const params = new URLSearchParams();
 		if (showCode) params.set('show', showCode);
@@ -47,6 +49,7 @@
 		window.location.href = `${base}/shows/ticket_purchases`;
 	}
 
+	/** @param {number} page */
 	function goToPage(page) {
 		// Use applied filters from server, not local state
 		const params = new URLSearchParams();
@@ -61,6 +64,7 @@
 		window.location.href = `${base}/shows/ticket_purchases${qs ? '?' + qs : ''}`;
 	}
 
+	/** @param {any} y */
 	function setYearFilter(y) {
 		showCode = data.filters?.showCode || '';
 		year = y.toString();
@@ -71,8 +75,14 @@
 		applyFilters();
 	}
 
+	/**
+	 * @param {number} current
+	 * @param {number} total
+	 * @returns {(number|string)[]}
+	 */
 	function pageNumbers(current, total) {
 		if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+		/** @type {(number|string)[]} */
 		const pages = [];
 		pages.push(1);
 		if (current > 3) pages.push('...');
@@ -88,10 +98,12 @@
 	$: rangeStart = (pagination.currentPage - 1) * pagination.pageSize + 1;
 	$: rangeEnd = Math.min(pagination.currentPage * pagination.pageSize, pagination.totalCount);
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
 
+	/** @param {any} dateStr */
 	function formatDate(dateStr) {
 		if (!dateStr) return '—';
 		const str = typeof dateStr === 'string' ? dateStr : dateStr.toISOString().split('T')[0];
@@ -100,6 +112,7 @@
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
+	/** @param {any} dateStr */
 	function formatDateShort(dateStr) {
 		if (!dateStr) return '—';
 		const str = typeof dateStr === 'string' ? dateStr : dateStr.toISOString().split('T')[0];
@@ -204,7 +217,7 @@
 					id="filterPatron"
 					bind:value={patronSearch}
 					placeholder="Name or email..."
-					on:keydown={(e) => e.key === 'Enter' && applyFilters()}
+					on:keydown={(/** @type {any} */ e) => e.key === 'Enter' && applyFilters()}
 				/>
 			</div>
 

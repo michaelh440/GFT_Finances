@@ -17,6 +17,7 @@
 	// ============================================================
 	// MANUAL ENTRY STATE
 	// ============================================================
+	/** @type {any[]} */
 	let rows = [createRow()];
 
 	function createRow() {
@@ -49,36 +50,43 @@
 		rows = [...rows, newRow];
 	}
 
+	/** @param {string} id */
 	function removeRow(id) {
 		if (rows.length <= 1) return;
 		rows = rows.filter((r) => r.id !== id);
 	}
 
+	/** @param {number} index */
 	function autoCalc(index) {
 		const row = rows[index];
-		const show = data.shows.find((s) => s.show_code === row.show_code);
+		const show = data.shows.find((/** @type {any} */ s) => s.show_code === row.show_code);
 		if (show && row.tickets_purchased > 0) {
 			rows[index].amount_paid = show.standard_ticket_price * row.tickets_purchased;
 			rows = rows;
 		}
 	}
 
-	$: showsByFormat = data.shows.reduce((acc, s) => {
+	$: showsByFormat = data.shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 
 	// ============================================================
 	// CSV IMPORT STATE — 3 steps
 	// ============================================================
 	// Step 1: Parsed CSV data + event/promo mapping
+	/** @type {any[]} */
 	let csvRows = [];
+	/** @type {string[]} */
 	let csvEventNames = [];
+	/** @type {string[]} */
 	let csvDiscountCodes = [];
+	/** @type {Record<string, any>} */
 	let mappings = {};
+	/** @type {Record<string, any>} */
 	let promoMappings = {};
 	let csvParsed = false;
 	let csvSummary = { totalRows: 0, rowsWithNames: 0, rowsAnonymous: 0 };
@@ -88,7 +96,9 @@
 
 	// Step 2: Patron review (from csv_check)
 	let reviewMode = false;
+	/** @type {any[]} */
 	let matchResults = [];
+	/** @type {any[]} */
 	let decisions = [];
 
 	// Step 3: Import results
@@ -120,10 +130,12 @@
 		'Ticket Sale'
 	];
 
+	/** @param {string} name */
 	function isClassEvent(name) {
 		return classEventNames.some((c) => name.toLowerCase() === c.toLowerCase());
 	}
 
+	/** @param {string} name */
 	function isPromoEvent(name) {
 		const lower = name.toLowerCase();
 		return promoEventNames.some((p) => lower.includes(p.toLowerCase())) ||
@@ -133,23 +145,23 @@
 	}
 
 	// ---- Reactive: Initialize event mappings from csv_upload ----
-	$: if (form?.action === 'csv_upload' && form.success && !csvParsed) {
-		csvRows = form.rows;
-		csvEventNames = form.eventNames;
-		csvDiscountCodes = form.discountCodes || [];
+	$: if (form?.action === 'csv_upload' && form?.success && !csvParsed) {
+		csvRows = form?.rows || [];
+		csvEventNames = form?.eventNames || [];
+		csvDiscountCodes = form?.discountCodes || [];
 		csvSummary = {
-			totalRows: form.totalRows,
-			rowsWithNames: form.rowsWithNames,
-			rowsAnonymous: form.rowsAnonymous
+			totalRows: form?.totalRows || 0,
+			rowsWithNames: form?.rowsWithNames || 0,
+			rowsAnonymous: form?.rowsAnonymous || 0
 		};
-		hasAddressData = form.hasAddressData || false;
-		hasAcctIds = form.hasAcctIds || false;
+		hasAddressData = form?.hasAddressData || false;
+		hasAcctIds = form?.hasAcctIds || false;
 		csvParsed = true;
 		reviewMode = false;
 		importComplete = false;
 
-		mappings = {};
-		promoMappings = {};
+		mappings = /** @type {Record<string, any>} */ ({});
+		promoMappings = /** @type {Record<string, any>} */ ({});
 		for (const eventName of csvEventNames) {
 			if (isClassEvent(eventName)) {
 				mappings[eventName] = '__skip__';
@@ -165,7 +177,7 @@
 				}
 				continue;
 			}
-			const match = data.shows.find((s) => s.show_name.toLowerCase() === eventName.toLowerCase());
+			const match = /** @type {any} */ (data.shows.find((/** @type {any} */ s) => s.show_name.toLowerCase() === eventName.toLowerCase()));
 			mappings[eventName] = match ? match.show_code : '';
 		}
 		for (const code of csvDiscountCodes) {
@@ -189,7 +201,7 @@
 
 	// ---- Reactive: Initialize patron review from csv_check ----
 	$: if (form?.action === 'csv_check' && form?.success && !reviewMode) {
-		matchResults = form.matchResults;
+		matchResults = form?.matchResults || [];
 		reviewMode = true;
 		// Default decisions: add for new, use_existing for matches
 		decisions = matchResults.map((r) => ({
@@ -203,7 +215,7 @@
 	// ---- Reactive: Import complete ----
 	$: if (form?.action === 'csv_confirm' && form?.success && !importComplete) {
 		importComplete = true;
-		skipCsvContent = form.skipCsvContent || '';
+		skipCsvContent = form?.skipCsvContent || '';
 	}
 
 	// Event mapping computed values
@@ -213,25 +225,25 @@
 		(e) => mappings[e] && mappings[e] !== '__skip__' && mappings[e] !== ''
 	).length;
 
-	$: rowCountByEvent = csvRows.reduce((acc, r) => {
+	$: rowCountByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + 1;
 		return acc;
-	}, {});
+	}, /** @type {Record<string, number>} */ ({}));
 
-	$: ticketCountByEvent = csvRows.reduce((acc, r) => {
+	$: ticketCountByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.qty || 0);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, number>} */ ({}));
 
-	$: revenueByEvent = csvRows.reduce((acc, r) => {
+	$: revenueByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.itemTotal || 0);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, number>} */ ({}));
 
-	$: rowCountByCode = csvRows.reduce((acc, r) => {
+	$: rowCountByCode = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
 		if (r.discountCode) acc[r.discountCode] = (acc[r.discountCode] || 0) + 1;
 		return acc;
-	}, {});
+	}, /** @type {Record<string, number>} */ ({}));
 
 	// Patron review computed values
 	$: matchedCount = matchResults.filter((r) => r.matchType !== 'new').length;
@@ -246,8 +258,8 @@
 		csvRows = [];
 		csvEventNames = [];
 		csvDiscountCodes = [];
-		mappings = {};
-		promoMappings = {};
+		mappings = /** @type {Record<string, any>} */ ({});
+		promoMappings = /** @type {Record<string, any>} */ ({});
 		csvParsed = false;
 		reviewMode = false;
 		importComplete = false;
@@ -268,6 +280,11 @@
 		URL.revokeObjectURL(url);
 	}
 
+	/**
+	 * @param {number} idx
+	 * @param {string} action
+	 * @param {any} [patronId]
+	 */
 	function setDecisionAction(idx, action, patronId) {
 		decisions[idx] = {
 			...decisions[idx],
@@ -277,17 +294,22 @@
 		decisions = [...decisions];
 	}
 
+	/**
+	 * @param {number} idx
+	 * @param {string} field
+	 */
 	function toggleUpdateField(idx, field) {
 		const d = decisions[idx];
 		const fields = d.updateFields || [];
 		if (fields.includes(field)) {
-			decisions[idx].updateFields = fields.filter((f) => f !== field);
+			decisions[idx].updateFields = fields.filter((/** @type {any} */ f) => f !== field);
 		} else {
 			decisions[idx].updateFields = [...fields, field];
 		}
 		decisions = [...decisions];
 	}
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
@@ -752,25 +774,25 @@
 			<!-- ===================== STEP 4: IMPORT RESULTS ===================== -->
 			{#if importComplete}
 				<div class="alert alert-success">
-					<div>✓ {form.message}</div>
+					<div>✓ {form?.message}</div>
 					<div class="import-stats">
-						Imported: {form.imported} · Skipped: {form.skipped} · New Patrons: {form.patronsCreated} · Updated: {form.patronsUpdated}
-						{#if form.anonymousImported > 0} · Anonymous: {form.anonymousImported}{/if}
+						Imported: {form?.imported} · Skipped: {form?.skipped} · New Patrons: {form?.patronsCreated} · Updated: {form?.patronsUpdated}
+						{#if (form?.anonymousImported || 0) > 0} · Anonymous: {form?.anonymousImported}{/if}
 					</div>
-					{#if form.errors && form.errors.length > 0}
+					{#if form?.errors && form?.errors.length > 0}
 						<details class="results-details">
-							<summary>{form.errors.length} error{form.errors.length !== 1 ? 's' : ''}</summary>
-							<ul>{#each form.errors as err}<li>{err}</li>{/each}</ul>
+							<summary>{form?.errors.length} error{form?.errors.length !== 1 ? 's' : ''}</summary>
+							<ul>{#each (form?.errors || []) as err}<li>{err}</li>{/each}</ul>
 						</details>
 					{/if}
 				</div>
 
-				{#if form.skippedCount > 0 && skipCsvContent}
+				{#if (form?.skippedCount || 0) > 0 && skipCsvContent}
 					<div class="card">
 						<h2>Skipped Rows</h2>
-						<p class="hint">{form.skippedCount} rows were not imported. Download the CSV to review why.</p>
+						<p class="hint">{form?.skippedCount} rows were not imported. Download the CSV to review why.</p>
 						<button class="btn-primary" on:click={downloadSkipCsv}>
-							Download Skipped Rows CSV ({form.skippedCount} rows)
+							Download Skipped Rows CSV ({form?.skippedCount} rows)
 						</button>
 					</div>
 				{/if}

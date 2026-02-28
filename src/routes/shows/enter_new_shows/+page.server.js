@@ -41,8 +41,8 @@ export const actions = {
 		} catch (error) {
 			console.error('Error creating show:', error);
 
-			if (error.code === '23505') {
-				const detail = error.detail || '';
+			if (/** @type {any} */ (error).code === '23505') {
+				const detail = /** @type {any} */ (error).detail || '';
 				if (detail.includes('show_code')) {
 					return fail(400, { error: `A show with code "${show_code}" already exists.`, values });
 				}

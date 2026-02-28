@@ -2,15 +2,22 @@
 <script>
 	import { base } from '$app/paths';
 
+	/** @type {any} */
 	export let data;
 
 	$: promo = data.promotion;
+	/** @type {any[]} */
 	$: showStats = data.showStats || [];
+	/** @type {Record<string, any>} */
 	$: totals = data.totals || {};
+	/** @type {Record<string, any>} */
 	$: discountTotals = data.discountTotals || {};
+	/** @type {any[]} */
 	$: linkedShows = data.linkedShows || [];
+	/** @type {any[]} */
 	$: linkedClasses = data.linkedClasses || [];
 
+	/** @type {Record<string, string>} */
 	const discountTypeLabels = {
 		flat: 'Flat Amount Off',
 		percentage: 'Percentage Off',
@@ -20,8 +27,9 @@
 		other: 'Other'
 	};
 
+	/** @param {string} type @param {any} value */
 	function formatDiscount(type, value) {
-		if (value == null) return '—';
+		if (value == null) return '\u2014';
 		if (type === 'flat') return `$${value.toFixed(2)} off`;
 		if (type === 'percentage') return `${value}% off`;
 		if (type === 'fixed_price') return `$${value.toFixed(2)} flat price`;
@@ -30,20 +38,23 @@
 		return `${value}`;
 	}
 
+	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
 
+	/** @param {string} dateStr */
 	function formatDate(dateStr) {
-		if (!dateStr) return '—';
+		if (!dateStr) return '\u2014';
 		const d = new Date(dateStr + 'T12:00:00');
 		return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
+	/** @returns {string} */
 	function dateStatus() {
 		if (!promo) return '';
 		if (!promo.start_date && !promo.end_date) return 'ongoing';
-		const now = new Date().toISOString().split('T')[0];
+		const now = /** @type {string} */ (new Date().toISOString().split('T')[0]);
 		if (promo.end_date && promo.end_date < now) return 'ended';
 		if (promo.start_date && promo.start_date > now) return 'upcoming';
 		return 'active';

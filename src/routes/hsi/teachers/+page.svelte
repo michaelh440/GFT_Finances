@@ -2,6 +2,7 @@
 <script>
 	import { base } from '$app/paths';
 
+	/** @type {any} */
 	export let data;
 
 	let searchQuery = '';
@@ -10,6 +11,7 @@
 	let currentPage = 1;
 	let pageSize = 25;
 
+	/** @param {string} field */
 	function toggleSort(field) {
 		if (sortField === field) {
 			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -20,12 +22,13 @@
 		currentPage = 1;
 	}
 
+	/** @param {string} field */
 	function sortIndicator(field) {
 		if (sortField !== field) return '';
 		return sortDirection === 'asc' ? ' ▲' : ' ▼';
 	}
 
-	$: filteredTeachers = (data.teachers || []).filter((t) => {
+	$: filteredTeachers = (data.teachers || []).filter((/** @type {any} */ t) => {
 		if (!searchQuery) return true;
 		const q = searchQuery.toLowerCase();
 		return (
@@ -35,7 +38,7 @@
 		);
 	});
 
-	$: sortedTeachers = [...filteredTeachers].sort((a, b) => {
+	$: sortedTeachers = [...filteredTeachers].sort((/** @type {any} */ a, /** @type {any} */ b) => {
 		let aVal = a[sortField];
 		let bVal = b[sortField];
 		if (aVal == null) aVal = '';
@@ -56,6 +59,7 @@
 		currentPage = 1;
 	}
 
+	/** @param {string} dateStr */
 	function formatDate(dateStr) {
 		if (!dateStr) return '—';
 		const d = new Date(dateStr + 'T12:00:00');

@@ -56,7 +56,7 @@ export const actions = {
 		} catch (error) {
 			console.error('Error updating patron:', error);
 
-			if (error.code === '23505') {
+			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A patron with that name and email already exists.',
 					values: { first_name, last_name, email, phone, is_active }
