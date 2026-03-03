@@ -17,7 +17,6 @@
 	// ============================================================
 	// MANUAL ENTRY STATE
 	// ============================================================
-	/** @type {any[]} */
 	let rows = [createRow()];
 
 	function createRow() {
@@ -50,43 +49,36 @@
 		rows = [...rows, newRow];
 	}
 
-	/** @param {string} id */
 	function removeRow(id) {
 		if (rows.length <= 1) return;
 		rows = rows.filter((r) => r.id !== id);
 	}
 
-	/** @param {number} index */
 	function autoCalc(index) {
 		const row = rows[index];
-		const show = data.shows.find((/** @type {any} */ s) => s.show_code === row.show_code);
+		const show = data.shows.find((s) => s.show_code === row.show_code);
 		if (show && row.tickets_purchased > 0) {
 			rows[index].amount_paid = show.standard_ticket_price * row.tickets_purchased;
 			rows = rows;
 		}
 	}
 
-	$: showsByFormat = data.shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
+	$: showsByFormat = data.shows.reduce((acc, s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, /** @type {Record<string, any[]>} */ ({}));
+	}, {});
 	$: formats = Object.keys(showsByFormat).sort();
 
 	// ============================================================
 	// CSV IMPORT STATE — 3 steps
 	// ============================================================
 	// Step 1: Parsed CSV data + event/promo mapping
-	/** @type {any[]} */
 	let csvRows = [];
-	/** @type {string[]} */
 	let csvEventNames = [];
-	/** @type {string[]} */
 	let csvDiscountCodes = [];
-	/** @type {Record<string, any>} */
 	let mappings = {};
-	/** @type {Record<string, any>} */
 	let promoMappings = {};
 	let csvParsed = false;
 	let csvSummary = { totalRows: 0, rowsWithNames: 0, rowsAnonymous: 0 };
@@ -96,9 +88,7 @@
 
 	// Step 2: Patron review (from csv_check)
 	let reviewMode = false;
-	/** @type {any[]} */
 	let matchResults = [];
-	/** @type {any[]} */
 	let decisions = [];
 
 	// Step 3: Import results
@@ -130,12 +120,10 @@
 		'Ticket Sale'
 	];
 
-	/** @param {string} name */
 	function isClassEvent(name) {
 		return classEventNames.some((c) => name.toLowerCase() === c.toLowerCase());
 	}
 
-	/** @param {string} name */
 	function isPromoEvent(name) {
 		const lower = name.toLowerCase();
 		return promoEventNames.some((p) => lower.includes(p.toLowerCase())) ||
@@ -145,23 +133,23 @@
 	}
 
 	// ---- Reactive: Initialize event mappings from csv_upload ----
-	$: if (form?.action === 'csv_upload' && form?.success && !csvParsed) {
-		csvRows = form?.rows || [];
-		csvEventNames = form?.eventNames || [];
-		csvDiscountCodes = form?.discountCodes || [];
+	$: if (form?.action === 'csv_upload' && form.success && !csvParsed) {
+		csvRows = form.rows;
+		csvEventNames = form.eventNames;
+		csvDiscountCodes = form.discountCodes || [];
 		csvSummary = {
-			totalRows: form?.totalRows || 0,
-			rowsWithNames: form?.rowsWithNames || 0,
-			rowsAnonymous: form?.rowsAnonymous || 0
+			totalRows: form.totalRows,
+			rowsWithNames: form.rowsWithNames,
+			rowsAnonymous: form.rowsAnonymous
 		};
-		hasAddressData = form?.hasAddressData || false;
-		hasAcctIds = form?.hasAcctIds || false;
+		hasAddressData = form.hasAddressData || false;
+		hasAcctIds = form.hasAcctIds || false;
 		csvParsed = true;
 		reviewMode = false;
 		importComplete = false;
 
-		mappings = /** @type {Record<string, any>} */ ({});
-		promoMappings = /** @type {Record<string, any>} */ ({});
+		mappings = {};
+		promoMappings = {};
 		for (const eventName of csvEventNames) {
 			if (isClassEvent(eventName)) {
 				mappings[eventName] = '__skip__';
@@ -177,8 +165,10 @@
 				}
 				continue;
 			}
-			const match = /** @type {any} */ (data.shows.find((/** @type {any} */ s) => s.show_name.toLowerCase() === eventName.toLowerCase()));
-			mappings[eventName] = match ? match.show_code : '';
+			// Try VBO event ID match first, then show name match
+			const vboMatch = data.shows.find((s) => s.vbo_event_id && s.vbo_event_id.toLowerCase() === eventName.toLowerCase());
+			const nameMatch = data.shows.find((s) => s.show_name.toLowerCase() === eventName.toLowerCase());
+			mappings[eventName] = (vboMatch || nameMatch)?.show_code || '';
 		}
 		for (const code of csvDiscountCodes) {
 			const codeLower = code.toLowerCase();
@@ -201,21 +191,45 @@
 
 	// ---- Reactive: Initialize patron review from csv_check ----
 	$: if (form?.action === 'csv_check' && form?.success && !reviewMode) {
-		matchResults = form?.matchResults || [];
+		matchResults = form.matchResults;
 		reviewMode = true;
-		// Default decisions: add for new, use_existing for matches
-		decisions = matchResults.map((r) => ({
-			key: r.key,
-			patron_id: r.dbPatron?.patron_id || null,
-			action: r.matchType === 'new' ? 'create_new' : (r.existingTicket ? 'skip' : 'use_existing'),
-			updateFields: []
-		}));
+		// Default decisions: use server-side autoCheck flag and suggestedAction
+		decisions = matchResults.map((r) => {
+			// Auto-check fields the server flagged (empty DB, formatting upgrade, etc.)
+			const autoFields = (r.diffs || [])
+				.filter((d) => d.autoCheck)
+				.map((d) => d.field);
+
+			const hasAutoFields = autoFields.length > 0;
+
+			let action;
+			if (r.matchType === 'new') {
+				action = 'create_new';
+			} else if (r.existingTicket) {
+				action = 'skip';
+			} else if (r.suggestedAction) {
+				// Server says this name match is likely a different person
+				action = r.suggestedAction;
+			} else if (hasAutoFields) {
+				action = 'update_existing';
+			} else {
+				action = 'use_existing';
+			}
+
+			return {
+				key: r.key,
+				patron_id: r.dbPatron?.patron_id || null,
+				action,
+				// Don't pre-check fields if we're creating a new patron
+				updateFields: action === 'create_new' ? [] : autoFields
+			};
+		});
 	}
 
 	// ---- Reactive: Import complete ----
 	$: if (form?.action === 'csv_confirm' && form?.success && !importComplete) {
 		importComplete = true;
-		skipCsvContent = form?.skipCsvContent || '';
+		skipCsvContent = form.skipCsvContent || '';
 	}
 
 	// Event mapping computed values
@@ -225,25 +239,25 @@
 		(e) => mappings[e] && mappings[e] !== '__skip__' && mappings[e] !== ''
 	).length;
 
-	$: rowCountByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
+	$: rowCountByEvent = csvRows.reduce((acc, r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + 1;
 		return acc;
-	}, /** @type {Record<string, number>} */ ({}));
+	}, {});
 
-	$: ticketCountByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
+	$: ticketCountByEvent = csvRows.reduce((acc, r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.qty || 0);
 		return acc;
-	}, /** @type {Record<string, number>} */ ({}));
+	}, {});
 
-	$: revenueByEvent = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
+	$: revenueByEvent = csvRows.reduce((acc, r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.itemTotal || 0);
 		return acc;
-	}, /** @type {Record<string, number>} */ ({}));
+	}, {});
 
-	$: rowCountByCode = csvRows.reduce((/** @type {Record<string, number>} */ acc, /** @type {any} */ r) => {
+	$: rowCountByCode = csvRows.reduce((acc, r) => {
 		if (r.discountCode) acc[r.discountCode] = (acc[r.discountCode] || 0) + 1;
 		return acc;
-	}, /** @type {Record<string, number>} */ ({}));
+	}, {});
 
 	// Patron review computed values
 	$: matchedCount = matchResults.filter((r) => r.matchType !== 'new').length;
@@ -258,8 +272,8 @@
 		csvRows = [];
 		csvEventNames = [];
 		csvDiscountCodes = [];
-		mappings = /** @type {Record<string, any>} */ ({});
-		promoMappings = /** @type {Record<string, any>} */ ({});
+		mappings = {};
+		promoMappings = {};
 		csvParsed = false;
 		reviewMode = false;
 		importComplete = false;
@@ -280,11 +294,6 @@
 		URL.revokeObjectURL(url);
 	}
 
-	/**
-	 * @param {number} idx
-	 * @param {string} action
-	 * @param {any} [patronId]
-	 */
 	function setDecisionAction(idx, action, patronId) {
 		decisions[idx] = {
 			...decisions[idx],
@@ -294,22 +303,17 @@
 		decisions = [...decisions];
 	}
 
-	/**
-	 * @param {number} idx
-	 * @param {string} field
-	 */
 	function toggleUpdateField(idx, field) {
 		const d = decisions[idx];
 		const fields = d.updateFields || [];
 		if (fields.includes(field)) {
-			decisions[idx].updateFields = fields.filter((/** @type {any} */ f) => f !== field);
+			decisions[idx].updateFields = fields.filter((f) => f !== field);
 		} else {
 			decisions[idx].updateFields = [...fields, field];
 		}
 		decisions = [...decisions];
 	}
 
-	/** @param {number} amount */
 	function formatCurrency(amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
@@ -704,12 +708,18 @@
 									</div>
 								{/if}
 
+								{#if result.suggestedAction === 'create_new'}
+									<div class="diff-person-warning">
+										⚠ Name match but no contact info overlap — likely a different person
+									</div>
+								{/if}
+
 								<!-- Field diffs -->
 								{#if result.diffs && result.diffs.length > 0}
 									<div class="diff-section">
 										<div class="diff-title">Differences</div>
 										{#each result.diffs as diff}
-											<label class="diff-row">
+											<label class="diff-row" class:auto-fill={diff.autoCheck || result.suggestedAction === 'create_new'}>
 												<input type="checkbox"
 													checked={decisions[i]?.updateFields?.includes(diff.field)}
 													on:change={() => toggleUpdateField(i, diff.field)} />
@@ -717,6 +727,7 @@
 												<span class="diff-db">{diff.db || '(empty)'}</span>
 												<span class="diff-arrow">→</span>
 												<span class="diff-csv">{diff.csv}</span>
+												{#if diff.autoCheck}<span class="auto-fill-tag">auto</span>{/if}
 											</label>
 										{/each}
 									</div>
@@ -774,25 +785,25 @@
 			<!-- ===================== STEP 4: IMPORT RESULTS ===================== -->
 			{#if importComplete}
 				<div class="alert alert-success">
-					<div>✓ {form?.message}</div>
+					<div>✓ {form.message}</div>
 					<div class="import-stats">
-						Imported: {form?.imported} · Skipped: {form?.skipped} · New Patrons: {form?.patronsCreated} · Updated: {form?.patronsUpdated}
-						{#if (form?.anonymousImported || 0) > 0} · Anonymous: {form?.anonymousImported}{/if}
+						Imported: {form.imported} · Skipped: {form.skipped} · New Patrons: {form.patronsCreated} · Updated: {form.patronsUpdated}
+						{#if form.anonymousImported > 0} · Anonymous: {form.anonymousImported}{/if}
 					</div>
-					{#if form?.errors && form?.errors.length > 0}
+					{#if form.errors && form.errors.length > 0}
 						<details class="results-details">
-							<summary>{form?.errors.length} error{form?.errors.length !== 1 ? 's' : ''}</summary>
-							<ul>{#each (form?.errors || []) as err}<li>{err}</li>{/each}</ul>
+							<summary>{form.errors.length} error{form.errors.length !== 1 ? 's' : ''}</summary>
+							<ul>{#each form.errors as err}<li>{err}</li>{/each}</ul>
 						</details>
 					{/if}
 				</div>
 
-				{#if (form?.skippedCount || 0) > 0 && skipCsvContent}
+				{#if form.skippedCount > 0 && skipCsvContent}
 					<div class="card">
 						<h2>Skipped Rows</h2>
-						<p class="hint">{form?.skippedCount} rows were not imported. Download the CSV to review why.</p>
+						<p class="hint">{form.skippedCount} rows were not imported. Download the CSV to review why.</p>
 						<button class="btn-primary" on:click={downloadSkipCsv}>
-							Download Skipped Rows CSV ({form?.skippedCount} rows)
+							Download Skipped Rows CSV ({form.skippedCount} rows)
 						</button>
 					</div>
 				{/if}
@@ -926,16 +937,20 @@
 
 	.db-patron-info { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; }
 	.dup-warning { font-size: 0.8rem; color: #92400e; background: #fef3c7; padding: 0.35rem 0.6rem; border-radius: 0.25rem; margin-bottom: 0.5rem; }
+	.diff-person-warning { font-size: 0.8rem; color: #9a3412; background: #fed7aa; padding: 0.35rem 0.6rem; border-radius: 0.25rem; margin-bottom: 0.5rem; font-weight: 500; }
 
 	.diff-section { margin-bottom: 0.5rem; }
 	.diff-title { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.35rem; }
 	.diff-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; background-color: #fefce8; border-radius: 0.25rem; font-size: 0.85rem; cursor: pointer; margin-bottom: 0.25rem; }
 	.diff-row:hover { background-color: #fef9c3; }
+	.diff-row.auto-fill { background-color: #fed7aa; }
+	.diff-row.auto-fill:hover { background-color: #fdba74; }
 	.diff-row input[type="checkbox"] { accent-color: #3b82f6; }
 	.diff-field { font-weight: 600; color: #374151; min-width: 80px; }
 	.diff-db { color: #991b1b; background-color: #fee2e2; padding: 0.1rem 0.4rem; border-radius: 0.2rem; font-size: 0.8rem; }
 	.diff-arrow { color: #9ca3af; }
 	.diff-csv { color: #166534; background-color: #dcfce7; padding: 0.1rem 0.4rem; border-radius: 0.2rem; font-size: 0.8rem; }
+	.auto-fill-tag { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #9a3412; background: #ffedd5; padding: 0.1rem 0.35rem; border-radius: 0.2rem; margin-left: auto; }
 
 	.review-action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
 

@@ -4,7 +4,7 @@ import sql from '$lib/db';
 export const load = async () => {
 	try {
 		const shows = await sql`
-			SELECT show_code, show_name, format, standard_ticket_price
+			SELECT show_code, show_name, format, standard_ticket_price, vbo_event_id
 			FROM shows
 			WHERE is_active = true
 			ORDER BY format ASC, show_name ASC
@@ -41,13 +41,11 @@ export const load = async () => {
 // CSV PARSING — auto-detects old (16 field) vs new (22 field) vs v2 (23 field) format
 // ============================================================
 
-/** @param {string} text */
 function parseCSZReport(text) {
 	// Normalize line endings
 	text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
 	// Rebuild lines respecting quoted fields (handles newlines inside quotes)
-	/** @type {string[]} */
 	const rawLines = [];
 	let current = '';
 	let inQuotes = false;
@@ -65,11 +63,9 @@ function parseCSZReport(text) {
 	}
 	if (current.trim()) rawLines.push(current);
 
-	/** @type {any[]} */
 	const rows = [];
 	const eventNamesSet = new Set();
 	const discountCodesSet = new Set();
-	/** @type {string | null} */
 	let detectedFormat = null;
 
 	for (const line of rawLines) {
@@ -97,7 +93,6 @@ function parseCSZReport(text) {
 			console.log(`[csv_parse] Detected ${detectedFormat} format (${fields.length} fields)`);
 		}
 
-		/** @type {any} */
 		let row;
 		if (detectedFormat === 'v3') {
 			// 0:Rec, 1:AcctID, 2:First, 3:Last, 4:Address, 5:Address2, 6:City, 7:State, 8:Zip, 9:Country,
@@ -228,7 +223,6 @@ function parseCSZReport(text) {
 	};
 }
 
-/** @param {string} str */
 function parseDate(str) {
 	if (!str) return null;
 	const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -236,9 +230,7 @@ function parseDate(str) {
 	return `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
 }
 
-/** @param {string} line */
 function parseCSVLine(line) {
-	/** @type {string[]} */
 	const result = [];
 	let current = '';
 	let inQuotes = false;
@@ -261,13 +253,13 @@ function parseCSVLine(line) {
 // ACTIONS
 // ============================================================
 
-const norm = (/** @type {any} */ s) => (s || '').toLowerCase().trim();
+const norm = (s) => (s || '').toLowerCase().trim();
 
 export const actions = {
 	// Manual row entry (unchanged)
 	manual: async ({ request }) => {
 		const formData = await request.formData();
-		const rowCount = parseInt((formData.get('row_count') || '').toString()) || 0;
+		const rowCount = parseInt(formData.get('row_count')) || 0;
 
 		if (rowCount === 0) {
 			return { success: false, error: 'No data to save.' };
@@ -276,20 +268,19 @@ export const actions = {
 		let saved = 0;
 		let skipped = 0;
 		let newPatrons = 0;
-		/** @type {any[]} */
 		const results = [];
 
 		try {
 			for (let i = 0; i < rowCount; i++) {
-				const mode = (formData.get(`mode_${i}`) || 'existing').toString();
-				const showCode = (formData.get(`show_code_${i}`) || '').toString();
-				const showDate = (formData.get(`show_date_${i}`) || '').toString();
-				const ticketsPurchased = parseInt((formData.get(`tickets_purchased_${i}`) || '').toString()) || 1;
-				const amountPaid = parseFloat((formData.get(`amount_paid_${i}`) || '').toString()) || 0;
-				const purchaseDate = (formData.get(`purchase_date_${i}`) || '').toString() || null;
-				const paymentMethod = (formData.get(`payment_method_${i}`) || '').toString() || null;
-				const notes = (formData.get(`notes_${i}`) || '').toString().trim() || null;
-				const promotionId = parseInt((formData.get(`promotion_id_${i}`) || '').toString()) || null;
+				const mode = formData.get(`mode_${i}`) || 'existing';
+				const showCode = formData.get(`show_code_${i}`);
+				const showDate = formData.get(`show_date_${i}`);
+				const ticketsPurchased = parseInt(formData.get(`tickets_purchased_${i}`)) || 1;
+				const amountPaid = parseFloat(formData.get(`amount_paid_${i}`)) || 0;
+				const purchaseDate = formData.get(`purchase_date_${i}`) || null;
+				const paymentMethod = formData.get(`payment_method_${i}`) || null;
+				const notes = (formData.get(`notes_${i}`) || '').trim() || null;
+				const promotionId = parseInt(formData.get(`promotion_id_${i}`)) || null;
 
 				if (!showCode || !showDate) {
 					skipped++;
@@ -299,16 +290,16 @@ export const actions = {
 				let patronId;
 
 				if (mode === 'existing') {
-					patronId = parseInt((formData.get(`patron_id_${i}`) || '').toString()) || 0;
+					patronId = parseInt(formData.get(`patron_id_${i}`)) || 0;
 					if (!patronId) {
 						skipped++;
 						continue;
 					}
 				} else {
-					const firstName = (formData.get(`first_name_${i}`) || '').toString().trim();
-					const lastName = (formData.get(`last_name_${i}`) || '').toString().trim();
-					const email = (formData.get(`email_${i}`) || '').toString().trim();
-					const phone = (formData.get(`phone_${i}`) || '').toString().trim();
+					const firstName = (formData.get(`first_name_${i}`) || '').trim();
+					const lastName = (formData.get(`last_name_${i}`) || '').trim();
+					const email = (formData.get(`email_${i}`) || '').trim();
+					const phone = (formData.get(`phone_${i}`) || '').trim();
 
 					if (!firstName || !lastName) {
 						skipped++;
@@ -345,7 +336,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error saving ticket purchases:', error);
-			return { success: false, error: 'Failed to save: ' + (error instanceof Error ? error.message : String(error)) };
+			return { success: false, error: 'Failed to save: ' + error.message };
 		}
 	},
 
@@ -376,12 +367,12 @@ export const actions = {
 				totalRows: rows.length,
 				rowsWithNames: rows.filter((r) => r.firstName || r.lastName).length,
 				rowsAnonymous: rows.filter((r) => !r.firstName && !r.lastName).length,
-				hasAddressData: format === 'new' || format === 'v2' || format === 'v3',
+				hasAddressData: format === 'new' || format === 'v2',
 				hasAcctIds
 			};
 		} catch (error) {
 			console.error('Error parsing CSV:', error);
-			return { success: false, error: 'Failed to parse CSV: ' + (error instanceof Error ? error.message : String(error)) };
+			return { success: false, error: 'Failed to parse CSV: ' + error.message };
 		}
 	},
 
@@ -406,7 +397,6 @@ export const actions = {
 		}
 
 		try {
-			/** @type {any[]} */
 			const matchResults = [];
 
 			// Deduplicate patrons — same person may have multiple ticket rows
@@ -514,28 +504,80 @@ export const actions = {
 				}
 
 				// Build field diffs for review
-				/** @type {any[]} */
+				// Phone digit normalizer — strips to last 10 digits for comparison
+				const phoneDigits = (s) => {
+					const digits = (s || '').replace(/\D/g, '');
+					return digits.length > 10 ? digits.slice(-10) : digits;
+				};
+
 				const diffs = [];
+				let suggestedAction = null;
 				if (dbPatron) {
 					if (firstName && norm(firstName) !== norm(dbPatron.first_name)) {
-						diffs.push({ field: 'first_name', db: dbPatron.first_name, csv: firstName });
+						diffs.push({ field: 'first_name', db: dbPatron.first_name, csv: firstName, autoCheck: false });
 					}
 					if (lastName && norm(lastName) !== norm(dbPatron.last_name)) {
-						diffs.push({ field: 'last_name', db: dbPatron.last_name, csv: lastName });
+						diffs.push({ field: 'last_name', db: dbPatron.last_name, csv: lastName, autoCheck: false });
 					}
 					if (email && norm(email) !== norm(dbPatron.email)) {
-						diffs.push({ field: 'email', db: dbPatron.email || '', csv: row.email });
+						diffs.push({ field: 'email', db: dbPatron.email || '', csv: row.email, autoCheck: !dbPatron.email });
 					}
-					if (phone && norm(phone) !== norm(dbPatron.phone)) {
-						diffs.push({ field: 'phone', db: dbPatron.phone || '', csv: phone });
+
+					// Phone diff — compare digits only
+					const dbPhoneDigits = phoneDigits(dbPatron.phone);
+					const csvPhoneDigits = phoneDigits(phone);
+					if (phone && (dbPhoneDigits !== csvPhoneDigits || norm(phone) !== norm(dbPatron.phone))) {
+						const sameDigits = dbPhoneDigits === csvPhoneDigits && dbPhoneDigits.length > 0;
+						const csvHasDashes = phone.includes('-');
+						const dbIsEmpty = !dbPatron.phone;
+						// Auto-check if: DB is empty, OR same digits but CSV has better formatting (dashes)
+						const autoCheck = dbIsEmpty || (sameDigits && csvHasDashes);
+						diffs.push({ field: 'phone', db: dbPatron.phone || '', csv: phone, autoCheck });
 					}
+
+					// Mobile phone diff — same logic
 					const csvMobile = (row.mobile_phone || '').trim();
-					if (csvMobile && norm(csvMobile) !== norm(dbPatron.mobile_phone)) {
-						diffs.push({ field: 'mobile_phone', db: dbPatron.mobile_phone || '', csv: csvMobile });
+					const dbMobileDigits = phoneDigits(dbPatron.mobile_phone);
+					const csvMobileDigits = phoneDigits(csvMobile);
+					if (csvMobile && (dbMobileDigits !== csvMobileDigits || norm(csvMobile) !== norm(dbPatron.mobile_phone))) {
+						const sameDigits = dbMobileDigits === csvMobileDigits && dbMobileDigits.length > 0;
+						const csvHasDashes = csvMobile.includes('-');
+						const dbIsEmpty = !dbPatron.mobile_phone;
+						const autoCheck = dbIsEmpty || (sameDigits && csvHasDashes);
+						diffs.push({ field: 'mobile_phone', db: dbPatron.mobile_phone || '', csv: csvMobile, autoCheck });
 					}
+
 					// Address diffs — only if CSV has data and DB is empty
 					if (row.address_line1 && !dbPatron.address_line1) {
-						diffs.push({ field: 'address', db: '(empty)', csv: [row.address_line1, row.city, row.state, row.zip_code].filter(Boolean).join(', ') });
+						diffs.push({ field: 'address', db: '(empty)', csv: [row.address_line1, row.city, row.state, row.zip_code].filter(Boolean).join(', '), autoCheck: true });
+					}
+
+					// --- Determine suggested action for name matches ---
+					// If this is a name-only match and NONE of the contact fields overlap,
+					// it's likely a different person — suggest create_new
+					if (matchType === 'name_match' && dbPatron) {
+						const dbHasContactData = dbPatron.email || dbPatron.phone || dbPatron.mobile_phone;
+						const csvHasContactData = email || phone || (row.mobile_phone || '').trim();
+
+						if (dbHasContactData && csvHasContactData) {
+							// Both have contact info — check if ANY field matches
+							// Compare CSV phone and mobile against BOTH DB phone and mobile
+							const dbPhoneD = phoneDigits(dbPatron.phone);
+							const dbMobileD = phoneDigits(dbPatron.mobile_phone);
+							const csvPhoneD = phoneDigits(phone);
+							const csvMobileD = phoneDigits((row.mobile_phone || '').trim());
+
+							const emailMatches = email && norm(email) === norm(dbPatron.email);
+							// Cross-compare: csv phone/mobile vs db phone/mobile
+							const phoneOverlap =
+								(csvPhoneD && csvPhoneD.length >= 7 && (csvPhoneD === dbPhoneD || csvPhoneD === dbMobileD)) ||
+								(csvMobileD && csvMobileD.length >= 7 && (csvMobileD === dbPhoneD || csvMobileD === dbMobileD));
+
+							if (!emailMatches && !phoneOverlap) {
+								// No contact overlap at all — likely different person
+								suggestedAction = 'create_new';
+							}
+						}
 					}
 				}
 
@@ -556,7 +598,8 @@ export const actions = {
 					matchType,
 					dbPatron,
 					existingTicket,
-					diffs
+					diffs,
+					suggestedAction
 				});
 			}
 
@@ -567,7 +610,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error checking patrons:', error);
-			return { success: false, error: 'Patron matching failed: ' + (error instanceof Error ? error.message : String(error)) };
+			return { success: false, error: 'Patron matching failed: ' + error.message };
 		}
 	},
 
@@ -595,7 +638,6 @@ export const actions = {
 		}
 
 		// Build a lookup from patron key → decision
-		/** @type {Record<string, any>} */
 		const decisionMap = {};
 		for (const d of decisions) {
 			decisionMap[d.key] = d;
@@ -606,14 +648,11 @@ export const actions = {
 		let patronsCreated = 0;
 		let patronsUpdated = 0;
 		let anonymousImported = 0;
-		/** @type {any[]} */
 		const skippedRows = [];
-		/** @type {string[]} */
 		const errors = [];
 
 		try {
 			// Cache patron_id lookups so we don't create duplicates within the same import
-			/** @type {Record<string, any>} */
 			const patronCache = {};
 
 			for (const row of rows) {
@@ -726,10 +765,9 @@ export const actions = {
 					imported++;
 					if (isAnonymous) anonymousImported++;
 				} catch (rowError) {
-					const rowErrMsg = rowError instanceof Error ? rowError.message : String(rowError);
 					const label = isAnonymous ? 'Anonymous' : `${row.firstName} ${row.lastName}`;
-					errors.push(`${label} / ${row.eventName}: ${rowErrMsg}`);
-					skippedRows.push({ ...row, skipReason: `Error: ${rowErrMsg}` });
+					errors.push(`${label} / ${row.eventName}: ${rowError.message}`);
+					skippedRows.push({ ...row, skipReason: `Error: ${rowError.message}` });
 					skipped++;
 				}
 			}
@@ -764,7 +802,7 @@ export const actions = {
 			};
 		} catch (error) {
 			console.error('Error importing tickets:', error);
-			return { success: false, error: 'Import failed: ' + (error instanceof Error ? error.message : String(error)) };
+			return { success: false, error: 'Import failed: ' + error.message };
 		}
 	}
 };
@@ -773,7 +811,6 @@ export const actions = {
 // PATRON HELPERS
 // ============================================================
 
-/** @param {any} r */
 function mapPatronRow(r) {
 	return {
 		patron_id: r.patron_id,
@@ -790,10 +827,6 @@ function mapPatronRow(r) {
 	};
 }
 
-/**
- * @param {any} patronId
- * @param {any} row
- */
 async function fillPatronData(patronId, row) {
 	const cleanPhone = row.phone || '';
 	const cleanMobile = row.mobile_phone || '';
@@ -814,10 +847,6 @@ async function fillPatronData(patronId, row) {
 	`;
 }
 
-/**
- * @param {any} patronId
- * @param {any} row
- */
 async function updatePatronFull(patronId, row) {
 	const cleanAcctId = (row.acctId || '').trim() || null;
 	const cleanMobile = (row.mobile_phone || '').trim();
@@ -840,7 +869,6 @@ async function updatePatronFull(patronId, row) {
 	`;
 }
 
-/** @param {any} row */
 async function findOrCreatePatronWithAddress(row) {
 	const cleanEmail = row.email || null;
 	const cleanPhone = row.phone || null;
@@ -863,12 +891,6 @@ async function findOrCreatePatronWithAddress(row) {
 	);
 }
 
-/**
- * @param {string} firstName
- * @param {string} lastName
- * @param {string} email
- * @param {string} phone
- */
 async function findOrCreatePatron(firstName, lastName, email, phone) {
 	const cleanEmail = email || null;
 	const cleanPhone = phone || null;
@@ -889,13 +911,6 @@ async function findOrCreatePatron(firstName, lastName, email, phone) {
 	return await safeInsertPatron(firstName, lastName, cleanEmail, cleanPhone, null, null, null, null, null, null, null);
 }
 
-/**
- * @param {string} firstName
- * @param {string} lastName
- * @param {string|null} email
- * @param {string|null} phone
- * @param {string|null} acctId
- */
 async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	const fLower = firstName.toLowerCase().trim();
 	const lLower = lastName.toLowerCase().trim();
@@ -906,7 +921,7 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 		if (acctMatch.length > 0) return acctMatch[0].patron_id;
 	}
 
-	// 1. Exact name + email
+	// 1. Exact name + email (including null email matching null)
 	if (email) {
 		const exact = await sql`
 			SELECT patron_id FROM patrons
@@ -916,6 +931,16 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 			LIMIT 1
 		`;
 		if (exact.length > 0) return exact[0].patron_id;
+	} else {
+		// CSV has no email — match patron with same name AND null/empty email
+		const nullEmailMatch = await sql`
+			SELECT patron_id FROM patrons
+			WHERE LOWER(TRIM(first_name)) = ${fLower}
+			  AND LOWER(TRIM(last_name)) = ${lLower}
+			  AND (email IS NULL OR TRIM(email) = '')
+			LIMIT 1
+		`;
+		if (nullEmailMatch.length > 0) return nullEmailMatch[0].patron_id;
 	}
 
 	// 2. Email only
@@ -926,7 +951,7 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 		if (emailMatch.length > 0) return emailMatch[0].patron_id;
 	}
 
-	// 3. Name only
+	// 3. Name only (any email)
 	const nameMatch = await sql`
 		SELECT patron_id FROM patrons
 		WHERE LOWER(TRIM(first_name)) = ${fLower} AND LOWER(TRIM(last_name)) = ${lLower}
@@ -937,20 +962,19 @@ async function lookupPatron(firstName, lastName, email, phone, acctId) {
 	return null;
 }
 
-/**
- * @param {string} firstName
- * @param {string} lastName
- * @param {string|null} email
- * @param {string|null} phone
- * @param {string|null} addr1
- * @param {string|null} addr2
- * @param {string|null} city
- * @param {string|null} state
- * @param {string|null} zip
- * @param {string|null} country
- * @param {string|null} acctId
- */
 async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2, city, state, zip, country, acctId) {
+	// First try to find existing patron before attempting insert
+	const existingId = await lookupPatron(firstName, lastName, email, phone, acctId);
+	if (existingId) {
+		if (acctId) {
+			await sql`
+				UPDATE patrons SET vbo_account_id = COALESCE(vbo_account_id, ${acctId}), updated_at = CURRENT_TIMESTAMP
+				WHERE patron_id = ${existingId} AND (vbo_account_id IS NULL OR vbo_account_id = '')
+			`;
+		}
+		return { id: existingId, created: false, updated: false };
+	}
+
 	try {
 		const [newPatron] = await sql`
 			INSERT INTO patrons (first_name, last_name, email, phone, address_line1, address_line2, city, state, zip_code, country, vbo_account_id)
@@ -964,24 +988,52 @@ async function safeInsertPatron(firstName, lastName, email, phone, addr1, addr2,
 		`;
 		return { id: newPatron.patron_id, created: true, updated: false };
 	} catch (err) {
-		if (/** @type {any} */ (err).code === '23505') {
-			const patronId = await lookupPatron(firstName, lastName, email, phone, acctId);
-			if (patronId) {
+		// Unique constraint violation — find the existing patron
+		if (err.code === '23505') {
+			console.log(`[safeInsertPatron] Duplicate caught for "${firstName} ${lastName}" (${email}), resolving...`);
+
+			// Match the exact unique constraint: (first_name, last_name, email)
+			let fallbackId = null;
+			if (email) {
+				const [match] = await sql`
+					SELECT patron_id FROM patrons
+					WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase().trim()}
+					  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
+					  AND LOWER(TRIM(email)) = LOWER(TRIM(${email}))
+					LIMIT 1
+				`;
+				if (match) fallbackId = match.patron_id;
+			} else {
+				const [match] = await sql`
+					SELECT patron_id FROM patrons
+					WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase().trim()}
+					  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
+					  AND (email IS NULL OR TRIM(email) = '')
+					LIMIT 1
+				`;
+				if (match) fallbackId = match.patron_id;
+			}
+
+			// Broader fallback — name only
+			if (!fallbackId) {
+				const [match] = await sql`
+					SELECT patron_id FROM patrons
+					WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase().trim()}
+					  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
+					ORDER BY patron_id ASC LIMIT 1
+				`;
+				if (match) fallbackId = match.patron_id;
+			}
+
+			if (fallbackId) {
 				if (acctId) {
 					await sql`
 						UPDATE patrons SET vbo_account_id = COALESCE(vbo_account_id, ${acctId}), updated_at = CURRENT_TIMESTAMP
-						WHERE patron_id = ${patronId} AND (vbo_account_id IS NULL OR vbo_account_id = '')
+						WHERE patron_id = ${fallbackId} AND (vbo_account_id IS NULL OR vbo_account_id = '')
 					`;
 				}
-				return { id: patronId, created: false, updated: false };
+				return { id: fallbackId, created: false, updated: false };
 			}
-			const [fallback] = await sql`
-				SELECT patron_id FROM patrons
-				WHERE LOWER(TRIM(first_name)) = ${firstName.toLowerCase().trim()}
-				  AND LOWER(TRIM(last_name)) = ${lastName.toLowerCase().trim()}
-				ORDER BY patron_id ASC LIMIT 1
-			`;
-			if (fallback) return { id: fallback.patron_id, created: false, updated: false };
 		}
 		throw err;
 	}
