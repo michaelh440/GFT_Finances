@@ -1,5 +1,15 @@
 {
-	"permissions": {
-		"allow": ["Bash(npm run check:*)"]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(npm run check:*)",
+      "Bash(find \"C:\\\\Projects\\\\GFT\\\\GFT_Finances\" -name \"compose.yaml\" -o -name \".env.example\" | xargs cat 2>/dev/null)",
+      "Bash(cd /c/Projects/GFT/GFT_Finances && curl -s http://localhost:5173/ -o /dev/null -w \"%{http_code}\" 2>&1)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(grep enter_class_registrations:*)",
+      "Bash(grep Error:*)",
+      "Bash(ls:*)"
+    ]
+  }
 }
