@@ -1,20 +1,25 @@
 <!-- src/routes/shows/patrons/zip_analytics/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
-	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import Chart from 'chart.js/auto';
 
 	/** @type {any} */
 	export let data;
 
-	let showCode = data.filters?.showCode || '';
-	let year = data.filters?.year || '';
-	/** @type {HTMLCanvasElement} */
-	let chartCanvas;
+	let showCode = '';
+	let year = '';
 	/** @type {any} */
 	let chart;
 	let mounted = false;
 	let showAll = false;
+
+	// Keep filter values in sync with data (re-runs on SvelteKit navigation)
+	$: showCode = data.filters?.showCode || '';
+	$: year = data.filters?.year || '';
 
 	$: hasFilters = data.filters?.showCode || data.filters?.year;
 
@@ -30,7 +35,7 @@
 	// Chart data: top N zip codes by patron count
 	$: chartZips = (data.zipData || []).filter((/** @type {any} */ z) => z.zip_code !== 'Unknown');
 	$: displayZips = showAll ? chartZips : chartZips.slice(0, 25);
-	$: unknownEntry = (data.zipData || []).find((/** @type {any} */ z) => z.zip_code === 'Unknown');
+	$: _unknownEntry = (data.zipData || []).find((/** @type {any} */ z) => z.zip_code === 'Unknown');
 
 	// Totals
 	$: totalPatrons = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.patron_count, 0);
@@ -39,86 +44,92 @@
 	$: totalTransactions = (data.zipData || []).reduce((/** @type {number} */ sum, /** @type {any} */ z) => sum + z.transaction_count, 0);
 
 	onMount(() => { mounted = true; });
+	onDestroy(() => { if (chart) chart.destroy(); });
 
-	$: if (browser && mounted && chartCanvas && chartZips.length > 0) {
+	// Re-render chart when data changes
+	$: if (browser && mounted && displayZips.length > 0) {
 		renderChart(displayZips);
 	}
 
 	/** @param {any[]} zips */
-	async function renderChart(zips) {
-		const Chart = (await import('chart.js/auto')).default;
+	function renderChart(zips) {
+		// Wait for canvas to exist
+		setTimeout(() => {
+			const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('zip-chart'));
+			if (!canvas) return;
 
-		if (chart) chart.destroy();
+			if (chart) chart.destroy();
 
-		const labels = zips.map((/** @type {any} */ z) => {
-			const loc = z.city ? `${z.zip_code} (${z.city})` : z.zip_code;
-			return loc;
-		});
-		const patronCounts = zips.map((/** @type {any} */ z) => z.patron_count);
-		const ticketCounts = zips.map((/** @type {any} */ z) => z.tickets_sold);
+			const labels = zips.map((/** @type {any} */ z) => {
+				const loc = z.city ? `${z.zip_code} (${z.city})` : z.zip_code;
+				return loc;
+			});
+			const patronCounts = zips.map((/** @type {any} */ z) => z.patron_count);
+			const ticketCounts = zips.map((/** @type {any} */ z) => z.tickets_sold);
 
-		const canvasHeight = Math.max(400, zips.length * 28);
-		if (chartCanvas.parentElement) chartCanvas.parentElement.style.height = canvasHeight + 'px';
+			const canvasHeight = Math.max(400, zips.length * 28);
+			if (canvas.parentElement) canvas.parentElement.style.height = canvasHeight + 'px';
 
-		chart = new Chart(chartCanvas, {
-			type: 'bar',
-			data: {
-				labels,
-				datasets: [
-					{
-						label: 'Unique Patrons',
-						data: patronCounts,
-						backgroundColor: 'rgba(59, 130, 246, 0.8)',
-						borderRadius: 3
-					},
-					{
-						label: 'Tickets Sold',
-						data: ticketCounts,
-						backgroundColor: 'rgba(16, 185, 129, 0.6)',
-						borderRadius: 3
-					}
-				]
-			},
-			options: {
-				indexAxis: 'y',
-				responsive: true,
-				maintainAspectRatio: false,
-				plugins: {
-					legend: { position: 'top' },
-					tooltip: {
-						callbacks: {
-							afterBody: function (/** @type {any} */ context) {
-								const idx = context[0].dataIndex;
-								const z = zips[idx];
-								return `Revenue: $${z.revenue.toLocaleString()}`;
+			chart = new Chart(canvas, {
+				type: 'bar',
+				data: {
+					labels,
+					datasets: [
+						{
+							label: 'Unique Patrons',
+							data: patronCounts,
+							backgroundColor: 'rgba(59, 130, 246, 0.8)',
+							borderRadius: 3
+						},
+						{
+							label: 'Tickets Sold',
+							data: ticketCounts,
+							backgroundColor: 'rgba(16, 185, 129, 0.6)',
+							borderRadius: 3
+						}
+					]
+				},
+				options: {
+					indexAxis: 'y',
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { position: 'top' },
+						tooltip: {
+							callbacks: {
+								afterBody: function (/** @type {any} */ context) {
+									const idx = context[0].dataIndex;
+									const z = zips[idx];
+									return `Revenue: $${z.revenue.toLocaleString()}`;
+								}
 							}
 						}
-					}
-				},
-				scales: {
-					x: {
-						beginAtZero: true,
-						title: { display: true, text: 'Count' },
-						ticks: { precision: 0 }
 					},
-					y: {
-						ticks: { font: { size: 11 } }
+					scales: {
+						x: {
+							beginAtZero: true,
+							title: { display: true, text: 'Count' },
+							ticks: { precision: 0 }
+						},
+						y: {
+							ticks: { font: { size: 11 } }
+						}
 					}
 				}
-			}
-		});
+			});
+		}, 100);
 	}
 
 	function applyFilters() {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (showCode) params.set('show', showCode);
 		if (year) params.set('year', year);
 		const qs = params.toString();
-		window.location.href = `${base}/shows/patrons/zip_analytics${qs ? '?' + qs : ''}`;
+		goto(resolve(`/shows/patrons/zip_analytics${qs ? '?' + qs : ''}`), { invalidateAll: true });
 	}
 
 	function clearFilters() {
-		window.location.href = `${base}/shows/patrons/zip_analytics`;
+		goto(resolve('/shows/patrons/zip_analytics'), { invalidateAll: true });
 	}
 
 	/** @param {number} amount */
@@ -134,12 +145,12 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/shows/patrons" class="breadcrumb">← Back to Patrons</a>
+			<a href={resolve('/shows/patrons')} class="breadcrumb">← Back to Patrons</a>
 			<h1>Zip Code Analytics</h1>
 			<p class="subtitle">Where your ticket buyers come from</p>
 		</div>
 		<div class="header-actions">
-			<a href="{base}/shows/patrons/update_patrons" class="btn-secondary-link">Update Patron Data</a>
+			<a href={resolve('/shows/patrons/update_patrons')} class="btn-secondary-link">Update Patron Data</a>
 		</div>
 	</header>
 
@@ -178,7 +189,7 @@
 		<div class="filter-grid">
 			<div class="filter-group">
 				<label for="filterShow">Show</label>
-				<select id="filterShow" bind:value={showCode}>
+				<select id="filterShow" bind:value={showCode} on:change={applyFilters}>
 					<option value="">All Shows</option>
 					{#each formats as fmt (fmt)}
 						<optgroup label={fmt}>
@@ -191,15 +202,12 @@
 			</div>
 			<div class="filter-group">
 				<label for="filterYear">Year</label>
-				<select id="filterYear" bind:value={year}>
+				<select id="filterYear" bind:value={year} on:change={applyFilters}>
 					<option value="">All Years</option>
 					{#each data.years as y (y)}
 						<option value={y.toString()}>{y}</option>
 					{/each}
 				</select>
-			</div>
-			<div class="filter-group filter-apply">
-				<button class="btn-apply" on:click={applyFilters}>Apply Filters</button>
 			</div>
 		</div>
 	</div>
@@ -207,7 +215,7 @@
 	{#if (data.zipData || []).length === 0}
 		<div class="card">
 			<p class="empty-state">
-				No zip code data available yet. <a href="{base}/shows/patrons/update_patrons">Upload patron address data</a> to see analytics.
+				No zip code data available yet. <a href={resolve('/shows/patrons/update_patrons')}>Upload patron address data</a> to see analytics.
 			</p>
 		</div>
 	{:else}
@@ -222,7 +230,7 @@
 				{/if}
 			</div>
 			<div class="chart-container">
-				<canvas bind:this={chartCanvas}></canvas>
+				<canvas id="zip-chart"></canvas>
 			</div>
 		</div>
 
@@ -305,9 +313,6 @@
 	.filter-group label { font-size: 0.7rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
 	.filter-group select { padding: 0.5rem 0.6rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.85rem; color: #1a202c; background: white; }
 	.filter-group select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-	.filter-apply { justify-content: flex-end; }
-	.btn-apply { padding: 0.5rem 1.5rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-	.btn-apply:hover { background-color: #2563eb; }
 
 	.card { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
 	.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }

@@ -1,6 +1,7 @@
 <!-- src/routes/shows/patrons/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	/** @type {{ patrons: any[], stats: any, pagination: any, search: string, shows: any[], formats: string[], audiences: string[], days: string[], years: number[], filters: any }} */
 	export let data;
@@ -55,7 +56,7 @@
 
 	/** @param {number} page */
 	function buildFilterParams(page) {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (selectedShowCode !== 'all') params.set('show', selectedShowCode);
 		if (selectedFormat !== 'all') params.set('format', selectedFormat);
 		if (selectedAudience !== 'all') params.set('audience', selectedAudience);
@@ -68,27 +69,27 @@
 
 	function applyFilters() {
 		const qs = buildFilterParams(1);
-		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve('/shows/patrons')}${qs ? '?' + qs : ''}`;
 	}
 
 	function clearFilters() {
-		window.location.href = `${base}/shows/patrons`;
+		window.location.href = `${resolve('/shows/patrons')}`;
 	}
 
 	function applySearch() {
 		const qs = buildFilterParams(1);
-		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve('/shows/patrons')}${qs ? '?' + qs : ''}`;
 	}
 
 	function clearSearch() {
 		searchTerm = '';
-		window.location.href = `${base}/shows/patrons`;
+		window.location.href = `${resolve('/shows/patrons')}`;
 	}
 
 	/** @param {number} page */
 	function goToPage(page) {
 		const qs = buildFilterParams(page);
-		window.location.href = `${base}/shows/patrons${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve('/shows/patrons')}${qs ? '?' + qs : ''}`;
 	}
 
 	/**
@@ -134,8 +135,8 @@
 	<header>
 		<h1>Patrons</h1>
 		<div class="header-actions">
-			<a href="{base}/shows/ticket_purchases" class="btn-secondary-link">Ticket Purchases</a>
-			<a href="{base}/shows/patrons/new" class="btn-primary">Add Patron</a>
+			<a href={resolve('/shows/ticket_purchases')} class="btn-secondary-link">Ticket Purchases</a>
+			<a href={resolve('/shows/patrons/new')} class="btn-primary">Add Patron</a>
 		</div>
 	</header>
 
@@ -146,7 +147,7 @@
 				<label for="showSelect">Show:</label>
 				<select id="showSelect" bind:value={selectedShowCode} class="filter-select">
 					<option value="all">All Shows</option>
-					{#each data.shows || [] as show}
+					{#each data.shows || [] as show (show.show_code)}
 						<option value={show.show_code}>{show.show_name}</option>
 					{/each}
 				</select>
@@ -156,7 +157,7 @@
 				<label for="formatSelect">Format:</label>
 				<select id="formatSelect" bind:value={selectedFormat} class="filter-select">
 					<option value="all">All Formats</option>
-					{#each data.formats || [] as f}
+					{#each data.formats || [] as f (f)}
 						<option value={f}>{f}</option>
 					{/each}
 				</select>
@@ -166,7 +167,7 @@
 				<label for="audienceSelect">Audience:</label>
 				<select id="audienceSelect" bind:value={selectedAudience} class="filter-select">
 					<option value="all">All Audiences</option>
-					{#each data.audiences || [] as a}
+					{#each data.audiences || [] as a (a)}
 						<option value={a}>{a}</option>
 					{/each}
 				</select>
@@ -176,7 +177,7 @@
 				<label for="daySelect">Day of Week:</label>
 				<select id="daySelect" bind:value={selectedDay} class="filter-select">
 					<option value="all">All Days</option>
-					{#each data.days || [] as d}
+					{#each data.days || [] as d (d)}
 						<option value={d}>{d}</option>
 					{/each}
 				</select>
@@ -297,7 +298,7 @@
 					{#each patrons as patron (patron.patron_id)}
 						<tr class:inactive={!patron.is_active}>
 							<td>
-								<a href="{base}/shows/patrons/{patron.patron_id}" class="patron-link">
+								<a href={resolve(`/shows/patrons/${patron.patron_id}`)} class="patron-link">
 									{patron.last_name}, {patron.first_name}
 								</a>
 							</td>

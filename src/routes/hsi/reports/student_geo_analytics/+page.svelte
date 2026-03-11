@@ -1,8 +1,9 @@
 <!-- src/routes/hsi/reports/student_geo_analytics/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import Chart from 'chart.js/auto';
 
 	/** @type {any} */
@@ -200,19 +201,19 @@
 	}
 
 	function applyFilters() {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (selectedClassCode !== 'all') params.set('class', selectedClassCode);
 		if (selectedTrack !== 'all') params.set('track', selectedTrack);
 		if (selectedYears.length > 0) params.set('years', selectedYears.join(','));
 		const qs = params.toString();
-		window.location.href = `${base}/hsi/reports/student_geo_analytics${qs ? '?' + qs : ''}`;
+		window.location.href = resolve(/** @type {any} */ (`/hsi/reports/student_geo_analytics${qs ? '?' + qs : ''}`));
 	}
 
 	function clearFilters() {
 		selectedClassCode = 'all';
 		selectedTrack = 'all';
 		selectedYears = [];
-		window.location.href = `${base}/hsi/reports/student_geo_analytics`;
+		window.location.href = resolve('/hsi/reports/student_geo_analytics');
 	}
 
 	/** @param {string} tab */
@@ -241,7 +242,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/hsi/reports" class="breadcrumb">← HSI Reports</a>
+			<a href={resolve('/hsi/reports')} class="breadcrumb">← HSI Reports</a>
 			<h1>Student Geographic Analytics</h1>
 			<p class="subtitle">Where your students come from</p>
 		</div>
@@ -254,9 +255,9 @@
 				<label for="classSelect">Class Filter:</label>
 				<select id="classSelect" bind:value={selectedClassCode} class="filter-select">
 					<option value="all">All Classes</option>
-					{#each trackList as t}
+					{#each trackList as t (t)}
 						<optgroup label={t}>
-							{#each classesByTrack[t] as c}
+							{#each classesByTrack[t] as c (c.class_code)}
 								<option value={c.class_code}>{c.class_name}</option>
 							{/each}
 						</optgroup>
@@ -268,7 +269,7 @@
 				<label for="trackSelect">Track Filter:</label>
 				<select id="trackSelect" bind:value={selectedTrack} class="filter-select">
 					<option value="all">All Tracks</option>
-					{#each uniqueTracks as t}
+					{#each uniqueTracks as t (t)}
 						<option value={t}>{t}</option>
 					{/each}
 				</select>
@@ -372,7 +373,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each data.zipData || [] as z, i}
+								{#each data.zipData || [] as z, i (i)}
 									<tr class:unknown={z.zip_code === 'Unknown'}>
 										<td class="rank">{z.zip_code !== 'Unknown' ? i + 1 : ''}</td>
 										<td class="zip-cell">{z.zip_code}</td>
@@ -425,7 +426,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each data.cityData || [] as c, i}
+								{#each data.cityData || [] as c, i (i)}
 									<tr class:unknown={c.city === 'Unknown'}>
 										<td class="rank">{c.city !== 'Unknown' ? i + 1 : ''}</td>
 										<td><strong>{c.city}</strong></td>
@@ -462,7 +463,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each data.stateData || [] as s, i}
+								{#each data.stateData || [] as s, i (i)}
 									<tr class:unknown={s.state === 'Unknown'}>
 										<td class="rank">{s.state !== 'Unknown' ? i + 1 : ''}</td>
 										<td><strong>{s.state}</strong></td>

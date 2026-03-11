@@ -14,6 +14,7 @@ export const load = async ({ params }) => {
 				student_type,
 				standard_price,
 				track,
+				vbo_event_id,
 				description,
 				is_active,
 				created_at,

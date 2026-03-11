@@ -15,7 +15,10 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 	prettier,
 	...svelte.configs.prettier,
 	{
-		languageOptions: { globals: { ...globals.browser, ...globals.node } }
+		languageOptions: { globals: { ...globals.browser, ...globals.node } },
+		rules: {
+			'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+		}
 	},
 
 	{

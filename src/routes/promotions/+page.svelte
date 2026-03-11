@@ -1,6 +1,6 @@
 <!-- src/routes/promotions/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {any} */
 	export let data;
@@ -111,7 +111,7 @@
 	<header>
 		<h1>Promotions</h1>
 		<div class="header-actions">
-			<a href="{base}/promotions/new" class="btn-primary">Add Promotion</a>
+			<a href={resolve('/promotions/new')} class="btn-primary">Add Promotion</a>
 		</div>
 	</header>
 
@@ -172,7 +172,7 @@
 						{@const ds = dateStatus(promo)}
 						<tr class:inactive={!promo.is_active}>
 							<td class="promo-name">
-								<a href="{base}/promotions/{promo.promotion_id}" class="name-link">{promo.promotion_name}</a>
+								<a href={resolve(`/promotions/${promo.promotion_id}`)} class="name-link">{promo.promotion_name}</a>
 							</td>
 							<td>
 								<span class="type-badge type-{promo.discount_type || 'other'}">
@@ -197,8 +197,8 @@
 							</td>
 							<td>
 								<div class="actions">
-									<a href="{base}/promotions/{promo.promotion_id}" class="btn-action">View</a>
-									<a href="{base}/promotions/{promo.promotion_id}/edit" class="btn-action">Edit</a>
+									<a href={resolve(`/promotions/${promo.promotion_id}`)} class="btn-action">View</a>
+									<a href={resolve(`/promotions/${promo.promotion_id}/edit`)} class="btn-action">Edit</a>
 								</div>
 							</td>
 						</tr>

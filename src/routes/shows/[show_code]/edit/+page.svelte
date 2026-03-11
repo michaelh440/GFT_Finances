@@ -1,6 +1,6 @@
 <!-- src/routes/shows/[show_code]/edit/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
 	/** @type {{ showInfo: any, form: any }} */
@@ -15,6 +15,7 @@
 	$: audience_type = form?.values?.audience_type ?? showInfo?.audience_type ?? '';
 	$: day_of_week = form?.values?.day_of_week ?? showInfo?.day_of_week ?? '';
 	$: standard_ticket_price = form?.values?.standard_ticket_price ?? showInfo?.standard_ticket_price ?? 0;
+	$: vbo_event_id = form?.values?.vbo_event_id ?? showInfo?.vbo_event_id ?? '';
 	$: description = form?.values?.description ?? showInfo?.description ?? '';
 	$: is_active = form?.values?.is_active ?? showInfo?.is_active ?? true;
 </script>
@@ -28,12 +29,12 @@
 		<div class="not-found">
 			<h1>Show Not Found</h1>
 			<p>The show you're looking for doesn't exist.</p>
-			<a href="{base}/shows" class="btn-secondary">Back to Shows</a>
+			<a href={resolve('/shows')} class="btn-secondary">Back to Shows</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/shows/{showInfo.show_code}" class="back-link">← Back to {showInfo.show_name}</a>
+				<a href={resolve(`/shows/${showInfo.show_code}`)} class="back-link">← Back to {showInfo.show_name}</a>
 				<h1>Edit Show</h1>
 			</div>
 		</header>
@@ -123,13 +124,16 @@
 						</div>
 					</div>
 
-					<div class="form-group full-width">
-						<label for="description">Description</label>
-						<textarea
-							id="description"
-							name="description"
-							rows="3"
-						>{description}</textarea>
+					<div class="form-group">
+						<label for="vbo_event_id">VBO Event ID</label>
+						<input
+							type="text"
+							id="vbo_event_id"
+							name="vbo_event_id"
+							value={vbo_event_id}
+							placeholder="e.g. (713) ComedySportz Houston"
+						/>
+						<span class="help-text">Event name as it appears in VBO CSV exports. Used for auto-mapping during import.</span>
 					</div>
 
 					<div class="form-group">
@@ -139,10 +143,19 @@
 							<option value="false">Inactive</option>
 						</select>
 					</div>
+
+					<div class="form-group full-width">
+						<label for="description">Description</label>
+						<textarea
+							id="description"
+							name="description"
+							rows="3"
+						>{description}</textarea>
+					</div>
 				</div>
 
 				<div class="form-actions">
-					<a href="{base}/shows/{showInfo.show_code}" class="btn-secondary">Cancel</a>
+					<a href={resolve(`/shows/${showInfo.show_code}`)} class="btn-secondary">Cancel</a>
 					<button type="submit" class="btn-primary">Save Changes</button>
 				</div>
 			</form>

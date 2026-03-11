@@ -14,6 +14,7 @@ export const load = async ({ params }) => {
 				audience_type,
 				day_of_week,
 				standard_ticket_price,
+				vbo_event_id,
 				description,
 				is_active
 			FROM shows
@@ -46,6 +47,7 @@ export const actions = {
 		const audience_type = formData.get('audience_type')?.toString() || null;
 		const day_of_week = formData.get('day_of_week')?.toString() || null;
 		const standard_ticket_price = parseFloat(formData.get('standard_ticket_price')?.toString() || '0');
+		const vbo_event_id = formData.get('vbo_event_id')?.toString().trim() || null;
 		const description = formData.get('description')?.toString().trim() || null;
 		const is_active = formData.get('is_active') === 'true';
 
@@ -53,14 +55,14 @@ export const actions = {
 		if (!show_name) {
 			return fail(400, {
 				error: 'Show name is required.',
-				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, description, is_active }
+				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, vbo_event_id, description, is_active }
 			});
 		}
 
 		if (isNaN(standard_ticket_price) || standard_ticket_price < 0) {
 			return fail(400, {
 				error: 'Ticket price must be a valid non-negative number.',
-				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, description, is_active }
+				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, vbo_event_id, description, is_active }
 			});
 		}
 
@@ -73,6 +75,7 @@ export const actions = {
 					audience_type = ${audience_type},
 					day_of_week = ${day_of_week},
 					standard_ticket_price = ${standard_ticket_price},
+					vbo_event_id = ${vbo_event_id},
 					description = ${description},
 					is_active = ${is_active},
 					updated_at = CURRENT_TIMESTAMP
@@ -84,13 +87,13 @@ export const actions = {
 			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A show with that name already exists.',
-					values: { show_name, format, audience_type, day_of_week, standard_ticket_price, description, is_active }
+					values: { show_name, format, audience_type, day_of_week, standard_ticket_price, vbo_event_id, description, is_active }
 				});
 			}
 
 			return fail(500, {
 				error: 'An unexpected error occurred. Please try again.',
-				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, description, is_active }
+				values: { show_name, format, audience_type, day_of_week, standard_ticket_price, vbo_event_id, description, is_active }
 			});
 		}
 

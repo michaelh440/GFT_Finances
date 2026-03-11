@@ -8,6 +8,7 @@
 	 * @property {string|null} audience_type
 	 * @property {string|null} day_of_week
 	 * @property {number} standard_ticket_price
+	 * @property {string|null} vbo_event_id
 	 * @property {string|null} description
 	 * @property {boolean} is_active
 	 * @property {string} created_at
@@ -23,7 +24,7 @@
 	 * @property {number} revenue
 	 */
 
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {{ showInfo: ShowInfo|null, summaries: Summary[], totalTickets: number, totalRevenue: number }} */
 	export let data;
@@ -66,16 +67,16 @@
 		<div class="not-found">
 			<h1>Show Not Found</h1>
 			<p>The show you're looking for doesn't exist.</p>
-			<a href="{base}/shows" class="btn-secondary">Back to Shows</a>
+			<a href={resolve('/shows')} class="btn-secondary">Back to Shows</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/shows" class="back-link">← Back to Shows</a>
+				<a href={resolve('/shows')} class="back-link">← Back to Shows</a>
 				<h1>{showInfo.show_name}</h1>
 			</div>
 			<div class="header-actions">
-				<a href="{base}/shows/{showInfo.show_code}/edit" class="btn-primary">Edit Show</a>
+				<a href={resolve(`/shows/${showInfo.show_code}/edit`)} class="btn-primary">Edit Show</a>
 			</div>
 		</header>
 
@@ -112,6 +113,12 @@
 						{showInfo.is_active ? 'Active' : 'Inactive'}
 					</span>
 				</div>
+				{#if showInfo.vbo_event_id}
+					<div class="info-item">
+						<span class="info-label">VBO Event ID</span>
+						<span class="info-value code">{showInfo.vbo_event_id}</span>
+					</div>
+				{/if}
 			</div>
 			{#if showInfo.description}
 				<div class="description">
@@ -157,7 +164,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each summaries as summary}
+						{#each summaries as summary (summary.summary_month)}
 							<tr>
 								<td>{formatMonth(summary.summary_month)}</td>
 								<td class="col-right">{summary.tickets_sold.toLocaleString()}</td>

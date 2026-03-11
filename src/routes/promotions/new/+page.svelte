@@ -1,6 +1,6 @@
 <!-- src/routes/promotions/new/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
 	/** @type {any} */
@@ -61,7 +61,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/promotions" class="breadcrumb">← Promotions</a>
+			<a href={resolve('/promotions')} class="breadcrumb">← Promotions</a>
 			<h1>Add Promotion</h1>
 		</div>
 	</header>
@@ -167,7 +167,7 @@
 				<button type="submit" class="btn-primary" disabled={submitting}>
 					{submitting ? 'Creating...' : 'Create Promotion'}
 				</button>
-				<a href="{base}/promotions" class="btn-secondary">Cancel</a>
+				<a href={resolve('/promotions')} class="btn-secondary">Cancel</a>
 			</div>
 		</form>
 	</div>

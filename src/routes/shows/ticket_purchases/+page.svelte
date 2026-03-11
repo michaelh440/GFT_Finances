@@ -1,6 +1,7 @@
 <!-- src/routes/shows/ticket_purchases/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	/** @type {any} */
 	export let data;
@@ -29,7 +30,7 @@
 
 	/** @param {number} page */
 	function buildUrl(page) {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (showCode) params.set('show', showCode);
 		if (year) params.set('year', year);
 		if (dateFrom) params.set('from', dateFrom);
@@ -38,7 +39,7 @@
 		if (paymentMethod) params.set('payment', paymentMethod);
 		if (page && page > 1) params.set('page', page.toString());
 		const qs = params.toString();
-		return `${base}/shows/ticket_purchases${qs ? '?' + qs : ''}`;
+		return `${resolve('/shows/ticket_purchases')}${qs ? '?' + qs : ''}`;
 	}
 
 	function applyFilters() {
@@ -46,13 +47,13 @@
 	}
 
 	function clearFilters() {
-		window.location.href = `${base}/shows/ticket_purchases`;
+		window.location.href = `${resolve('/shows/ticket_purchases')}`;
 	}
 
 	/** @param {number} page */
 	function goToPage(page) {
 		// Use applied filters from server, not local state
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (data.filters?.showCode) params.set('show', data.filters.showCode);
 		if (data.filters?.year) params.set('year', data.filters.year);
 		if (data.filters?.dateFrom) params.set('from', data.filters.dateFrom);
@@ -61,7 +62,7 @@
 		if (data.filters?.paymentMethod) params.set('payment', data.filters.paymentMethod);
 		if (page > 1) params.set('page', page.toString());
 		const qs = params.toString();
-		window.location.href = `${base}/shows/ticket_purchases${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve('/shows/ticket_purchases')}${qs ? '?' + qs : ''}`;
 	}
 
 	/** @param {any} y */
@@ -135,8 +136,8 @@
 			</p>
 		</div>
 		<div class="header-actions">
-			<a href="{base}/shows/ticket_purchases/enter_ticket_purchases" class="btn-primary">Enter Ticket Purchases</a>
-			<a href="{base}/shows/patrons" class="btn-secondary-link">View Patrons</a>
+			<a href={resolve('/shows/ticket_purchases/enter_ticket_purchases')} class="btn-primary">Enter Ticket Purchases</a>
+			<a href={resolve('/shows/patrons')} class="btn-secondary-link">View Patrons</a>
 		</div>
 	</header>
 
@@ -276,12 +277,12 @@
 						<tr>
 							<td class="col-date">{formatDate(ticket.show_date)}</td>
 							<td>
-								<a href="{base}/shows/{ticket.show_code}" class="link">{ticket.show_name}</a>
+								<a href={resolve(`/shows/${ticket.show_code}`)} class="link">{ticket.show_name}</a>
 								<span class="show-format">{ticket.format || ''}</span>
 							</td>
 							<td>
 								{#if ticket.patron_id}
-									<a href="{base}/shows/patrons/{ticket.patron_id}" class="link">
+									<a href={resolve(`/shows/patrons/${ticket.patron_id}`)} class="link">
 										{ticket.patron_first_name} {ticket.patron_last_name}
 									</a>
 									{#if ticket.patron_email}

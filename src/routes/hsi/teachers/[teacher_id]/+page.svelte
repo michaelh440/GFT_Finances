@@ -1,6 +1,6 @@
 <!-- src/routes/hsi/teachers/[teacher_id]/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {any} */
 	export let data;
@@ -26,7 +26,7 @@
 	}
 
 	/** @param {string} type @param {number} value */
-	function ratingLabel(type, value) {
+	function _ratingLabel(type, value) {
 		if (type === 'likert') {
 			const labels = ['', 'Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
 			const idx = Math.round(value);
@@ -49,17 +49,17 @@
 <div class="container">
 	{#if !teacher}
 		<div class="alert alert-error">Teacher not found.</div>
-		<a href="{base}/hsi/teachers" class="btn-secondary">Back to Teachers</a>
+		<a href={resolve('/hsi/teachers')} class="btn-secondary">Back to Teachers</a>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/hsi/teachers" class="breadcrumb">← Teachers</a>
+				<a href={resolve('/hsi/teachers')} class="breadcrumb">← Teachers</a>
 				<h1>{teacher.first_name} {teacher.last_name}</h1>
 				<span class="status-badge" class:active={teacher.is_active}>
 					{teacher.is_active ? 'Active' : 'Inactive'}
 				</span>
 			</div>
-			<a href="{base}/hsi/teachers/{teacher.teacher_id}/edit" class="btn-primary">Edit Teacher</a>
+			<a href={resolve(`/hsi/teachers/${teacher.teacher_id}/edit`)} class="btn-primary">Edit Teacher</a>
 		</header>
 
 		<!-- Info Card -->
@@ -177,7 +177,7 @@
 								<tr>
 									<td class="session-name">{session.session_name || '—'}</td>
 									<td>
-										<a href="{base}/hsi/class/{session.class_code}" class="link">{session.class_name}</a>
+										<a href={resolve(/** @type {any} */ (`/hsi/classes/${session.class_code}`))} class="link">{session.class_name}</a>
 									</td>
 									<td>{session.track || '—'}</td>
 									<td>{formatDate(session.start_date)}</td>

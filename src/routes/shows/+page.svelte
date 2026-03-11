@@ -1,6 +1,6 @@
 <!-- src/routes/shows/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/**
 	 * @typedef {Object} ShowItem
@@ -115,9 +115,9 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href="{base}/shows/{show.show_code}" class="btn-action">View</a>
+											<a href={resolve(`/shows/${show.show_code}`)} class="btn-action">View</a>
 											<a
-												href="{base}/shows/{show.show_code}/edit"
+												href={resolve(`/shows/${show.show_code}/edit`)}
 												class="btn-action">Edit</a
 											>
 										</div>

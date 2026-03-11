@@ -1,6 +1,6 @@
 <!-- src/routes/hsi/teachers/new/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
 	export let form;
@@ -13,7 +13,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/hsi/teachers" class="breadcrumb">← Teachers</a>
+			<a href={resolve('/hsi/teachers')} class="breadcrumb">← Teachers</a>
 			<h1>Add Teacher</h1>
 		</div>
 	</header>
@@ -53,7 +53,7 @@
 
 			<div class="form-actions">
 				<button type="submit" class="btn-primary">Add Teacher</button>
-				<a href="{base}/hsi/teachers" class="btn-secondary">Cancel</a>
+				<a href={resolve('/hsi/teachers')} class="btn-secondary">Cancel</a>
 			</div>
 		</form>
 	</div>

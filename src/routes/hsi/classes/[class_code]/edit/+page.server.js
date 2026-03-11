@@ -14,6 +14,7 @@ export const load = async ({ params }) => {
 				student_type,
 				standard_price,
 				track,
+				vbo_event_id,
 				description,
 				is_active
 			FROM classes
@@ -46,6 +47,7 @@ export const actions = {
 		const student_type = formData.get('student_type')?.toString() || null;
 		const standard_price = parseFloat(formData.get('standard_price')?.toString() || '0');
 		const track = formData.get('track')?.toString().trim() || null;
+		const vbo_event_id = formData.get('vbo_event_id')?.toString().trim() || null;
 		const description = formData.get('description')?.toString().trim() || null;
 		const is_active = formData.get('is_active') === 'true';
 
@@ -53,14 +55,14 @@ export const actions = {
 		if (!class_name) {
 			return fail(400, {
 				error: 'Class name is required.',
-				values: { class_name, class_type, student_type, standard_price, track, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
 			});
 		}
 
 		if (isNaN(standard_price) || standard_price < 0) {
 			return fail(400, {
 				error: 'Standard price must be a valid non-negative number.',
-				values: { class_name, class_type, student_type, standard_price, track, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
 			});
 		}
 
@@ -73,6 +75,7 @@ export const actions = {
 					student_type = ${student_type},
 					standard_price = ${standard_price},
 					track = ${track},
+					vbo_event_id = ${vbo_event_id},
 					description = ${description},
 					is_active = ${is_active},
 					updated_at = CURRENT_TIMESTAMP
@@ -84,13 +87,13 @@ export const actions = {
 			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A class with that name already exists.',
-					values: { class_name, class_type, student_type, standard_price, track, description, is_active }
+					values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
 				});
 			}
 
 			return fail(500, {
 				error: 'An unexpected error occurred. Please try again.',
-				values: { class_name, class_type, student_type, standard_price, track, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
 			});
 		}
 

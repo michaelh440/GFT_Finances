@@ -1,7 +1,7 @@
 <!-- src/routes/hsi/enter_class_registrations/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
-  import { base } from '$app/paths';
+  import { resolve } from '$app/paths';
 
   export let data;
   export let form;
@@ -53,11 +53,11 @@
   let csvClassCode = '';
   let csvClassDate = '';
   /** @type {File|null} */
-  let csvFile = null;
+  let _csvFile = null;
   /** @type {any[]} */
   let csvParsed = [];
   let csvPreview = false;
-  let csvDataJson = '';
+  let _csvDataJson = '';
   let reviewMode = false;
   /** @type {any[]} */
   let matchResults = [];
@@ -155,7 +155,7 @@
   function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
-    csvFile = file;
+    _csvFile = file;
 
     // Try to parse class and date from filename
     const parsed = parseFilename(file.name);
@@ -286,7 +286,7 @@
 
     csvParsed = parsed;
     csvPreview = true;
-    csvDataJson = JSON.stringify(parsed);
+    _csvDataJson = JSON.stringify(parsed);
   }
 
   /** @param {string} line */
@@ -336,7 +336,7 @@
   /** @param {any} val */
   function cleanAmount(val) {
     if (val === undefined || val === null) return 0;
-    val = val.replace(/[^0-9.\-]/g, '');
+    val = val.replace(/[^0-9.-]/g, '');
     return parseFloat(val) || 0;
   }
 
@@ -357,7 +357,7 @@
   /** @param {number} index */
   function removeCsvRow(index) {
     csvParsed = csvParsed.filter((_, i) => i !== index);
-    csvDataJson = JSON.stringify(csvParsed);
+    _csvDataJson = JSON.stringify(csvParsed);
   }
 </script>
 
@@ -371,7 +371,7 @@
       <h1>Enter Class Registrations</h1>
       <p class="subtitle">Add or import student registrations</p>
     </div>
-    <a href="{base}/hsi/classes" class="btn-secondary">Back to Classes</a>
+    <a href={resolve('/hsi/classes')} class="btn-secondary">Back to Classes</a>
   </header>
 
   {#if form?.success}
@@ -381,7 +381,7 @@
         <details class="results-details">
           <summary>{form?.results.length} students processed</summary>
           <ul>
-            {#each (form?.results || []) as r}
+            {#each (form?.results || []) as r, i (i)}
               <li>{r.name} ({r.email}) — <span class="tag {r.status === 'new student' ? 'tag-new' : 'tag-existing'}">{r.status}</span></li>
             {/each}
           </ul>
@@ -442,9 +442,9 @@
                 <td>
                   <select name="class_code_{i}" bind:value={row.class_code} class="input-select" required>
                     <option value="">Class...</option>
-                    {#each tracks as track}
+                    {#each tracks as track (track)}
                       <optgroup label={track}>
-                        {#each classesByTrack[track] as c}
+                        {#each classesByTrack[track] as c (c.class_code)}
                           <option value={c.class_code}>{c.class_name}</option>
                         {/each}
                       </optgroup>
@@ -513,9 +513,9 @@
             <label for="csvClassCode">Class:</label>
             <select id="csvClassCode" bind:value={csvClassCode} class="input-select" required>
               <option value="">Select class...</option>
-              {#each tracks as track}
+              {#each tracks as track (track)}
                 <optgroup label={track}>
-                  {#each classesByTrack[track] as c}
+                  {#each classesByTrack[track] as c (c.class_code)}
                     <option value={c.class_code}>{c.class_name}</option>
                   {/each}
                 </optgroup>
@@ -608,7 +608,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each csvParsed as row, i}
+                {#each csvParsed as row, i (i)}
                   <tr class:guest-row={row.is_guest}>
                     <td class="row-num">{i + 1}</td>
                     {#if row.is_guest}
@@ -728,7 +728,7 @@
           </div>
 
           <div class="review-list">
-            {#each matchResults as match, i}
+            {#each matchResults as match, i (i)}
               <div class="review-card {match.matchType}">
                 <div class="review-header">
                   <span class="review-num">#{i + 1}</span>

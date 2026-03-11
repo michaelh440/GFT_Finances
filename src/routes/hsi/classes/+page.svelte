@@ -1,6 +1,6 @@
 <!-- src/routes/hsi/classes/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/**
 	 * @typedef {Object} ClassItem
@@ -108,11 +108,11 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href="{base}/hsi/classes/{classItem.class_code}" class="btn-action"
+											<a href={resolve(`/hsi/classes/${classItem.class_code}`)} class="btn-action"
 												>View</a
 											>
 											<a
-												href="{base}/hsi/classes/{classItem.class_code}/edit"
+												href={resolve(`/hsi/classes/${classItem.class_code}/edit`)}
 												class="btn-action">Edit</a
 											>
 										</div>

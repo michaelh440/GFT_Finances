@@ -1,37 +1,43 @@
 <!-- src/routes/promotions/[promotion_id]/edit/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
-	/** @type {any} */
-	export let data;
-	export let form;
+	/** @type {{ data: any, form: any }} */
+	let { data, form } = $props();
 
-	$: promotion = data.promotion;
-	$: shows = data.shows || [];
-	$: classes = data.classes || [];
-	$: linkedShowCodes = data.linkedShowCodes || [];
-	$: linkedClassCodes = data.linkedClassCodes || [];
+	let promotion = $state(data.promotion ? { ...data.promotion } : null);
+	let shows = $derived(data.shows || []);
+	let classes = $derived(data.classes || []);
+	let linkedShowCodes = $derived(data.linkedShowCodes || []);
+	let linkedClassCodes = $derived(data.linkedClassCodes || []);
 
-	let submitting = false;
+	// Re-sync promotion from data when it changes
+	$effect(() => {
+		if (data.promotion) {
+			promotion = { ...data.promotion };
+		}
+	});
+
+	let submitting = $state(false);
 
 	// Group shows by format
-	$: showsByFormat = shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
+	let showsByFormat = $derived(shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, /** @type {Record<string, any[]>} */ ({}));
-	$: formats = Object.keys(showsByFormat).sort();
+	}, /** @type {Record<string, any[]>} */ ({})));
+	let formats = $derived(Object.keys(showsByFormat).sort());
 
 	// Group classes by track
-	$: classesByTrack = classes.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
+	let classesByTrack = $derived(classes.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
 		const track = c.track || 'Other';
 		if (!acc[track]) acc[track] = [];
 		acc[track].push(c);
 		return acc;
-	}, /** @type {Record<string, any[]>} */ ({}));
-	$: tracks = Object.keys(classesByTrack).sort();
+	}, /** @type {Record<string, any[]>} */ ({})));
+	let tracks = $derived(Object.keys(classesByTrack).sort());
 
 	const discountTypes = [
 		{ value: '', label: '— Select —' },
@@ -63,11 +69,11 @@
 <div class="container">
 	{#if !promotion}
 		<div class="alert alert-error">Promotion not found.</div>
-		<a href="{base}/promotions" class="btn-secondary">Back to Promotions</a>
+		<a href={resolve('/promotions')} class="btn-secondary">Back to Promotions</a>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/promotions/{promotion.promotion_id}" class="breadcrumb">← Back to {promotion.promotion_name}</a>
+				<a href={resolve(`/promotions/${promotion.promotion_id}`)} class="breadcrumb">← Back to {promotion.promotion_name}</a>
 				<h1>Edit Promotion</h1>
 			</div>
 		</header>
@@ -185,7 +191,7 @@
 					<button type="submit" class="btn-primary" disabled={submitting}>
 						{submitting ? 'Saving...' : 'Save Changes'}
 					</button>
-					<a href="{base}/promotions/{promotion.promotion_id}" class="btn-secondary">Cancel</a>
+					<a href={resolve(`/promotions/${promotion.promotion_id}`)} class="btn-secondary">Cancel</a>
 				</div>
 			</form>
 		</div>

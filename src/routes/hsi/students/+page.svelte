@@ -14,7 +14,7 @@
 	 * @property {boolean} is_active
 	 */
 
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {{ students: Student[] }} */
 	export let data;
@@ -166,7 +166,7 @@
 					{#each pagedStudents as student (student.student_id)}
 						<tr class:inactive={!student.is_active}>
 							<td class="student-name">
-								<a href="{base}/hsi/students/{student.student_id}" class="student-link">
+								<a href={resolve(`/hsi/students/${student.student_id}`)} class="student-link">
 									{student.first_name || ''}
 									{student.last_name || ''}
 								</a>
@@ -186,7 +186,7 @@
 							</td>
 							<td>
 								<div class="actions">
-									<a href="{base}/hsi/students/{student.student_id}" class="btn-action"
+									<a href={resolve(`/hsi/students/${student.student_id}`)} class="btn-action"
 										>View</a
 									>
 								</div>

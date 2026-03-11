@@ -1,6 +1,6 @@
 <!-- src/routes/shows/patrons/[patron_id]/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {{ patron: any, tickets: any[], totalTickets: number, totalSpent: number }} */
 	export let data;
@@ -45,16 +45,16 @@
 		<div class="not-found">
 			<h1>Patron Not Found</h1>
 			<p>The patron you're looking for doesn't exist.</p>
-			<a href="{base}/shows/patrons" class="btn-secondary">Back to Patrons</a>
+			<a href={resolve('/shows/patrons')} class="btn-secondary">Back to Patrons</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/shows/patrons" class="back-link">← Back to Patrons</a>
+				<a href={resolve('/shows/patrons')} class="back-link">← Back to Patrons</a>
 				<h1>{patron.first_name} {patron.last_name}</h1>
 			</div>
 			<div class="header-actions">
-				<a href="{base}/shows/patrons/{patron.patron_id}/edit" class="btn-primary">Edit Patron</a>
+				<a href={resolve(`/shows/patrons/${patron.patron_id}/edit`)} class="btn-primary">Edit Patron</a>
 			</div>
 		</header>
 
@@ -119,7 +119,7 @@
 						{#each tickets as ticket (ticket.ticket_id)}
 							<tr>
 								<td>
-									<a href="{base}/shows/{ticket.show_code}" class="show-link">{ticket.show_name}</a>
+									<a href={resolve(`/shows/${ticket.show_code}`)} class="show-link">{ticket.show_name}</a>
 									<span class="show-format">{ticket.format || ''}</span>
 								</td>
 								<td>{formatDate(ticket.show_date)}</td>

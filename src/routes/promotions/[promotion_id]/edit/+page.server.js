@@ -74,7 +74,7 @@ export const actions = {
 		const end_date = (formData.get('end_date') || '').toString().trim() || null;
 		const is_active = formData.get('is_active') === 'true';
 		const show_codes = formData.getAll('show_codes').map((s) => s.toString());
-		const class_codes = formData.getAll('class_codes').map((s) => s.toString());
+		const _class_codes = formData.getAll('class_codes').map((s) => s.toString());
 
 		if (!promotion_name) {
 			return fail(400, { error: 'Promotion name is required.' });

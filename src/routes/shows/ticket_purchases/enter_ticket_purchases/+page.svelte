@@ -1,6 +1,6 @@
 <!-- src/routes/shows/ticket_purchases/enter_ticket_purchases/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
 	export let data;
@@ -49,36 +49,41 @@
 		rows = [...rows, newRow];
 	}
 
-	function removeRow(id) {
+	function removeRow(/** @type {any} */ id) {
 		if (rows.length <= 1) return;
-		rows = rows.filter((r) => r.id !== id);
+		rows = rows.filter((/** @type {any} */ r) => r.id !== id);
 	}
 
-	function autoCalc(index) {
+	function autoCalc(/** @type {number} */ index) {
 		const row = rows[index];
-		const show = data.shows.find((s) => s.show_code === row.show_code);
+		const show = data.shows.find((/** @type {any} */ s) => s.show_code === row.show_code);
 		if (show && row.tickets_purchased > 0) {
 			rows[index].amount_paid = show.standard_ticket_price * row.tickets_purchased;
 			rows = rows;
 		}
 	}
 
-	$: showsByFormat = data.shows.reduce((acc, s) => {
+	$: showsByFormat = data.shows.reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 
 	// ============================================================
 	// CSV IMPORT STATE — 3 steps
 	// ============================================================
 	// Step 1: Parsed CSV data + event/promo mapping
+	/** @type {any[]} */
 	let csvRows = [];
+	/** @type {any[]} */
 	let csvEventNames = [];
+	/** @type {any[]} */
 	let csvDiscountCodes = [];
+	/** @type {Record<string, any>} */
 	let mappings = {};
+	/** @type {Record<string, any>} */
 	let promoMappings = {};
 	let csvParsed = false;
 	let csvSummary = { totalRows: 0, rowsWithNames: 0, rowsAnonymous: 0 };
@@ -88,7 +93,9 @@
 
 	// Step 2: Patron review (from csv_check)
 	let reviewMode = false;
+	/** @type {any[]} */
 	let matchResults = [];
+	/** @type {any[]} */
 	let decisions = [];
 
 	// Step 3: Import results
@@ -120,11 +127,11 @@
 		'Ticket Sale'
 	];
 
-	function isClassEvent(name) {
+	function isClassEvent(/** @type {any} */ name) {
 		return classEventNames.some((c) => name.toLowerCase() === c.toLowerCase());
 	}
 
-	function isPromoEvent(name) {
+	function isPromoEvent(/** @type {any} */ name) {
 		const lower = name.toLowerCase();
 		return promoEventNames.some((p) => lower.includes(p.toLowerCase())) ||
 			lower.includes('ticket sale') ||
@@ -134,13 +141,13 @@
 
 	// ---- Reactive: Initialize event mappings from csv_upload ----
 	$: if (form?.action === 'csv_upload' && form.success && !csvParsed) {
-		csvRows = form.rows;
-		csvEventNames = form.eventNames;
-		csvDiscountCodes = form.discountCodes || [];
+		csvRows = form.rows ?? [];
+		csvEventNames = form.eventNames ?? [];
+		csvDiscountCodes = form.discountCodes ?? [];
 		csvSummary = {
-			totalRows: form.totalRows,
-			rowsWithNames: form.rowsWithNames,
-			rowsAnonymous: form.rowsAnonymous
+			totalRows: form.totalRows ?? 0,
+			rowsWithNames: form.rowsWithNames ?? 0,
+			rowsAnonymous: form.rowsAnonymous ?? 0
 		};
 		hasAddressData = form.hasAddressData || false;
 		hasAcctIds = form.hasAcctIds || false;
@@ -158,7 +165,7 @@
 			if (isPromoEvent(eventName)) {
 				mappings[eventName] = '';
 				const promoMatch = (data.promotions || []).find(
-					(p) => p.promotion_name.toLowerCase() === eventName.toLowerCase()
+					(/** @type {any} */ p) => p.promotion_name.toLowerCase() === eventName.toLowerCase()
 				);
 				if (promoMatch) {
 					promoMappings['__event__' + eventName] = promoMatch.promotion_id.toString();
@@ -166,23 +173,23 @@
 				continue;
 			}
 			// Try VBO event ID match first, then show name match
-			const vboMatch = data.shows.find((s) => s.vbo_event_id && s.vbo_event_id.toLowerCase() === eventName.toLowerCase());
-			const nameMatch = data.shows.find((s) => s.show_name.toLowerCase() === eventName.toLowerCase());
-			mappings[eventName] = (vboMatch || nameMatch)?.show_code || '';
+			const vboMatch = data.shows.find((/** @type {any} */ s) => s.vbo_event_id && s.vbo_event_id.toLowerCase() === eventName.toLowerCase());
+			const nameMatch = data.shows.find((/** @type {any} */ s) => s.show_name.toLowerCase() === eventName.toLowerCase());
+			mappings[eventName] = /** @type {any} */ (vboMatch || nameMatch)?.show_code || '';
 		}
 		for (const code of csvDiscountCodes) {
 			const codeLower = code.toLowerCase();
 			let promoMatch = (data.promotions || []).find(
-				(p) => p.promotion_name.toLowerCase() === codeLower
+				(/** @type {any} */ p) => p.promotion_name.toLowerCase() === codeLower
 			);
 			if (!promoMatch) {
 				promoMatch = (data.promotions || []).find(
-					(p) => p.promotion_name.toLowerCase().includes(codeLower)
+					(/** @type {any} */ p) => p.promotion_name.toLowerCase().includes(codeLower)
 				);
 			}
 			if (!promoMatch) {
 				promoMatch = (data.promotions || []).find(
-					(p) => codeLower.includes(p.promotion_name.toLowerCase())
+					(/** @type {any} */ p) => codeLower.includes(p.promotion_name.toLowerCase())
 				);
 			}
 			promoMappings[code] = promoMatch ? promoMatch.promotion_id.toString() : '';
@@ -191,14 +198,14 @@
 
 	// ---- Reactive: Initialize patron review from csv_check ----
 	$: if (form?.action === 'csv_check' && form?.success && !reviewMode) {
-		matchResults = form.matchResults;
+		matchResults = form.matchResults ?? [];
 		reviewMode = true;
 		// Default decisions: use server-side autoCheck flag and suggestedAction
-		decisions = matchResults.map((r) => {
+		decisions = matchResults.map((/** @type {any} */ r) => {
 			// Auto-check fields the server flagged (empty DB, formatting upgrade, etc.)
 			const autoFields = (r.diffs || [])
-				.filter((d) => d.autoCheck)
-				.map((d) => d.field);
+				.filter((/** @type {any} */ d) => d.autoCheck)
+				.map((/** @type {any} */ d) => d.field);
 
 			const hasAutoFields = autoFields.length > 0;
 
@@ -233,37 +240,37 @@
 	}
 
 	// Event mapping computed values
-	$: unmappedCount = csvEventNames.filter((e) => !mappings[e] || mappings[e] === '').length;
-	$: skippedEventCount = csvEventNames.filter((e) => mappings[e] === '__skip__').length;
+	$: unmappedCount = csvEventNames.filter((/** @type {any} */ e) => !mappings[e] || mappings[e] === '').length;
+	$: skippedEventCount = csvEventNames.filter((/** @type {any} */ e) => mappings[e] === '__skip__').length;
 	$: mappedEventCount = csvEventNames.filter(
-		(e) => mappings[e] && mappings[e] !== '__skip__' && mappings[e] !== ''
+		(/** @type {any} */ e) => mappings[e] && mappings[e] !== '__skip__' && mappings[e] !== ''
 	).length;
 
-	$: rowCountByEvent = csvRows.reduce((acc, r) => {
+	$: rowCountByEvent = csvRows.reduce((/** @type {Record<string, any>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + 1;
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any>} */ ({}));
 
-	$: ticketCountByEvent = csvRows.reduce((acc, r) => {
+	$: ticketCountByEvent = csvRows.reduce((/** @type {Record<string, any>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.qty || 0);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any>} */ ({}));
 
-	$: revenueByEvent = csvRows.reduce((acc, r) => {
+	$: revenueByEvent = csvRows.reduce((/** @type {Record<string, any>} */ acc, /** @type {any} */ r) => {
 		acc[r.eventName] = (acc[r.eventName] || 0) + (r.itemTotal || 0);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any>} */ ({}));
 
-	$: rowCountByCode = csvRows.reduce((acc, r) => {
+	$: rowCountByCode = csvRows.reduce((/** @type {Record<string, any>} */ acc, /** @type {any} */ r) => {
 		if (r.discountCode) acc[r.discountCode] = (acc[r.discountCode] || 0) + 1;
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any>} */ ({}));
 
 	// Patron review computed values
-	$: matchedCount = matchResults.filter((r) => r.matchType !== 'new').length;
-	$: newCount = matchResults.filter((r) => r.matchType === 'new').length;
-	$: dupCount = matchResults.filter((r) => r.existingTicket).length;
-	$: importCount = decisions.filter((d) => d.action !== 'skip').length;
+	$: matchedCount = matchResults.filter((/** @type {any} */ r) => r.matchType !== 'new').length;
+	$: newCount = matchResults.filter((/** @type {any} */ r) => r.matchType === 'new').length;
+	$: dupCount = matchResults.filter((/** @type {any} */ r) => r.existingTicket).length;
+	$: importCount = decisions.filter((/** @type {any} */ d) => d.action !== 'skip').length;
 
 	// Current step
 	$: currentStep = importComplete ? 4 : reviewMode ? 3 : csvParsed ? 2 : 1;
@@ -294,7 +301,7 @@
 		URL.revokeObjectURL(url);
 	}
 
-	function setDecisionAction(idx, action, patronId) {
+	function setDecisionAction(/** @type {number} */ idx, /** @type {any} */ action, /** @type {any} */ patronId = undefined) {
 		decisions[idx] = {
 			...decisions[idx],
 			action,
@@ -303,18 +310,18 @@
 		decisions = [...decisions];
 	}
 
-	function toggleUpdateField(idx, field) {
+	function toggleUpdateField(/** @type {number} */ idx, /** @type {any} */ field) {
 		const d = decisions[idx];
 		const fields = d.updateFields || [];
 		if (fields.includes(field)) {
-			decisions[idx].updateFields = fields.filter((f) => f !== field);
+			decisions[idx].updateFields = fields.filter((/** @type {any} */ f) => f !== field);
 		} else {
 			decisions[idx].updateFields = [...fields, field];
 		}
 		decisions = [...decisions];
 	}
 
-	function formatCurrency(amount) {
+	function formatCurrency(/** @type {number} */ amount) {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 	}
 </script>
@@ -329,7 +336,7 @@
 			<h1>Enter Ticket Purchases</h1>
 			<p class="subtitle">Add ticket purchases manually or import from CSV</p>
 		</div>
-		<a href="{base}/shows/ticket_purchases" class="btn-secondary">Back to Purchases</a>
+		<a href={resolve('/shows/ticket_purchases')} class="btn-secondary">Back to Purchases</a>
 	</header>
 
 	{#if form?.success && form?.action === 'manual'}
@@ -718,7 +725,7 @@
 								{#if result.diffs && result.diffs.length > 0}
 									<div class="diff-section">
 										<div class="diff-title">Differences</div>
-										{#each result.diffs as diff}
+										{#each result.diffs as diff (diff.field)}
 											<label class="diff-row" class:auto-fill={diff.autoCheck || result.suggestedAction === 'create_new'}>
 												<input type="checkbox"
 													checked={decisions[i]?.updateFields?.includes(diff.field)}
@@ -783,34 +790,34 @@
 			{/if}
 
 			<!-- ===================== STEP 4: IMPORT RESULTS ===================== -->
-			{#if importComplete}
+			{#if importComplete && form}
 				<div class="alert alert-success">
 					<div>✓ {form.message}</div>
 					<div class="import-stats">
 						Imported: {form.imported} · Skipped: {form.skipped} · New Patrons: {form.patronsCreated} · Updated: {form.patronsUpdated}
-						{#if form.anonymousImported > 0} · Anonymous: {form.anonymousImported}{/if}
+						{#if (form.anonymousImported ?? 0) > 0} · Anonymous: {form.anonymousImported}{/if}
 					</div>
 					{#if form.errors && form.errors.length > 0}
 						<details class="results-details">
 							<summary>{form.errors.length} error{form.errors.length !== 1 ? 's' : ''}</summary>
-							<ul>{#each form.errors as err}<li>{err}</li>{/each}</ul>
+							<ul>{#each form.errors as err, i (i)}<li>{err}</li>{/each}</ul>
 						</details>
 					{/if}
 				</div>
 
-				{#if form.skippedCount > 0 && skipCsvContent}
+				{#if (form?.skippedCount ?? 0) > 0 && skipCsvContent}
 					<div class="card">
 						<h2>Skipped Rows</h2>
-						<p class="hint">{form.skippedCount} rows were not imported. Download the CSV to review why.</p>
+						<p class="hint">{form?.skippedCount ?? 0} rows were not imported. Download the CSV to review why.</p>
 						<button class="btn-primary" on:click={downloadSkipCsv}>
-							Download Skipped Rows CSV ({form.skippedCount} rows)
+							Download Skipped Rows CSV ({form?.skippedCount ?? 0} rows)
 						</button>
 					</div>
 				{/if}
 
 				<div class="form-actions">
 					<button class="btn-secondary" on:click={resetCsv}>Import Another File</button>
-					<a href="{base}/shows/ticket_purchases" class="btn-secondary">View Ticket Purchases</a>
+					<a href={resolve('/shows/ticket_purchases')} class="btn-secondary">View Ticket Purchases</a>
 				</div>
 			{/if}
 		</div>

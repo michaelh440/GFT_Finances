@@ -1,6 +1,6 @@
 <!-- src/routes/shows/patrons/new/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
 	export let form;
@@ -18,7 +18,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/shows/patrons" class="back-link">← Back to Patrons</a>
+			<a href={resolve('/shows/patrons')} class="back-link">← Back to Patrons</a>
 			<h1>Add New Patron</h1>
 		</div>
 	</header>
@@ -52,7 +52,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href="{base}/shows/patrons" class="btn-secondary">Cancel</a>
+				<a href={resolve('/shows/patrons')} class="btn-secondary">Cancel</a>
 				<button type="submit" class="btn-primary">Add Patron</button>
 			</div>
 		</form>

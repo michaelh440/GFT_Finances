@@ -1,7 +1,7 @@
 <!-- src/routes/hsi/update_student_phones/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
-  import { base } from '$app/paths';
+  import { resolve } from '$app/paths';
 
   /** @type {any} */
   export let data;
@@ -246,7 +246,7 @@
 <div class="container" data-sveltekit-reload>
   <header>
     <div>
-      <a href="{base}/hsi/classes" class="breadcrumb">← HSI</a>
+      <a href={resolve('/hsi/classes')} class="breadcrumb">← HSI</a>
       <h1>Update Student Phone Numbers</h1>
       <p class="subtitle">Import phone and mobile numbers from CSV registration files</p>
     </div>
@@ -289,7 +289,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each csvParsed.slice(0, 20) as row, i}
+                {#each csvParsed.slice(0, 20) as row, i (i)}
                   <tr>
                     <td class="row-num">{i + 1}</td>
                     <td>{row.first_name} {row.last_name}</td>

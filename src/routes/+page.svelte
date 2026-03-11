@@ -1,6 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -20,22 +20,22 @@
 		<div class="quick-links">
 			<h2>Quick Access</h2>
 			<div class="link-grid">
-				<a href="{base}/hsi/classes" class="quick-card">
+				<a href={resolve('/hsi/classes')} class="quick-card">
 					<span class="card-icon">🎭</span>
 					<span class="card-label">HSI</span>
 					<span class="card-desc">Houston School of Improv</span>
 				</a>
-				<a href="{base}/shows" class="quick-card">
+				<a href={resolve('/shows')} class="quick-card">
 					<span class="card-icon">🎪</span>
 					<span class="card-label">GFT</span>
 					<span class="card-desc">Good Friends Theater</span>
 				</a>
-				<a href="{base}/csz" class="quick-card disabled">
+				<a href={resolve(/** @type {any} */ ('/csz'))} class="quick-card disabled">
 					<span class="card-icon">⚡</span>
 					<span class="card-label">CSz</span>
 					<span class="card-desc">ComedySportz Houston</span>
 				</a>
-				<a href="{base}/corp" class="quick-card disabled">
+				<a href={resolve(/** @type {any} */ ('/corp'))} class="quick-card disabled">
 					<span class="card-icon">💼</span>
 					<span class="card-label">Corp</span>
 					<span class="card-desc">Corporate</span>

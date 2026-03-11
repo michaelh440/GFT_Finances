@@ -1,10 +1,27 @@
 <!-- src/routes/+layout.svelte -->
 <script>
 	import { page } from '$app/stores';
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	// Navigation structure
 	const navSections = [
+		{
+			id: 'data',
+			label: 'DATA',
+			fullName: 'Data Entry',
+			icon: '✏️',
+			basePath: '/data',
+			children: [
+				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+				{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
+				{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' },
+				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
+				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
+				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
+				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
+				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
+			]
+		},
 		{
 			id: 'hsi',
 			label: 'HSI',
@@ -15,10 +32,10 @@
 				{ label: 'Classes', href: '/hsi/classes' },
 				{ label: 'Students', href: '/hsi/students' },
 				{ label: 'Teachers', href: '/hsi/teachers' },
-				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
+				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+				//{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
 				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
-				{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
+				//{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
 				//{ label: 'Class Financial Reports', href: '/hsi/reports' }
 				
 			]
@@ -32,12 +49,13 @@
 			children: [
 				{ label: 'Shows', href: '/shows' },
 				{ label: 'Patrons', href: '/shows/patrons' },
-				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
+				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
 				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
-				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
-				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
+				//{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
+				//{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
+				//{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
 				//{ label: 'Shows Financial Reports', href: '/shows/reports' }
+				{ label: '2026 Combined Reporting', href: '/shows/reports/2026/combined_reporting' }
 			]
 		},
 		{
@@ -159,7 +177,7 @@
 	<!-- Sidebar -->
 	<aside class="sidebar">
 		<div class="sidebar-header">
-			<a href="{base}/" class="logo-link">
+			<a href={resolve('/')} class="logo-link">
 				{#if !sidebarCollapsed}
 					<span class="logo-text">B&C Entertainment</span>
 					<span class="logo-sub">Financial Tracker</span>
@@ -198,7 +216,7 @@
 							{#each section.children as child, i (i)}
 								<li>
 									<a
-										href="{base}{child.href}"
+										href={resolve(/** @type {any} */ (child.href))}
 										class="nav-child-link"
 										class:active={isActive(child.href)}
 										class:disabled={child.href === '#'}
@@ -252,7 +270,7 @@
 										{#each sub.children as child, i (i)}
 											<li>
 												<a
-													href="{base}{child.href}"
+													href={resolve(/** @type {any} */ (child.href))}
 													class="nav-child-link"
 													class:active={isActive(child.href)}
 													class:disabled={child.href === '#'}

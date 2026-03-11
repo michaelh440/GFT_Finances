@@ -1,32 +1,45 @@
 <!-- src/routes/shows/tickets/new/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
-	/** @type {{ shows: any[], patrons: any[] }} */
-	export let data;
-	export let form;
+	/** @type {{ data: { shows: any[], patrons: any[] }, form: any }} */
+	let { data, form } = $props();
 
-	$: patron_id = form?.values?.patron_id ?? '';
-	$: show_code = form?.values?.show_code ?? '';
-	$: show_date = form?.values?.show_date ?? '';
-	$: tickets_purchased = form?.values?.tickets_purchased ?? 1;
-	$: amount_paid = form?.values?.amount_paid ?? 0;
-	$: purchase_date = form?.values?.purchase_date ?? new Date().toISOString().split('T')[0];
-	$: payment_method = form?.values?.payment_method ?? '';
-	$: notes = form?.values?.notes ?? '';
+	let patron_id = $state(form?.values?.patron_id ?? '');
+	let show_code = $state(form?.values?.show_code ?? '');
+	let show_date = $state(form?.values?.show_date ?? '');
+	let tickets_purchased = $state(form?.values?.tickets_purchased ?? 1);
+	let amount_paid = $state(form?.values?.amount_paid ?? 0);
+	let purchase_date = $state(form?.values?.purchase_date ?? new Date().toISOString().split('T')[0]);
+	let payment_method = $state(form?.values?.payment_method ?? '');
+	let notes = $state(form?.values?.notes ?? '');
+
+	// Re-sync from form when it changes (e.g. after validation error)
+	$effect(() => {
+		if (form?.values) {
+			patron_id = form.values.patron_id ?? '';
+			show_code = form.values.show_code ?? '';
+			show_date = form.values.show_date ?? '';
+			tickets_purchased = form.values.tickets_purchased ?? 1;
+			amount_paid = form.values.amount_paid ?? 0;
+			purchase_date = form.values.purchase_date ?? new Date().toISOString().split('T')[0];
+			payment_method = form.values.payment_method ?? '';
+			notes = form.values.notes ?? '';
+		}
+	});
 
 	// Group shows by format for dropdown
-	$: showsByFormat = data.shows.reduce((/** @type {Record<string, any[]>} */ acc, s) => {
+	let showsByFormat = $derived(data.shows.reduce((/** @type {Record<string, any[]>} */ acc, s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
-	$: formats = Object.keys(showsByFormat).sort();
+	}, {}));
+	let formats = $derived(Object.keys(showsByFormat).sort());
 
 	// Auto-calculate amount when show or ticket count changes
-	$: selectedShow = data.shows.find((s) => s.show_code === show_code);
+	let selectedShow = $derived(data.shows.find((s) => s.show_code === show_code));
 	function autoCalc() {
 		if (selectedShow && tickets_purchased > 0) {
 			amount_paid = selectedShow.standard_ticket_price * tickets_purchased;
@@ -41,7 +54,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/shows/patrons" class="back-link">← Back to Patrons</a>
+			<a href={resolve('/shows/patrons')} class="back-link">← Back to Patrons</a>
 			<h1>Record Ticket Purchase</h1>
 		</div>
 	</header>
@@ -68,7 +81,7 @@
 
 				<div class="form-group">
 					<label for="show_code">Show <span class="required">*</span></label>
-					<select id="show_code" name="show_code" bind:value={show_code} on:change={autoCalc} required>
+					<select id="show_code" name="show_code" bind:value={show_code} onchange={autoCalc} required>
 						<option value="">Select a show...</option>
 						{#each formats as fmt (fmt)}
 							<optgroup label={fmt}>
@@ -97,7 +110,7 @@
 						id="tickets_purchased"
 						name="tickets_purchased"
 						bind:value={tickets_purchased}
-						on:change={autoCalc}
+						onchange={autoCalc}
 						min="1"
 						required
 					/>
@@ -140,7 +153,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href="{base}/shows/patrons" class="btn-secondary">Cancel</a>
+				<a href={resolve('/shows/patrons')} class="btn-secondary">Cancel</a>
 				<button type="submit" class="btn-primary">Save Purchase</button>
 			</div>
 		</form>

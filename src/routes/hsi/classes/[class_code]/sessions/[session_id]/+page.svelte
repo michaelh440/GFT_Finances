@@ -33,7 +33,7 @@
 	 * @property {string|null} class_date
 	 */
 
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {{ classInfo: ClassInfo|null, session: Session|null, students: Student[], totalRevenue: number }} */
 	export let data;
@@ -79,18 +79,18 @@
 			<h1>Session Not Found</h1>
 			<p>The session you're looking for doesn't exist.</p>
 			{#if classInfo}
-				<a href="{base}/hsi/classes/{classInfo.class_code}" class="btn-secondary">Back to Class</a>
+				<a href={resolve(`/hsi/classes/${classInfo.class_code}`)} class="btn-secondary">Back to Class</a>
 			{:else}
-				<a href="{base}/hsi/classes" class="btn-secondary">Back to Classes</a>
+				<a href={resolve('/hsi/classes')} class="btn-secondary">Back to Classes</a>
 			{/if}
 		</div>
 	{:else}
 		<header>
 			<div>
 				<div class="breadcrumb">
-					<a href="{base}/hsi/classes">Classes</a>
+					<a href={resolve('/hsi/classes')}>Classes</a>
 					<span class="separator">›</span>
-					<a href="{base}/hsi/classes/{classInfo.class_code}">{classInfo.class_name}</a>
+					<a href={resolve(`/hsi/classes/${classInfo.class_code}`)}>{classInfo.class_name}</a>
 					<span class="separator">›</span>
 					<span class="current">{session.session_name}</span>
 				</div>
@@ -176,14 +176,14 @@
 						{#each students as student (student.registration_id)}
 							<tr>
 								<td class="student-name">
-									<a href="{base}/hsi/students/{student.student_id}">{student.last_name}, {student.first_name}</a>
+									<a href={resolve(`/hsi/students/${student.student_id}`)}>{student.last_name}, {student.first_name}</a>
 								</td>
 								<td>{student.email || '—'}</td>
 								<td>{student.phone || '—'}</td>
 								<td>{formatDate(student.registration_date)}</td>
 								<td class="col-right">{formatCurrency(student.amount_paid)}</td>
 								<td>
-									<a href="{base}/hsi/students/{student.student_id}" class="btn-view">View</a>
+									<a href={resolve(`/hsi/students/${student.student_id}`)} class="btn-view">View</a>
 								</td>
 							</tr>
 						{/each}

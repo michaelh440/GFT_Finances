@@ -1,6 +1,6 @@
 <!-- src/routes/hsi/teachers/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {any} */
 	export let data;
@@ -75,8 +75,8 @@
 	<header>
 		<h1>Teachers</h1>
 		<div class="header-actions">
-			<a href="{base}/hsi/teachers/new" class="btn-primary">Add Teacher</a>
-			<a href="{base}/hsi" class="btn-secondary">Back to Classes</a>
+			<a href={resolve('/hsi/teachers/new')} class="btn-primary">Add Teacher</a>
+			<a href={resolve('/hsi')} class="btn-secondary">Back to Classes</a>
 		</div>
 	</header>
 
@@ -129,7 +129,7 @@
 					{#each pagedTeachers as teacher (teacher.teacher_id)}
 						<tr class:inactive={!teacher.is_active}>
 							<td class="teacher-name">
-								<a href="{base}/hsi/teachers/{teacher.teacher_id}" class="name-link">
+								<a href={resolve(`/hsi/teachers/${teacher.teacher_id}`)} class="name-link">
 									{teacher.first_name} {teacher.last_name}
 								</a>
 							</td>
@@ -149,8 +149,8 @@
 							</td>
 							<td>
 								<div class="actions">
-									<a href="{base}/hsi/teachers/{teacher.teacher_id}" class="btn-action">View</a>
-									<a href="{base}/hsi/teachers/{teacher.teacher_id}/edit" class="btn-action">Edit</a>
+									<a href={resolve(`/hsi/teachers/${teacher.teacher_id}`)} class="btn-action">View</a>
+									<a href={resolve(`/hsi/teachers/${teacher.teacher_id}/edit`)} class="btn-action">Edit</a>
 								</div>
 							</td>
 						</tr>

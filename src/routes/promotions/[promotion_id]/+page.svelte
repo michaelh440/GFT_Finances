@@ -1,6 +1,6 @@
 <!-- src/routes/promotions/[promotion_id]/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {any} */
 	export let data;
@@ -68,11 +68,11 @@
 <div class="container">
 	{#if !promo}
 		<div class="alert alert-error">Promotion not found.</div>
-		<a href="{base}/promotions" class="btn-secondary">Back to Promotions</a>
+		<a href={resolve('/promotions')} class="btn-secondary">Back to Promotions</a>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/promotions" class="breadcrumb">← Promotions</a>
+				<a href={resolve('/promotions')} class="breadcrumb">← Promotions</a>
 				<h1>{promo.promotion_name}</h1>
 				<div class="header-badges">
 					<span class="status-badge" class:active={promo.is_active && dateStatus() !== 'ended'} class:ended={dateStatus() === 'ended'}>
@@ -85,7 +85,7 @@
 					{/if}
 				</div>
 			</div>
-			<a href="{base}/promotions/{promo.promotion_id}/edit" class="btn-primary">Edit Promotion</a>
+			<a href={resolve(`/promotions/${promo.promotion_id}/edit`)} class="btn-primary">Edit Promotion</a>
 		</header>
 
 		<!-- Info Card -->
@@ -124,7 +124,7 @@
 					<span class="info-label">Linked Shows ({linkedShows.length})</span>
 					<div class="linked-shows">
 						{#each linkedShows as ls (ls.show_code)}
-							<a href="{base}/shows/{ls.show_code}" class="show-chip">{ls.show_name}</a>
+							<a href={resolve(`/shows/${ls.show_code}`)} class="show-chip">{ls.show_name}</a>
 						{/each}
 					</div>
 				</div>
@@ -197,7 +197,7 @@
 								{@const avgPerTicket = ss.tickets_sold > 0 ? ss.revenue / ss.tickets_sold : 0}
 								<tr>
 									<td>
-										<a href="{base}/shows/{ss.show_code}" class="link">{ss.show_name}</a>
+										<a href={resolve(`/shows/${ss.show_code}`)} class="link">{ss.show_name}</a>
 									</td>
 									<td class="text-muted">{ss.format || '—'}</td>
 									<td class="col-right">{ss.transaction_count}</td>

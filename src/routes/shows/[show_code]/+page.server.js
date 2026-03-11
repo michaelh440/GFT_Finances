@@ -14,6 +14,7 @@ export const load = async ({ params }) => {
 				audience_type,
 				day_of_week,
 				standard_ticket_price,
+				vbo_event_id,
 				description,
 				is_active,
 				created_at,

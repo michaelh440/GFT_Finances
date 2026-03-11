@@ -1,22 +1,36 @@
 <!-- src/routes/shows/enter_new_show/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
-	export let form;
+	/** @type {{ form: any }} */
+	let { form } = $props();
 
-	let submitting = false;
+	let submitting = $state(false);
 
-	$: show_code = form?.values?.show_code ?? '';
-	$: show_name = form?.values?.show_name ?? '';
-	$: format = form?.values?.format ?? '';
-	$: audience_type = form?.values?.audience_type ?? '';
-	$: day_of_week = form?.values?.day_of_week ?? '';
-	$: standard_ticket_price = form?.values?.standard_ticket_price ?? 0;
-	$: description = form?.values?.description ?? '';
+	let show_code = $state(form?.values?.show_code ?? '');
+	let show_name = $state(form?.values?.show_name ?? '');
+	let format = $state(form?.values?.format ?? '');
+	let audience_type = $state(form?.values?.audience_type ?? '');
+	let day_of_week = $state(form?.values?.day_of_week ?? '');
+	let standard_ticket_price = $state(form?.values?.standard_ticket_price ?? 0);
+	let description = $state(form?.values?.description ?? '');
+
+	// Re-sync from form when it changes (e.g. after validation error)
+	$effect(() => {
+		if (form?.values) {
+			show_code = form.values.show_code ?? '';
+			show_name = form.values.show_name ?? '';
+			format = form.values.format ?? '';
+			audience_type = form.values.audience_type ?? '';
+			day_of_week = form.values.day_of_week ?? '';
+			standard_ticket_price = form.values.standard_ticket_price ?? 0;
+			description = form.values.description ?? '';
+		}
+	});
 
 	// Auto-generate show code from show name
-	let codeManuallyEdited = false;
+	let codeManuallyEdited = $state(false);
 
 	/** @param {any} e */
 	function handleNameInput(e) {
@@ -41,7 +55,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/shows" class="back-link">← Back to Shows</a>
+			<a href={resolve('/shows')} class="back-link">← Back to Shows</a>
 			<h1>Add New Show</h1>
 		</div>
 	</header>
@@ -66,7 +80,7 @@
 						id="show_name"
 						name="show_name"
 						value={show_name}
-						on:input={handleNameInput}
+						oninput={handleNameInput}
 						required
 						placeholder="e.g. Friday Night ComedySportz"
 					/>
@@ -79,7 +93,7 @@
 						id="show_code"
 						name="show_code"
 						value={show_code}
-						on:input={handleCodeInput}
+						oninput={handleCodeInput}
 						required
 						class="code-input"
 						placeholder="e.g. FRI-CSZ"
@@ -150,7 +164,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href="{base}/shows" class="btn-secondary">Cancel</a>
+				<a href={resolve('/shows')} class="btn-secondary">Cancel</a>
 				<button type="submit" class="btn-primary" disabled={submitting}>
 					{submitting ? 'Creating...' : 'Create Show'}
 				</button>

@@ -23,6 +23,8 @@
 	/** @type {{ success?: boolean, message?: string, error?: string } | null} */
 	export let form;
 
+	let submitting = false;
+
 	/** @type {Row[]} */
 	let rows = [createRow()];
 
@@ -89,7 +91,6 @@
 			<h1>Enter Monthly Show Summary</h1>
 			<p class="subtitle">Add ticket sales and revenue data by show and month</p>
 		</div>
-		<!--a href="/shows" class="btn-secondary">Back to Shows</a-->
 	</header>
 
 	{#if form?.success}
@@ -104,7 +105,29 @@
 		</div>
 	{/if}
 
-	<form method="POST" use:enhance>
+	<form method="POST" use:enhance={({ formData }) => {
+		submitting = true;
+		// Log what we're sending
+		/** @type {Record<string, any>} */
+		const logData = {};
+		for (const [key, value] of formData.entries()) {
+			logData[key] = value;
+		}
+		console.log('[enter_monthly_summary] SUBMITTING form data:', logData);
+		console.log('[enter_monthly_summary] Rows state:', JSON.stringify(rows));
+
+		return async ({ update, result }) => {
+			submitting = false;
+			console.log('[enter_monthly_summary] SERVER RESULT type:', result.type);
+			console.log('[enter_monthly_summary] SERVER RESULT data:', JSON.stringify(/** @type {any} */ (result).data || result));
+
+			if (result.type === 'success' && /** @type {any} */ (result).data?.success) {
+				console.log('[enter_monthly_summary] SUCCESS — resetting rows');
+				rows = [createRow()];
+			}
+			await update();
+		};
+	}}>
 		<input type="hidden" name="row_count" value={rows.length} />
 
 		<div class="table-wrapper">
@@ -192,7 +215,9 @@
 		</div>
 
 		<div class="form-actions">
-			<button type="submit" class="btn-primary"> Save All Entries </button>
+			<button type="submit" class="btn-primary" disabled={submitting}>
+				{submitting ? 'Saving...' : 'Save All Entries'}
+			</button>
 			<button type="button" class="btn-secondary" on:click={addRow}> + Add Another Row </button>
 		</div>
 	</form>
@@ -415,6 +440,11 @@
 
 	.btn-primary:hover {
 		background-color: #2563eb;
+	}
+
+	.btn-primary:disabled {
+		background-color: #93c5fd;
+		cursor: not-allowed;
 	}
 
 	.btn-secondary {

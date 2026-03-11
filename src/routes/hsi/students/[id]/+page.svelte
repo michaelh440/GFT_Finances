@@ -27,7 +27,7 @@
 	 * @property {string|null} location
 	 */
 
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {{ student: Student|null, registrations: Registration[], totalPaid: number }} */
 	export let data;
@@ -69,12 +69,12 @@
 		<div class="not-found">
 			<h1>Student Not Found</h1>
 			<p>The student you're looking for doesn't exist.</p>
-			<a href="{base}/hsi/students" class="btn-secondary">Back to Students</a>
+			<a href={resolve('/hsi/students')} class="btn-secondary">Back to Students</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href="{base}/hsi/students" class="back-link">← Back to Students</a>
+				<a href={resolve('/hsi/students')} class="back-link">← Back to Students</a>
 				<h1>{student.first_name} {student.last_name}</h1>
 			</div>
 		</header>
