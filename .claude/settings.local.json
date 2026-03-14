@@ -64,7 +64,8 @@
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | tail -5)",
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx eslint . 2>&1 | tail -5)",
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep -B1 \"Error:\" | head -60)",
-      "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep \"Warn:\" | sort | uniq -c | sort -rn)"
+      "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep \"Warn:\" | sort | uniq -c | sort -rn)",
+      "Bash(npm run:*)"
     ]
   }
 }
