@@ -259,7 +259,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/reports/2026" class="back-link">← Back to Reports</a>
+			<a href="{base}/reports" class="back-link">← Back to Reports</a>
 			<h1>Monthly Report Generator</h1>
 			<p class="subtitle">Configure, preview, and generate PDF reports</p>
 		</div>
@@ -369,7 +369,7 @@
 	{#if data.pastReports && data.pastReports.length > 0}
 		<div class="section past-reports"><h2>Previously Generated Reports</h2>
 			<table><thead><tr><th>Title</th><th>Date Range</th><th>Generated</th><th>Size</th><th></th></tr></thead>
-				<tbody>{#each data.pastReports as r}<tr><td class="rpt-title">{r.report_title}</td><td>{formatDate(r.date_range_start)} – {formatDate(r.date_range_end)}</td><td>{formatDateTime(r.created_at)}</td><td>{formatBytes(r.file_size_bytes)}</td><td><a href="{base}/reports/2026/monthly_reporting/download/{r.report_id}" class="btn-download" target="_blank">Download</a></td></tr>{/each}</tbody>
+				<tbody>{#each data.pastReports as r}<tr><td class="rpt-title">{r.report_title}</td><td>{formatDate(r.date_range_start)} – {formatDate(r.date_range_end)}</td><td>{formatDateTime(r.created_at)}</td><td>{formatBytes(r.file_size_bytes)}</td><td><a href="{base}/reports/monthly_reporting/download/{r.report_id}" class="btn-download" target="_blank">Download</a></td></tr>{/each}</tbody>
 			</table>
 		</div>
 	{/if}
