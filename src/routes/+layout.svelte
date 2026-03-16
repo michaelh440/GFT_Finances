@@ -29,9 +29,10 @@
 			icon: '🎭',
 			basePath: '/hsi',
 			children: [
-				{ label: 'Classes', href: '/hsi/classes' },
-				{ label: 'Students', href: '/hsi/students' },
 				{ label: 'Teachers', href: '/hsi/teachers' },
+				{ label: 'Classes', href: '/hsi/classes' },
+				{ label: 'Tracks', href: '/hsi/tracks' },
+				{ label: 'Students', href: '/hsi/students' },
 				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
 				//{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
 				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
