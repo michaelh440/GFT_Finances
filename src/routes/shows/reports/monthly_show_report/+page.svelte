@@ -5,16 +5,21 @@
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
+	/** @type {{ summaries: any[], shows: any[] }} */
 	export let data;
 
 	let mounted = false;
+	/** @type {Record<string, any>} */
 	let charts = {};
 
 	// ---- Filters ----
 	let dateStart = '';
 	let dateEnd = '';
+	/** @type {any[]} */
 	let availableYears = [];
+	/** @type {any[]} */
 	let selectedYears = [];
+	/** @type {any[]} */
 	let selectedShows = [];
 	let showFilterOpen = false;
 
@@ -30,7 +35,7 @@
 
 	// Extract available years
 	$: {
-		const yrs = [...new Set((data.summaries || []).map((s) => s.summary_year))].sort((a, b) => b - a);
+		const yrs = [...new Set((data.summaries || []).map((/** @type {any} */ s) => s.summary_year))].sort((/** @type {any} */ a, /** @type {any} */ b) => b - a);
 		availableYears = yrs;
 		if (selectedYears.length === 0 && yrs.length > 0) {
 			const startYr = dateStart ? parseInt(dateStart.split('-')[0]) : yrs[0];
@@ -74,6 +79,7 @@
 			? (data.shows || []).find((s) => s.show_code === selectedShows[0])?.show_name || '1 show'
 			: `${selectedShows.length} shows`;
 
+	/** @param {any} code */
 	function toggleShow(code) {
 		if (selectedShows.includes(code)) selectedShows = selectedShows.filter((c) => c !== code);
 		else selectedShows = [...selectedShows, code];
@@ -108,7 +114,9 @@
 	$: uniqueMonths = [...new Set(filteredData.map((s) => s.summary_month))].length;
 
 	// ---- Build overlay year data ----
+	/** @param {any} dataSlice */
 	function buildOverlayData(dataSlice) {
+		/** @type {Record<string, any>} */
 		const byYear = {};
 		for (const yr of selectedYears) {
 			byYear[yr] = { revenue: Array(monthSlots.length).fill(0), units: Array(monthSlots.length).fill(0) };
@@ -123,6 +131,7 @@
 
 	// ---- Per-show totals ----
 	$: showBreakdown = (() => {
+		/** @type {Record<string, any>} */
 		const byShow = {};
 		for (const s of filteredData) {
 			if (!byShow[s.show_code]) byShow[s.show_code] = { code: s.show_code, name: s.show_name, format: s.format, revenue: 0, units: 0 };
@@ -133,6 +142,7 @@
 	})();
 
 	$: perShowOverlayData = (() => {
+		/** @type {Record<string, any>} */
 		const result = {};
 		for (const show of showBreakdown) {
 			result[show.code] = buildOverlayData(filteredData.filter((s) => s.show_code === show.code));
@@ -141,17 +151,27 @@
 	})();
 
 	// ---- Chart rendering ----
-	function destroyCharts() { Object.values(charts).forEach((c) => c.destroy()); charts = {}; }
+	function destroyCharts() { Object.values(charts).forEach((/** @type {any} */ c) => c.destroy()); charts = {}; }
+	/**
+	 * @param {string} id
+	 * @param {any} config
+	 */
 	function rc(id, config) {
-		const ctx = document.getElementById(id);
+		const ctx = /** @type {HTMLCanvasElement} */ (document.getElementById(id));
 		if (!ctx) return;
 		if (charts[id]) charts[id].destroy();
 		charts[id] = new Chart(ctx, config);
 	}
+	/** @param {any} v */
 	function dollarTick(v) { return '$' + Number(v).toLocaleString(); }
 
+	/**
+	 * @param {any} overlayData
+	 * @param {any} metric
+	 * @param {string} [chartType]
+	 */
 	function yearDatasets(overlayData, metric, chartType = 'bar') {
-		return selectedYears.map((yr, i) => {
+		return selectedYears.map((/** @type {any} */ yr, /** @type {number} */ i) => {
 			const d = overlayData[yr]?.[metric] || [];
 			if (chartType === 'line') {
 				const cum = []; let sum = 0;
@@ -231,12 +251,14 @@
 	onMount(() => { mounted = true; });
 	onDestroy(() => { destroyCharts(); });
 
+	/** @param {any} yr */
 	function toggleYear(yr) {
 		if (selectedYears.includes(yr)) {
 			if (selectedYears.length > 1) selectedYears = selectedYears.filter((y) => y !== yr);
 		} else selectedYears = [...selectedYears, yr].sort((a, b) => b - a);
 	}
 
+	/** @param {any} a */
 	function formatCurrency(a) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(a); }
 
 	$: dateRangeLabel = (() => {

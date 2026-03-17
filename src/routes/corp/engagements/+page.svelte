@@ -17,6 +17,7 @@
    */
 
   import { goto } from '$app/navigation';
+  /** @type {{ engagements: Engagement[], filters: { type: string, pipeline: string, contract: string, archived: boolean } }} */
   export let data;
 
   const TYPES = [

@@ -5,10 +5,13 @@
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
+	/** @type {{ summaries: any[], showItems: any[], classItems: any[], pastReports: any[] }} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	let mounted = false;
+	/** @type {Record<string, any>} */
 	let charts = {};
 	let generating = false;
 
@@ -41,7 +44,7 @@
 		if (!reportTitle || reportTitle.startsWith('Report:')) reportTitle = `Report: ${sf} – ${ef}`;
 	}
 
-	$: filteredData = (data.summaries || []).filter((s) => {
+	$: filteredData = (data.summaries || []).filter((/** @type {any} */ s) => {
 		if (!selectedSources.includes(s.source_type)) return false;
 		if (dateStart && s.summary_month < dateStart + '-01') return false;
 		if (dateEnd && s.summary_month > dateEnd + '-28') return false;
@@ -49,57 +52,70 @@
 	});
 
 	$: sourceData = (() => {
+		/** @type {Record<string, any>} */
 		const r = {};
-		for (const src of sourceOptions) r[src.value] = filteredData.filter((s) => s.source_type === src.value);
+		for (const src of sourceOptions) r[src.value] = filteredData.filter((/** @type {any} */ s) => s.source_type === src.value);
 		return r;
 	})();
 
-	$: totalRevenue = filteredData.reduce((sum, s) => sum + s.revenue, 0);
-	$: totalUnits = filteredData.reduce((sum, s) => sum + s.unit_count, 0);
+	$: totalRevenue = filteredData.reduce((/** @type {number} */ sum, /** @type {any} */ s) => sum + s.revenue, 0);
+	$: totalUnits = filteredData.reduce((/** @type {number} */ sum, /** @type {any} */ s) => sum + s.unit_count, 0);
 	$: sourceStats = (() => {
+		/** @type {Record<string, any>} */
 		const r = {};
 		for (const src of sourceOptions) {
 			const d = sourceData[src.value] || [];
-			r[src.value] = { revenue: d.reduce((sum, s) => sum + s.revenue, 0), units: d.reduce((sum, s) => sum + s.unit_count, 0) };
+			r[src.value] = { revenue: d.reduce((/** @type {number} */ sum, /** @type {any} */ s) => sum + s.revenue, 0), units: d.reduce((/** @type {number} */ sum, /** @type {any} */ s) => sum + s.unit_count, 0) };
 		}
 		return r;
 	})();
 
 	const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 	const yearColors = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899'];
-	$: selectedYears = [...new Set(filteredData.map((s) => s.summary_year))].sort();
+	$: selectedYears = [...new Set(filteredData.map((/** @type {any} */ s) => s.summary_year))].sort();
 
+	/** @param {any[]} slice */
 	function buildYearData(slice) {
-		const byYear = {}; const years = [...new Set(slice.map((s) => s.summary_year))].sort();
+		/** @type {Record<string, any>} */
+		const byYear = {}; const years = [...new Set(slice.map((/** @type {any} */ s) => s.summary_year))].sort();
 		for (const yr of years) byYear[yr] = { revenue: Array(12).fill(0), units: Array(12).fill(0) };
 		for (const s of slice) { if (!byYear[s.summary_year]) continue; byYear[s.summary_year].revenue[s.summary_month_num-1] += s.revenue; byYear[s.summary_year].units[s.summary_month_num-1] += s.unit_count; }
 		return { byYear, years };
 	}
+	/** @param {any[]} slice */
 	function buildItemData(slice) {
+		/** @type {Record<string, any>} */
 		const m = {};
 		for (const s of slice) { if (!m[s.item_code]) m[s.item_code] = { name: s.item_name, source: s.source_type, revenue: 0, units: 0 }; m[s.item_code].revenue += s.revenue; m[s.item_code].units += s.unit_count; }
-		return Object.values(m).sort((a, b) => b.revenue - a.revenue);
+		return Object.values(m).sort((/** @type {any} */ a, /** @type {any} */ b) => b.revenue - a.revenue);
 	}
+	/** @param {any[]} slice */
 	function buildMonthlyRows(slice) {
+		/** @type {Record<string, any>} */
 		const m = {};
 		for (const s of slice) { const k = s.summary_month; if (!m[k]) m[k] = { month: k, revenue: 0, units: 0 }; m[k].revenue += s.revenue; m[k].units += s.unit_count; }
-		return Object.values(m).sort((a, b) => a.month.localeCompare(b.month));
+		return Object.values(m).sort((/** @type {any} */ a, /** @type {any} */ b) => a.month.localeCompare(b.month));
 	}
 
 	$: combinedMonthlyRows = (() => {
+		/** @type {Record<string, any>} */
 		const m = {};
 		for (const s of filteredData) {
 			const k = s.summary_month;
 			if (!m[k]) { m[k] = { month: k }; for (const src of sourceOptions) { m[k][src.value+'_revenue'] = 0; m[k][src.value+'_units'] = 0; } }
 			m[k][s.source_type+'_revenue'] += s.revenue; m[k][s.source_type+'_units'] += s.unit_count;
 		}
-		return Object.values(m).sort((a, b) => a.month.localeCompare(b.month));
+		return Object.values(m).sort((/** @type {any} */ a, /** @type {any} */ b) => a.month.localeCompare(b.month));
 	})();
 
-	function destroyCharts() { Object.values(charts).forEach((c) => c.destroy()); charts = {}; }
+	function destroyCharts() { Object.values(charts).forEach((/** @type {any} */ c) => c.destroy()); charts = {}; }
 
+	/**
+	 * @param {string} id
+	 * @param {any} config
+	 */
 	function rc(id, config) {
-		const ctx = document.getElementById(id);
+		const ctx = /** @type {HTMLCanvasElement} */ (document.getElementById(id));
 		if (!ctx) return;
 		if (charts[id]) charts[id].destroy();
 		charts[id] = new Chart(ctx, config);
@@ -109,16 +125,16 @@
 		if (!browser || !mounted || !dateStart || !dateEnd) return;
 		destroyCharts();
 		setTimeout(() => {
-			const active = sourceOptions.filter((s) => selectedSources.includes(s.value));
+			const active = sourceOptions.filter((/** @type {any} */ s) => selectedSources.includes(s.value));
 			const latestYr = selectedYears.length > 0 ? Math.max(...selectedYears) : new Date().getFullYear();
-			const srcColor = Object.fromEntries(sourceOptions.map((s) => [s.value, s.color]));
+			const srcColor = Object.fromEntries(sourceOptions.map((/** @type {any} */ s) => [s.value, s.color]));
 
 			// COMBINED
 			if (includeCombined && active.length > 1) {
 				if (selectedCharts.includes('revenue_by_source')) {
 					const ds = [];
 					for (const src of active) { const { byYear } = buildYearData(sourceData[src.value]||[]); const yd = byYear[latestYr]; if (yd) ds.push({ label: `${src.label} ${latestYr}`, data: yd.revenue, backgroundColor: src.color, stack: 's' }); }
-					if (ds.length) rc('combined-revenue-source', { type:'bar', data:{ labels:monthLabels, datasets:ds }, options:{ responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true, ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}} } });
+					if (ds.length) rc('combined-revenue-source', { type:'bar', data:{ labels:monthLabels, datasets:ds }, options:{ responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true, ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}} } });
 				}
 				if (selectedCharts.includes('units_sold')) {
 					const ds = [];
@@ -126,16 +142,16 @@
 					if (ds.length) rc('combined-units-sold', { type:'bar', data:{ labels:monthLabels, datasets:ds }, options:{ responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{x:{stacked:true},y:{stacked:true}} } });
 				}
 				if (selectedCharts.includes('revenue_split') && totalRevenue > 0) {
-					rc('combined-revenue-split', { type:'doughnut', data:{ labels:active.map(s=>s.label), datasets:[{ data:active.map(s=>sourceStats[s.value].revenue), backgroundColor:active.map(s=>s.color) }] }, options:{ responsive:true, animation:false, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label:(c)=>{ const p=((c.parsed/totalRevenue)*100).toFixed(1); return `${c.label}: $${c.parsed.toLocaleString()} (${p}%)`; }}}} } });
+					rc('combined-revenue-split', { type:'doughnut', data:{ labels:active.map((/** @type {any} */ s)=>s.label), datasets:[{ data:active.map((/** @type {any} */ s)=>sourceStats[s.value].revenue), backgroundColor:active.map((/** @type {any} */ s)=>s.color) }] }, options:{ responsive:true, animation:false, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label:(/** @type {any} */ c)=>{ const p=((c.parsed/totalRevenue)*100).toFixed(1); return `${c.label}: $${c.parsed.toLocaleString()} (${p}%)`; }}}} } });
 				}
 				if (selectedCharts.includes('ytd_revenue')) {
 					const { byYear, years } = buildYearData(filteredData);
-					const ds = years.map((yr,i)=>{ const yd=byYear[yr]; if(!yd) return null; const cum=[]; let sum=0; for(const v of yd.revenue){sum+=v; cum.push(sum);} return { label:String(yr), data:cum, borderColor:yearColors[i%yearColors.length], backgroundColor:'transparent', borderWidth:2, tension:0.3, pointRadius:3 }; }).filter(Boolean);
-					rc('combined-ytd-revenue', { type:'line', data:{labels:monthLabels, datasets:ds}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}}} });
+					const ds = years.map((/** @type {any} */ yr,/** @type {number} */ i)=>{ const yd=byYear[yr]; if(!yd) return null; const cum=/** @type {number[]} */([]); let sum=0; for(const v of yd.revenue){sum+=v; cum.push(sum);} return { label:String(yr), data:cum, borderColor:yearColors[i%yearColors.length], backgroundColor:'transparent', borderWidth:2, tension:0.3, pointRadius:3 }; }).filter(Boolean);
+					rc('combined-ytd-revenue', { type:'line', data:{labels:monthLabels, datasets:ds}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}}} });
 				}
 				if (selectedCharts.includes('item_breakdown')) {
 					const items = buildItemData(filteredData).slice(0,15);
-					if (items.length) rc('combined-item-breakdown', { type:'bar', data:{labels:items.map(d=>d.name), datasets:[{label:'Revenue', data:items.map(d=>d.revenue), backgroundColor:items.map(d=>srcColor[d.source]||'#6b7280')}]}, options:{responsive:true, animation:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}}} });
+					if (items.length) rc('combined-item-breakdown', { type:'bar', data:{labels:items.map((/** @type {any} */ d)=>d.name), datasets:[{label:'Revenue', data:items.map((/** @type {any} */ d)=>d.revenue), backgroundColor:items.map((/** @type {any} */ d)=>srcColor[d.source]||'#6b7280')}]}, options:{responsive:true, animation:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}}} });
 				}
 			}
 
@@ -146,17 +162,17 @@
 				const pfx = src.value;
 				if (selectedCharts.includes('revenue_by_source')||selectedCharts.includes('units_sold')) {
 					const { byYear } = buildYearData(sd); const yd = byYear[latestYr];
-					if (yd && (selectedCharts.includes('revenue_by_source'))) rc(`${pfx}-revenue`, { type:'bar', data:{labels:monthLabels, datasets:[{label:`Revenue ${latestYr}`, data:yd.revenue, backgroundColor:src.color}]}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}}} });
+					if (yd && (selectedCharts.includes('revenue_by_source'))) rc(`${pfx}-revenue`, { type:'bar', data:{labels:monthLabels, datasets:[{label:`Revenue ${latestYr}`, data:yd.revenue, backgroundColor:src.color}]}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}}} });
 					if (yd && selectedCharts.includes('units_sold')) rc(`${pfx}-units-sold`, { type:'bar', data:{labels:monthLabels, datasets:[{label:`${src.unitLabel} ${latestYr}`, data:yd.units, backgroundColor:src.color}]}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}} });
 				}
 				if (selectedCharts.includes('ytd_revenue')) {
 					const { byYear, years } = buildYearData(sd);
-					const ds = years.map((yr,i)=>{ const yd=byYear[yr]; if(!yd) return null; const cum=[]; let sum=0; for(const v of yd.revenue){sum+=v; cum.push(sum);} return { label:String(yr), data:cum, borderColor:yearColors[i%yearColors.length], backgroundColor:'transparent', borderWidth:2, tension:0.3, pointRadius:3 }; }).filter(Boolean);
-					rc(`${pfx}-ytd-revenue`, { type:'line', data:{labels:monthLabels, datasets:ds}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}}} });
+					const ds = years.map((/** @type {any} */ yr,/** @type {number} */ i)=>{ const yd=byYear[yr]; if(!yd) return null; const cum=/** @type {number[]} */([]); let sum=0; for(const v of yd.revenue){sum+=v; cum.push(sum);} return { label:String(yr), data:cum, borderColor:yearColors[i%yearColors.length], backgroundColor:'transparent', borderWidth:2, tension:0.3, pointRadius:3 }; }).filter(Boolean);
+					rc(`${pfx}-ytd-revenue`, { type:'line', data:{labels:monthLabels, datasets:ds}, options:{responsive:true, animation:false, plugins:{legend:{position:'top'}}, scales:{y:{ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}}} });
 				}
 				if (selectedCharts.includes('item_breakdown')) {
 					const items = buildItemData(sd).slice(0,15);
-					if (items.length) rc(`${pfx}-item-breakdown`, { type:'bar', data:{labels:items.map(d=>d.name), datasets:[{label:'Revenue', data:items.map(d=>d.revenue), backgroundColor:src.color}]}, options:{responsive:true, animation:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:(v)=>'$'+Number(v).toLocaleString()}}}} });
+					if (items.length) rc(`${pfx}-item-breakdown`, { type:'bar', data:{labels:items.map((/** @type {any} */ d)=>d.name), datasets:[{label:'Revenue', data:items.map((/** @type {any} */ d)=>d.revenue), backgroundColor:src.color}]}, options:{responsive:true, animation:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:(/** @type {any} */ v)=>'$'+Number(v).toLocaleString()}}}} });
 				}
 			}
 		}, 150);
@@ -169,6 +185,7 @@
 	async function generateAndSavePDF() {
 		generating = true;
 		try {
+			// @ts-ignore - CDN dynamic import
 			const { default: jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js');
 			const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
 			const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight(), margin = 50, contentW = pageW - margin*2;
@@ -181,8 +198,13 @@
 			doc.text(`Generated: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`, margin, y);
 			doc.setTextColor(0); y+=25; doc.setDrawColor(200); doc.line(margin, y, pageW-margin, y); y+=20;
 
+			/**
+			 * @param {string} canvasId
+			 * @param {string} title
+			 * @param {number} [h=220]
+			 */
 			function addChart(canvasId, title, h=220) {
-				const cv = document.getElementById(canvasId); if(!cv) return;
+				const cv = /** @type {HTMLCanvasElement} */ (document.getElementById(canvasId)); if(!cv) return;
 				const img = cv.toDataURL('image/png',1.0);
 				const ch = title.includes('Split') ? 250 : h;
 				if (y+ch+30 > pageH-margin) { doc.addPage(); y=margin; }
@@ -191,13 +213,14 @@
 				const x = title.includes('Split') ? margin+(contentW-w)/2 : margin;
 				doc.addImage(img,'PNG',x,y,w,ch); y+=ch+20;
 			}
+			/** @param {string} title */
 			function addHeader(title) {
 				if(y+40>pageH-margin){doc.addPage();y=margin;}
 				doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text(title,margin,y);y+=8;
 				doc.setDrawColor(180);doc.line(margin,y,pageW-margin,y);y+=15;
 			}
 
-			const active = sourceOptions.filter(s=>selectedSources.includes(s.value));
+			const active = sourceOptions.filter((/** @type {any} */ s)=>selectedSources.includes(s.value));
 
 			if (includeCombined && active.length > 1) {
 				addHeader('Combined Report');
@@ -236,18 +259,24 @@
 			const result = await resp.json();
 			const ad = result?.data ? JSON.parse(result.data) : result;
 			if(ad?.[1]?.success||ad?.success){ alert('Report saved successfully!'); window.location.reload(); }
-		} catch(err) { console.error('PDF error:',err); alert('Error: '+err.message); }
+		} catch(/** @type {any} */ err) { console.error('PDF error:',err); alert('Error: '+err.message); }
 		finally { generating = false; }
 	}
 
+	/** @param {any} a */
 	function formatCurrency(a){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(a);}
+	/** @param {any} d */
 	function formatDate(d){if(!d)return'—';const x=new Date(d+(d.includes('T')?'':'T12:00:00'));return isNaN(x.getTime())?'—':x.toLocaleDateString('en-US',{month:'short',year:'numeric'});}
+	/** @param {any} d */
 	function formatDateTime(d){if(!d)return'—';const x=new Date(d);return isNaN(x.getTime())?'—':x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});}
+	/** @param {any} b */
 	function formatBytes(b){if(!b)return'—';if(b<1024)return b+' B';if(b<1024*1024)return(b/1024).toFixed(1)+' KB';return(b/(1024*1024)).toFixed(1)+' MB';}
-	function toggleSource(v){if(selectedSources.includes(v)){if(selectedSources.length>1)selectedSources=selectedSources.filter(d=>d!==v);}else selectedSources=[...selectedSources,v];}
-	function toggleChart(v){if(selectedCharts.includes(v))selectedCharts=selectedCharts.filter(c=>c!==v);else selectedCharts=[...selectedCharts,v];}
+	/** @param {any} v */
+	function toggleSource(v){if(selectedSources.includes(v)){if(selectedSources.length>1)selectedSources=selectedSources.filter((/** @type {any} */ d)=>d!==v);}else selectedSources=[...selectedSources,v];}
+	/** @param {any} v */
+	function toggleChart(v){if(selectedCharts.includes(v))selectedCharts=selectedCharts.filter((/** @type {any} */ c)=>c!==v);else selectedCharts=[...selectedCharts,v];}
 
-	$: activeSources = sourceOptions.filter(s=>selectedSources.includes(s.value));
+	$: activeSources = sourceOptions.filter((/** @type {any} */ s)=>selectedSources.includes(s.value));
 	$: canGenerate = dateStart && dateEnd && selectedSources.length > 0 && selectedCharts.length > 0 && filteredData.length > 0;
 </script>
 
@@ -325,7 +354,7 @@
 					<div class="section"><h3>Monthly Breakdown</h3>
 						<div class="table-wrapper"><table>
 							<thead><tr><th>Month</th>{#each activeSources as src}<th class="col-right">{src.unitLabel}</th><th class="col-right">{src.label} Rev</th>{/each}<th class="col-right">Total Revenue</th></tr></thead>
-							<tbody>{#each combinedMonthlyRows as row}<tr><td>{formatDate(row.month)}</td>{#each activeSources as src}<td class="col-right">{(row[src.value+'_units']||0).toLocaleString()}</td><td class="col-right">{formatCurrency(row[src.value+'_revenue']||0)}</td>{/each}<td class="col-right total-cell">{formatCurrency(activeSources.reduce((s,src)=>s+(row[src.value+'_revenue']||0),0))}</td></tr>{/each}</tbody>
+							<tbody>{#each combinedMonthlyRows as row}<tr><td>{formatDate(row.month)}</td>{#each activeSources as src}<td class="col-right">{(row[src.value+'_units']||0).toLocaleString()}</td><td class="col-right">{formatCurrency(row[src.value+'_revenue']||0)}</td>{/each}<td class="col-right total-cell">{formatCurrency(activeSources.reduce((/** @type {number} */ s,/** @type {any} */ src)=>s+(row[src.value+'_revenue']||0),0))}</td></tr>{/each}</tbody>
 							<tfoot><tr><td class="total-label">Total</td>{#each activeSources as src}<td class="col-right total-value">{sourceStats[src.value].units.toLocaleString()}</td><td class="col-right total-value">{formatCurrency(sourceStats[src.value].revenue)}</td>{/each}<td class="col-right total-value">{formatCurrency(totalRevenue)}</td></tr></tfoot>
 						</table></div>
 					</div>

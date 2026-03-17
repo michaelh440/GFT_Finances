@@ -1,7 +1,9 @@
 <!-- src/routes/corp/import_engagements/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {{ contacts: any[] }} */
   export let data;
+  /** @type {any} */
   export let form;
 
   const TYPES = [
@@ -351,7 +353,7 @@
                 <span class="contact-missing">⚠ No contact match for "{match.csv.company_name || match.csv.email || '?'}"</span>
                 <select
                   class="input-select contact-override"
-                  on:change={(e) => { decisions[i] = { ...decisions[i], corp_contact_id: e.target.value ? parseInt(/** @type {any} */ (e.target).value) : null }; }}
+                  on:change={(e) => { decisions[i] = { ...decisions[i], corp_contact_id: /** @type {HTMLInputElement} */ (e.target).value ? parseInt(/** @type {HTMLInputElement} */ (e.target).value) : null }; }}
                 >
                   <option value="">— Link to contact (optional) —</option>
                   {#each data.contacts as c}

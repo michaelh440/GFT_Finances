@@ -3,7 +3,9 @@
   import { enhance } from '$app/forms';
   import { resolve } from '$app/paths';
 
+  /** @type {{ classes: any[] }} */
   export let data;
+  /** @type {any} */
   export let form;
 
   let activeTab = 'manual';

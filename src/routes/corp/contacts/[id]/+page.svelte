@@ -1,14 +1,16 @@
 <!-- src/routes/corp/contacts/[id]/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {{ contact: any, engagements: any[] }} */
   export let data;
 
   let editing = false;
   $: contact     = data.contact;
   $: engagements = data.engagements ?? [];
 
-  const fmt = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
+  const fmt = (/** @type {any} */ n) => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
 
+  /** @type {Record<string, string>} */
   const typeLabel = {
     corporate_training: 'Corporate Training',
     private_show_gft:   'Private Show @ GFT',
@@ -18,6 +20,7 @@
     other:              'Other',
   };
 
+  /** @type {Record<string, string>} */
   const pipelineLabel = {
     lm_emailed:          'LM / Emailed',
     proposal_in_progress:'Proposal In Progress',
@@ -27,6 +30,7 @@
     none:                '—',
   };
 
+  /** @type {Record<string, string>} */
   const contractLabel = {
     needs_sending: 'Needs Sending',
     sent:          'Sent',

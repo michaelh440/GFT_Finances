@@ -96,7 +96,7 @@ export async function load() {
     .map(g => ({
       canonical_id: g.canonical_id,
       match_types:  g.match_types,
-      contacts:     g.all_ids.map(id => contactMap[id]).filter(Boolean),
+      contacts:     g.all_ids.map(/** @param {any} id */ id => contactMap[id]).filter(Boolean),
     }))
     .filter(g => g.contacts.length > 1);
 

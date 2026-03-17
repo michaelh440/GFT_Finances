@@ -1,7 +1,9 @@
 <!-- src/routes/corp/import_contacts/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {any} */
   export let data;
+  /** @type {any} */
   export let form;
 
   // ── State ────────────────────────────────────────────────────────────────

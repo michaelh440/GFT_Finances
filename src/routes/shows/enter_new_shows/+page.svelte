@@ -8,26 +8,13 @@
 
 	let submitting = $state(false);
 
-	let show_code = $state(form?.values?.show_code ?? '');
-	let show_name = $state(form?.values?.show_name ?? '');
-	let format = $state(form?.values?.format ?? '');
-	let audience_type = $state(form?.values?.audience_type ?? '');
-	let day_of_week = $state(form?.values?.day_of_week ?? '');
-	let standard_ticket_price = $state(form?.values?.standard_ticket_price ?? 0);
-	let description = $state(form?.values?.description ?? '');
-
-	// Re-sync from form when it changes (e.g. after validation error)
-	$effect(() => {
-		if (form?.values) {
-			show_code = form.values.show_code ?? '';
-			show_name = form.values.show_name ?? '';
-			format = form.values.format ?? '';
-			audience_type = form.values.audience_type ?? '';
-			day_of_week = form.values.day_of_week ?? '';
-			standard_ticket_price = form.values.standard_ticket_price ?? 0;
-			description = form.values.description ?? '';
-		}
-	});
+	let show_code = $derived(form?.values?.show_code ?? '');
+	let show_name = $derived(form?.values?.show_name ?? '');
+	let format = $derived(form?.values?.format ?? '');
+	let audience_type = $derived(form?.values?.audience_type ?? '');
+	let day_of_week = $derived(form?.values?.day_of_week ?? '');
+	let standard_ticket_price = $derived(form?.values?.standard_ticket_price ?? 0);
+	let description = $derived(form?.values?.description ?? '');
 
 	// Auto-generate show code from show name
 	let codeManuallyEdited = $state(false);

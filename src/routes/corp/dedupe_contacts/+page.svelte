@@ -1,7 +1,9 @@
 <!-- src/routes/corp/dedupe_contacts/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {{ groups: any[] }} */
   export let data;
+  /** @type {any} */
   export let form;
 
   const FIELDS = [
@@ -34,7 +36,7 @@
   function hasConflict(group, fieldKey) {
     const canonical = String(group.contacts[0][fieldKey] ?? '').trim().toLowerCase();
     return group.contacts.slice(1).some(
-      c => String(c[fieldKey] ?? '').trim().toLowerCase() !== canonical
+      /** @param {any} c */ c => String(c[fieldKey] ?? '').trim().toLowerCase() !== canonical
     );
   }
 
@@ -160,7 +162,7 @@
                   {group.match_types === 'email' ? 'email match' : group.match_types === 'name_phone' ? 'name + phone match' : 'email + name/phone'}
                 </span>
                 <span class="eng-total">
-                  {group.contacts.reduce((s, c) => s + (c.engagement_count || 0), 0)} engagements total
+                  {group.contacts.reduce((/** @type {any} */ s, /** @type {any} */ c) => s + (c.engagement_count || 0), 0)} engagements total
                 </span>
               </div>
               <button type="button" class="btn-skip"

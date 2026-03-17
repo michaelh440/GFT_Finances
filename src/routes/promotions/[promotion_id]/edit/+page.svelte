@@ -6,18 +6,11 @@
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 
-	let promotion = $state(data.promotion ? { ...data.promotion } : null);
+	let promotion = $derived(data.promotion ? { ...data.promotion } : null);
 	let shows = $derived(data.shows || []);
 	let classes = $derived(data.classes || []);
 	let linkedShowCodes = $derived(data.linkedShowCodes || []);
 	let linkedClassCodes = $derived(data.linkedClassCodes || []);
-
-	// Re-sync promotion from data when it changes
-	$effect(() => {
-		if (data.promotion) {
-			promotion = { ...data.promotion };
-		}
-	});
 
 	let submitting = $state(false);
 

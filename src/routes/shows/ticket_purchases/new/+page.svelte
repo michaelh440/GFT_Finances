@@ -6,27 +6,36 @@
 	/** @type {{ data: { shows: any[], patrons: any[] }, form: any }} */
 	let { data, form } = $props();
 
-	let patron_id = $state(form?.values?.patron_id ?? '');
-	let show_code = $state(form?.values?.show_code ?? '');
-	let show_date = $state(form?.values?.show_date ?? '');
-	let tickets_purchased = $state(form?.values?.tickets_purchased ?? 1);
-	let amount_paid = $state(form?.values?.amount_paid ?? 0);
-	let purchase_date = $state(form?.values?.purchase_date ?? new Date().toISOString().split('T')[0]);
-	let payment_method = $state(form?.values?.payment_method ?? '');
-	let notes = $state(form?.values?.notes ?? '');
+	// Derived defaults from form prop (reactive to form changes, e.g. after validation error)
+	let formPatronId = $derived(form?.values?.patron_id ?? '');
+	let formShowCode = $derived(form?.values?.show_code ?? '');
+	let formShowDate = $derived(form?.values?.show_date ?? '');
+	let formTicketsPurchased = $derived(form?.values?.tickets_purchased ?? 1);
+	let formAmountPaid = $derived(form?.values?.amount_paid ?? 0);
+	let formPurchaseDate = $derived(form?.values?.purchase_date ?? new Date().toISOString().split('T')[0]);
+	let formPaymentMethod = $derived(form?.values?.payment_method ?? '');
+	let formNotes = $derived(form?.values?.notes ?? '');
+
+	// Mutable state for form inputs, initialized with defaults
+	let patron_id = $state('');
+	let show_code = $state('');
+	let show_date = $state('');
+	let tickets_purchased = $state(1);
+	let amount_paid = $state(0);
+	let purchase_date = $state(new Date().toISOString().split('T')[0]);
+	let payment_method = $state('');
+	let notes = $state('');
 
 	// Re-sync from form when it changes (e.g. after validation error)
 	$effect(() => {
-		if (form?.values) {
-			patron_id = form.values.patron_id ?? '';
-			show_code = form.values.show_code ?? '';
-			show_date = form.values.show_date ?? '';
-			tickets_purchased = form.values.tickets_purchased ?? 1;
-			amount_paid = form.values.amount_paid ?? 0;
-			purchase_date = form.values.purchase_date ?? new Date().toISOString().split('T')[0];
-			payment_method = form.values.payment_method ?? '';
-			notes = form.values.notes ?? '';
-		}
+		patron_id = formPatronId;
+		show_code = formShowCode;
+		show_date = formShowDate;
+		tickets_purchased = formTicketsPurchased;
+		amount_paid = formAmountPaid;
+		purchase_date = formPurchaseDate;
+		payment_method = formPaymentMethod;
+		notes = formNotes;
 	});
 
 	// Group shows by format for dropdown

@@ -65,7 +65,17 @@
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx eslint . 2>&1 | tail -5)",
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep -B1 \"Error:\" | head -60)",
       "Bash(cd /c/Projects/GFT/GFT_Finances && npx svelte-check --tsconfig ./jsconfig.json 2>&1 | sed 's/\\\\x1b\\\\[[0-9;]*m//g' | grep \"Warn:\" | sort | uniq -c | sort -rn)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | tail -60)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep \"^c:\" | sed 's/:[0-9]*:[0-9]*$//' | sort -u)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep -E \"^\\(Error|Warn\\)\" | sort | uniq -c | sort -rn | head -20)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep -oP '\\(Error|Warn\\): .*?\\\\\\(' | sort | uniq -c | sort -rn)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep -E \"^\\(Error|Warn\\):\" | sed \"s/'.*//\" | sort | uniq -c | sort -rn | head -20)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep -E \"^\\\\[\" | head -30)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep \"Error:\" | sed 's/Variable .*/implicit any/' | sed 's/Parameter .*/implicit any/' | sort | uniq -c | sort -rn | head -20)",
+      "Bash(npx svelte-check:*)",
+      "Read(//tmp/**)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | tee /dev/stderr | grep -i \"error\" | head -30)"
     ]
   }
 }

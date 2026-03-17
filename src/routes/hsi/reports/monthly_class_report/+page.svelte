@@ -5,9 +5,11 @@
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
+	/** @type {{ summaries: any[], classes: any[] }} */
 	export let data;
 
 	let mounted = false;
+	/** @type {Record<string, any>} */
 	let charts = {};
 
 	// ---- Filters ----
@@ -15,8 +17,11 @@
 	// selectedYears overlay that same month pattern onto other years for comparison
 	let dateStart = '';
 	let dateEnd = '';
+	/** @type {any[]} */
 	let availableYears = [];
+	/** @type {any[]} */
 	let selectedYears = [];
+	/** @type {any[]} */
 	let selectedClasses = [];
 	let classFilterOpen = false;
 
@@ -32,7 +37,7 @@
 
 	// Extract available years
 	$: {
-		const yrs = [...new Set((data.summaries || []).map((s) => s.summary_year))].sort((a, b) => b - a);
+		const yrs = [...new Set((data.summaries || []).map((/** @type {any} */ s) => s.summary_year))].sort((/** @type {any} */ a, /** @type {any} */ b) => b - a);
 		availableYears = yrs;
 		if (selectedYears.length === 0 && yrs.length > 0) {
 			// Default: select the years that overlap with the date range
@@ -87,6 +92,7 @@
 			? (data.classes || []).find((c) => c.class_code === selectedClasses[0])?.class_name || '1 class'
 			: `${selectedClasses.length} classes`;
 
+	/** @param {any} code */
 	function toggleClass(code) {
 		if (selectedClasses.includes(code)) selectedClasses = selectedClasses.filter((c) => c !== code);
 		else selectedClasses = [...selectedClasses, code];
@@ -124,7 +130,9 @@
 	$: uniqueMonths = [...new Set(filteredData.map((s) => s.summary_month))].length;
 
 	// ---- Build overlay year data for charts ----
+	/** @param {any} dataSlice */
 	function buildOverlayData(dataSlice) {
+		/** @type {Record<string, any>} */
 		const byYear = {};
 		for (const yr of selectedYears) {
 			byYear[yr] = { revenue: Array(monthSlots.length).fill(0), units: Array(monthSlots.length).fill(0) };
@@ -139,6 +147,7 @@
 
 	// ---- Per-class totals ----
 	$: classBreakdown = (() => {
+		/** @type {Record<string, any>} */
 		const byClass = {};
 		for (const s of filteredData) {
 			if (!byClass[s.class_code]) byClass[s.class_code] = { code: s.class_code, name: s.class_name, track: s.track, revenue: 0, units: 0 };
@@ -149,6 +158,7 @@
 	})();
 
 	$: perClassOverlayData = (() => {
+		/** @type {Record<string, any>} */
 		const result = {};
 		for (const cls of classBreakdown) {
 			result[cls.code] = buildOverlayData(filteredData.filter((s) => s.class_code === cls.code));
@@ -157,21 +167,31 @@
 	})();
 
 	// ---- Chart rendering ----
-	function destroyCharts() { Object.values(charts).forEach((c) => c.destroy()); charts = {}; }
+	function destroyCharts() { Object.values(charts).forEach((/** @type {any} */ c) => c.destroy()); charts = {}; }
+	/**
+	 * @param {any} id
+	 * @param {any} config
+	 */
 	function rc(id, config) {
-		const ctx = document.getElementById(id);
+		const ctx = /** @type {HTMLCanvasElement} */ (document.getElementById(id));
 		if (!ctx) return;
 		if (charts[id]) charts[id].destroy();
 		charts[id] = new Chart(ctx, config);
 	}
+	/** @param {any} v */
 	function dollarTick(v) { return '$' + Number(v).toLocaleString(); }
 
+	/**
+	 * @param {any} overlayData
+	 * @param {any} metric
+	 * @param {string} [chartType]
+	 */
 	function yearDatasets(overlayData, metric, chartType = 'bar') {
 		return selectedYears.map((yr, i) => {
 			const d = overlayData[yr]?.[metric] || [];
 			if (chartType === 'line') {
 				const cum = []; let sum = 0;
-				for (const v of d) { sum += v; cum.push(sum); }
+				for (const v of /** @type {any[]} */ (d)) { sum += v; cum.push(sum); }
 				return { label: String(yr), data: cum, borderColor: yearColors[i % yearColors.length], backgroundColor: 'transparent', borderWidth: 2, tension: 0.3, pointRadius: 3 };
 			}
 			return { label: String(yr), data: d, backgroundColor: yearColors[i % yearColors.length] };
@@ -247,12 +267,14 @@
 	onMount(() => { mounted = true; });
 	onDestroy(() => { destroyCharts(); });
 
+	/** @param {any} yr */
 	function toggleYear(yr) {
 		if (selectedYears.includes(yr)) {
 			if (selectedYears.length > 1) selectedYears = selectedYears.filter((y) => y !== yr);
 		} else selectedYears = [...selectedYears, yr].sort((a, b) => b - a);
 	}
 
+	/** @param {any} a */
 	function formatCurrency(a) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(a); }
 
 	$: dateRangeLabel = (() => {
