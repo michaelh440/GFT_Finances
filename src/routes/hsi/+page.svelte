@@ -11,34 +11,39 @@
 	<div class="hero">
 		<div class="logo-container">
 			<div class="logo-placeholder">
-				<span class="logo-icon">🎭</span>
-				<h1>Good Friends Theater</h1>
-				<p class="tagline">B&C Entertainment Financial Tracker</p>
+				<span class="logo-icon">💼</span>
+				<h1>Houston School of Improv</h1>
+				<p class="tagline">''</p>
 			</div>
 		</div>
 
 		<div class="quick-links">
 			<h2>Quick Access</h2>
 			<div class="link-grid">
-				<a href={resolve('/hsi')} class="quick-card">
-					<span class="card-icon">🎭</span>
-					<span class="card-label">HSI</span>
-					<span class="card-desc">Houston School of Improv</span>
+				<a href={resolve('/hsi/classes')} class="quick-card">
+					<span class="card-icon">�</span>
+					<span class="card-label">Classes</span>
+					<span class="card-desc">Manage HSI Classes</span>
 				</a>
-				<a href={resolve('/gft')} class="quick-card">
-					<span class="card-icon">🎪</span>
-					<span class="card-label">GFT</span>
-					<span class="card-desc">Good Friends Theater</span>
+				<a href={resolve('/hsi/registrations')} class="quick-card">
+					<span class="card-icon">📝</span>
+					<span class="card-label">Registrations</span>
+					<span class="card-desc">Manage HSI Registrations</span>
 				</a>
-				<a href={resolve(/** @type {any} */ ('/csz'))} class="quick-card disabled">
-					<span class="card-icon">⚡</span>
-					<span class="card-label">CSz</span>
-					<span class="card-desc">ComedySportz Houston</span>
+				<a href={resolve('/hsi/students')} class="quick-card">
+					<span class="card-icon">👥</span>
+					<span class="card-label">Students</span>
+					<span class="card-desc">Manage HSI Students</span>
 				</a>
-				<a href={resolve('/corp')} class="quick-card">
-					<span class="card-icon">💼</span>
-					<span class="card-label">Corp</span>
-					<span class="card-desc">Corporate</span>
+				<a href={resolve('/hsi/teachers')} class="quick-card">
+					<span class="card-icon">👨‍🏫</span>
+					<span class="card-label">Teachers</span>
+					<span class="card-desc">Manage HSI Teachers</span>
+				</a>
+				<a href={resolve('/hsi/reports')} class="quick-card">
+					<span class="card-icon">📊</span>
+					<span class="card-label">Reports</span>
+					<span class="card-desc">HSI Reports</span>
 				</a>
 			</div>
 		</div>

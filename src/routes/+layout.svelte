@@ -46,17 +46,17 @@
 			label: 'GFT',
 			fullName: 'Good Friends Theater',
 			icon: '🎪',
-			basePath: '/shows',
+			basePath: '/gft',
 			children: [
-				{ label: 'Shows', href: '/shows' },
-				{ label: 'Patrons', href: '/shows/patrons' },
-				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
-				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
-				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
-				//{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
-				//{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
-				//{ label: 'Shows Financial Reports', href: '/shows/reports' }
-				{ label: '2026 Combined Reporting', href: '/shows/reports/2026/combined_reporting' }
+				{ label: 'Shows', href: '/gft/shows' },
+				{ label: 'Patrons', href: '/gft/patrons' },
+				//{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
+				{ label: 'Ticket Purchases', href: '/gft/ticket_purchases' },
+				{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
+				//{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
+				//{ label: 'Enter Monthly Summary', href: '/gft/enter_monthly_summary' },
+				//{ label: 'Shows Financial Reports', href: '/gft/reports' }
+				{ label: '2026 Combined Reporting', href: '/gft/reports/2026/combined_reporting' }
 			]
 		},
 		{

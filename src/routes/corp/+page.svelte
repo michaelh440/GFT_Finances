@@ -11,34 +11,35 @@
 	<div class="hero">
 		<div class="logo-container">
 			<div class="logo-placeholder">
-				<span class="logo-icon">🎭</span>
-				<h1>Good Friends Theater</h1>
-				<p class="tagline">B&C Entertainment Financial Tracker</p>
+				<span class="logo-icon">💼</span>
+				<h1>B&C Corporate Business</h1>
+				<p class="tagline">''</p>
 			</div>
 		</div>
 
 		<div class="quick-links">
 			<h2>Quick Access</h2>
 			<div class="link-grid">
-				<a href={resolve('/hsi')} class="quick-card">
-					<span class="card-icon">🎭</span>
-					<span class="card-label">HSI</span>
-					<span class="card-desc">Houston School of Improv</span>
+				<a href={resolve('/corp/companies')} class="quick-card">
+					<span class="card-icon">🏢</span>
+					<span class="card-label">Companies</span>
+					<span class="card-desc">Manage Corporate Companies</span>
+
 				</a>
-				<a href={resolve('/gft')} class="quick-card">
-					<span class="card-icon">🎪</span>
-					<span class="card-label">GFT</span>
-					<span class="card-desc">Good Friends Theater</span>
+				<a href={resolve('/corp/contacts')} class="quick-card">
+					<span class="card-icon">👥</span>
+					<span class="card-label">Contacts</span>
+					<span class="card-desc">Manage Corporate Contacts</span>
 				</a>
-				<a href={resolve(/** @type {any} */ ('/csz'))} class="quick-card disabled">
+				<a href={resolve('/corp/engagements')} class="quick-card">
 					<span class="card-icon">⚡</span>
-					<span class="card-label">CSz</span>
-					<span class="card-desc">ComedySportz Houston</span>
+					<span class="card-label">Engagements</span>
+					<span class="card-desc">Manage Corporate Engagements</span>
 				</a>
-				<a href={resolve('/corp')} class="quick-card">
-					<span class="card-icon">💼</span>
-					<span class="card-label">Corp</span>
-					<span class="card-desc">Corporate</span>
+				<a href={resolve('/corp/reports')} class="quick-card">
+					<span class="card-icon">📊</span>
+					<span class="card-label">Reports</span>
+					<span class="card-desc">Corporate Reports</span>
 				</a>
 			</div>
 		</div>
