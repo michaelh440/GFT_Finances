@@ -70,6 +70,7 @@ export async function load() {
   const contacts = await sql`
     SELECT
       c.corp_contact_id,
+      c.corp_company_id,
       c.company_name,
       c.first_name,
       c.last_name,
@@ -96,7 +97,7 @@ export async function load() {
     .map(g => ({
       canonical_id: g.canonical_id,
       match_types:  g.match_types,
-      contacts:     g.all_ids.map(/** @param {any} id */ id => contactMap[id]).filter(Boolean),
+      contacts:     g.all_ids.map(id => contactMap[id]).filter(Boolean),
     }))
     .filter(g => g.contacts.length > 1);
 
@@ -105,40 +106,81 @@ export async function load() {
 
 export const actions = {
   merge: async ({ request }) => {
-    const form        = await request.formData();
-    const mergesJson  = (form.get('merges') || '').toString();
+    const form       = await request.formData();
+    const mergesJson = (form.get('merges') || '').toString();
     if (!mergesJson) return { success: false, error: 'No merge data.' };
 
     try {
       const merges = JSON.parse(mergesJson);
-      // merges: [{ keep_id, discard_ids, updates: { company_name, email, phone, ... } }]
-
       let merged = 0;
 
       for (const m of merges) {
         const { keep_id, discard_ids, updates } = m;
 
-        // Apply any field overrides chosen by the user
-        if (updates && Object.keys(updates).length > 0) {
-          const u = updates;
-          await sql`
-            UPDATE corp_contacts SET
-              company_name  = COALESCE(${u.company_name  ?? null}, company_name),
-              first_name    = COALESCE(${u.first_name    ?? null}, first_name),
-              last_name     = COALESCE(${u.last_name     ?? null}, last_name),
-              email         = COALESCE(${u.email         ?? null}, email),
-              phone         = COALESCE(${u.phone         ?? null}, phone),
-              address_line1 = COALESCE(${u.address_line1 ?? null}, address_line1),
-              city          = COALESCE(${u.city          ?? null}, city),
-              state         = COALESCE(${u.state         ?? null}, state),
-              zip           = COALESCE(${u.zip           ?? null}, zip),
-              updated_at    = NOW()
-            WHERE corp_contact_id = ${keep_id}
-          `;
-        }
+        // ── Fetch the canonical contact's current state ───────────────────
+        const canonicalRows = await sql`
+          SELECT company_name, email, phone FROM corp_contacts
+          WHERE corp_contact_id = ${keep_id}
+        `;
+        const canonical = canonicalRows[0] ?? {};
 
-        // Reassign all engagements from discarded contacts to the keeper
+        // ── Fetch the most recent history entry (to compare against) ──────
+        const lastHistoryRows = await sql`
+          SELECT company_name, email, phone FROM corp_contact_history
+          WHERE corp_contact_id = ${keep_id}
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+        const lastHistory = lastHistoryRows[0] ?? null;
+
+        // ── Process each discarded contact ────────────────────────────────
         for (const discard_id of discard_ids) {
+          const discardRows = await sql`
+            SELECT company_name, email, phone FROM corp_contacts
+            WHERE corp_contact_id = ${discard_id}
+          `;
+          const discard = discardRows[0];
+          if (!discard) continue;
+
+          // Compare discard's data against the canonical AND the last history row.
+          // Only write a history entry if at least one field differs from both.
+          const compareTo = lastHistory ?? canonical;
+
+          const differsFromCurrent =
+            (discard.company_name ?? '') !== (canonical.company_name ?? '') ||
+            (discard.email        ?? '') !== (canonical.email        ?? '') ||
+            (discard.phone        ?? '') !== (canonical.phone        ?? '');
+
+          const differsFromLastHistory =
+            !lastHistory ||
+            (discard.company_name ?? '') !== (compareTo.company_name ?? '') ||
+            (discard.email        ?? '') !== (compareTo.email        ?? '') ||
+            (discard.phone        ?? '') !== (compareTo.phone        ?? '');
+
+          if (differsFromCurrent && differsFromLastHistory) {
+            // Look up the company_id for the discard contact's company name
+            const companyRows = await sql`
+              SELECT corp_company_id FROM corp_companies
+              WHERE LOWER(TRIM(company_name)) = LOWER(TRIM(${discard.company_name ?? ''}))
+              LIMIT 1
+            `;
+            const companyId = companyRows[0]?.corp_company_id ?? null;
+
+            await sql`
+              INSERT INTO corp_contact_history
+                (corp_contact_id, company_name, email, phone, notes, corp_company_id)
+              VALUES (
+                ${keep_id},
+                ${discard.company_name ?? null},
+                ${discard.email        ?? null},
+                ${discard.phone        ?? null},
+                ${'Merged from contact ID ' + discard_id},
+                ${companyId}
+              )
+            `;
+          }
+
+          // Reassign engagements then delete
           await sql`
             UPDATE corp_engagements
             SET corp_contact_id = ${keep_id}, updated_at = NOW()
@@ -147,6 +189,59 @@ export const actions = {
           await sql`
             DELETE FROM corp_contacts WHERE corp_contact_id = ${discard_id}
           `;
+        }
+
+        // ── Apply field overrides the user chose ──────────────────────────
+        // Write the CURRENT canonical values to history first (before overwriting),
+        // but only if they differ from the last history entry.
+        if (updates && Object.keys(updates).length > 0) {
+          const u = updates;
+
+          // Check if current canonical state differs from last history
+          const canonicalDiffersFromHistory =
+            !lastHistory ||
+            (canonical.company_name ?? '') !== (lastHistory.company_name ?? '') ||
+            (canonical.email        ?? '') !== (lastHistory.email        ?? '') ||
+            (canonical.phone        ?? '') !== (lastHistory.phone        ?? '');
+
+          if (canonicalDiffersFromHistory) {
+            await sql`
+              INSERT INTO corp_contact_history
+                (corp_contact_id, company_name, email, phone, notes)
+              VALUES (
+                ${keep_id},
+                ${canonical.company_name ?? null},
+                ${canonical.email        ?? null},
+                ${canonical.phone        ?? null},
+                ${'Previous values before field update'}
+              )
+            `;
+          }
+
+          // Apply field overrides — only update fields that have chosen values
+          if (u.company_name  != null) await sql`UPDATE corp_contacts SET company_name  = ${u.company_name},  updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.first_name    != null) await sql`UPDATE corp_contacts SET first_name    = ${u.first_name},    updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.last_name     != null) await sql`UPDATE corp_contacts SET last_name     = ${u.last_name},     updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.email         != null) await sql`UPDATE corp_contacts SET email         = ${u.email},         updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.phone         != null) await sql`UPDATE corp_contacts SET phone         = ${u.phone},         updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.address_line1 != null) await sql`UPDATE corp_contacts SET address_line1 = ${u.address_line1}, updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.city          != null) await sql`UPDATE corp_contacts SET city          = ${u.city},          updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.state         != null) await sql`UPDATE corp_contacts SET state         = ${u.state},         updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+          if (u.zip           != null) await sql`UPDATE corp_contacts SET zip           = ${u.zip},           updated_at = NOW() WHERE corp_contact_id = ${keep_id}`;
+
+          // If company_name changed, resolve the new corp_company_id
+          if (u.company_name) {
+            const coRows = await sql`
+              SELECT corp_company_id FROM corp_companies
+              WHERE LOWER(TRIM(company_name)) = LOWER(TRIM(${u.company_name}))
+              LIMIT 1
+            `;
+            const newCompanyId = coRows[0]?.corp_company_id ?? null;
+            await sql`
+              UPDATE corp_contacts SET corp_company_id = ${newCompanyId}
+              WHERE corp_contact_id = ${keep_id}
+            `;
+          }
         }
 
         merged++;

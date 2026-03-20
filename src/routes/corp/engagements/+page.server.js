@@ -16,7 +16,7 @@ export async function load({ url }) {
            e.pipeline_status, e.contract_status,
            e.engagement_date::text, e.audience_size_min, e.audience_size_max,
            e.amount_paid, e.is_archived,
-           c.company_name, c.corp_contact_id
+           c.company_name, c.corp_contact_id, c.corp_company_id
     FROM corp_engagements e
     LEFT JOIN corp_contacts c ON c.corp_contact_id = e.corp_contact_id
     WHERE e.is_archived = ${archived}

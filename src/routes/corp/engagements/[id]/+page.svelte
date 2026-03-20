@@ -1,14 +1,13 @@
 <!-- src/routes/corp/engagements/[id]/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
-  /** @type {{ engagement: any, contacts: any[] }} */
   export let data;
 
   let editing = false;
   $: e        = data.engagement;
   $: contacts = data.contacts ?? [];
 
-  const fmt = (/** @type {any} */ n) => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
+  const fmt = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
   const TYPES = [
     ['corporate_training', 'Corporate Training'],
@@ -35,7 +34,6 @@
     ['signed',        'Signed'],
   ];
 
-  /** @param {any} eng */
   function audienceStr(eng) {
     if (eng.audience_size_min == null) return '—';
     const approx = eng.audience_size_approx ? '~' : '';
@@ -51,9 +49,15 @@
     <h1>{e.title ?? '(untitled)'}</h1>
     {#if e.company_name}
       <p class="sub">
-        <a href="/corp/contacts/{e.corp_contact_id}">{e.company_name}</a>
+        {#if e.corp_company_id}
+          <a href="/corp/companies/{e.corp_company_id}">{e.company_name}</a>
+        {:else}
+          <a href="/corp/contacts/{e.corp_contact_id}">{e.company_name}</a>
+        {/if}
         {#if e.first_name || e.last_name}
-          · {[e.first_name, e.last_name].filter(Boolean).join(' ')}
+          · <a href="/corp/contacts/{e.corp_contact_id}" class="contact-sub">
+              {[e.first_name, e.last_name].filter(Boolean).join(' ')}
+            </a>
         {/if}
       </p>
     {/if}
@@ -178,6 +182,7 @@
   .sub { margin: 0; color: #666; font-size: 0.95rem; }
   .sub a { color: #2563eb; text-decoration: none; }
   .sub a:hover { text-decoration: underline; }
+  .contact-sub { color: #6b7280 !important; font-size: 0.875rem; }
   .header-actions { display: flex; align-items: center; gap: 0.75rem; }
   .badge.archived { background: #f3f4f6; color: #6b7280; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }

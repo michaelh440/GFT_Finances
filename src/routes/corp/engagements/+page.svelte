@@ -14,10 +14,10 @@
    * @property {boolean} is_archived
    * @property {string} company_name
    * @property {number} corp_contact_id
+   * @property {number|null} corp_company_id
    */
 
   import { goto } from '$app/navigation';
-  /** @type {{ engagements: Engagement[], filters: { type: string, pipeline: string, contract: string, archived: boolean } }} */
   export let data;
 
   const TYPES = [
@@ -220,7 +220,9 @@
                 </a>
               </td>
               <td>
-                {#if e.corp_contact_id}
+                {#if e.corp_company_id}
+                  <a href="/corp/companies/{e.corp_company_id}" class="company-link">{e.company_name || '—'}</a>
+                {:else if e.corp_contact_id}
                   <a href="/corp/contacts/{e.corp_contact_id}" class="company-link">{e.company_name || '—'}</a>
                 {:else}
                   {e.company_name || '—'}

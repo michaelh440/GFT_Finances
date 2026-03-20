@@ -13,7 +13,7 @@ export async function load({ params }) {
       e.engagement_date::text, e.end_date::text,
       e.audience_size_min, e.audience_size_max, e.audience_size_approx,
       e.amount_paid, e.notes, e.is_archived,
-      c.company_name, c.first_name, c.last_name,
+      c.company_name, c.corp_company_id, c.first_name, c.last_name,
       c.email AS contact_email
     FROM corp_engagements e
     LEFT JOIN corp_contacts c ON c.corp_contact_id = e.corp_contact_id

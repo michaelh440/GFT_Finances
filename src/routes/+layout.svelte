@@ -52,7 +52,7 @@
 				{ label: 'Patrons', href: '/shows/patrons' },
 				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
 				{ label: 'Ticket Purchases', href: '/shows/ticket_purchases' },
-				//{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
+				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
 				//{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
 				//{ label: 'Enter Monthly Summary', href: '/shows/enter_monthly_summary' },
 				//{ label: 'Shows Financial Reports', href: '/shows/reports' }
@@ -73,7 +73,16 @@
 			fullName: 'Corporate',
 			icon: '💼',
 			basePath: '/corp',
-			children: [{ label: 'Coming Soon', href: '#' }]
+			children: [
+				{ label: 'Contacts', href: '/corp/contacts' },
+				{ label: 'Engagements', href: '/corp/engagements' },
+				{ label: 'Companies', href: '/corp/companies' },{ label: 'Import Contacts', href: '/corp/import_contacts' },
+				{ label: 'Import Engagements', href: '/corp/import_engagements' },	
+				{ label: 'Import All', href: '/corp/import' },	
+				{ label: 'Dedupe Contacts', href: '/corp/dedupe_contacts' },	
+				{ label: 'Dedupe Companies', href: '/corp/dedupe_companies' },
+				{ label: 'Corporate Reporting', href: '/corp/reports' }
+			]
 		},
 		{
 			id: 'reporting',
@@ -96,20 +105,75 @@
 	// Admin sub-sections (each expandable independently)
 	const adminSubSections = [
 		{
-			id: 'admin-hsi',
-			label: 'HSI',
-			basePath: '/admin/hsi',
+			id: 'admin-user-management',
+			label: 'User Management',
+			basePath: '/admin/users',
 			children: 
 			[
-				{ label: 'Promotions', href: '/promotions' }	
+				{ label: 'View Users', href: '/admin/users' },
+				{ label: 'Add Users', href: '/admin/users/new' }		
 			
 			]
 		},
+		
 		{
-			id: 'admin-gft',
-			label: 'GFT',
-			basePath: '/admin/gft',
-			children: [{ label: 'Coming Soon', href: '#' }]
+			id: 'admin-hsi-data',
+			label: 'HSI DATA',
+			fullName: 'HSI Data Entry',
+			icon: '✏️',
+			basePath: '/data',
+			children: [
+				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+				{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
+				{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' }
+			]
+		},			
+				
+		{
+			id: 'admin-gft-data',
+			label: 'GFT DATA',
+			fullName: 'GFT Data Entry',
+			icon: '✏️',
+			basePath: '/data',
+			children: [		
+				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
+				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
+				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
+				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
+				
+			]
+		},		
+			
+				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+		
+				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
+		
+		
+				
+		{
+			id: 'admin-reporting',
+			label: 'Reporting',
+			fullName: 'Admin Combined Reporting',
+			icon: '🎪',
+			basePath: '/reports',
+			children: [
+				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
+				//{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
+				{ label: '2026 Combined Reporting', href: '/shows/reports/2026/combined_reporting' },
+				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },	
+				{ label: 'Registration Funnel', href: '/hsi/registrations' },
+				{ label: 'Class Financial Reports', href: '/hsi/reports' },
+				{ label: 'Shows Financial Reports', href: '/shows/reports' },
+				{ label: 'Patron Zip Code Analytics', href: '/shows/patrons/zip_analytics' }
+				
+			]
+		},
+		
+		{
+			id: 'admin-logs',
+			label: 'Audit Logs',
+			basePath: '/admin/audit-log',
+			children: [{ label: 'Session Logs', href: '/admin/audit-log' }]
 		},
 		{
 			id: 'admin-csz',

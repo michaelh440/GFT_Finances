@@ -3,6 +3,7 @@
   /**
    * @typedef {Object} Contact
    * @property {number} corp_contact_id
+   * @property {number|null} corp_company_id
    * @property {string} company_name
    * @property {string} first_name
    * @property {string} last_name
@@ -140,11 +141,17 @@
           {#each pagedContacts as c (c.corp_contact_id)}
             <tr>
               <td class="company-name">
-                <a href="/corp/contacts/{c.corp_contact_id}" class="row-link">
+                {#if c.corp_company_id}
+                  <a href="/corp/companies/{c.corp_company_id}" class="row-link">{c.company_name || '—'}</a>
+                {:else}
                   {c.company_name || '—'}
+                {/if}
+              </td>
+              <td>
+                <a href="/corp/contacts/{c.corp_contact_id}" class="contact-link">
+                  {[c.first_name, c.last_name].filter(Boolean).join(' ') || '(unnamed)'}
                 </a>
               </td>
-              <td>{[c.first_name, c.last_name].filter(Boolean).join(' ') || '—'}</td>
               <td class="email-cell">{c.email || '—'}</td>
               <td>{c.phone || '—'}</td>
               <td>{[c.city, c.state].filter(Boolean).join(', ') || '—'}</td>
@@ -306,6 +313,9 @@
   .row-link:hover {
     text-decoration: underline;
   }
+
+  .contact-link { color: #374151; text-decoration: none; }
+  .contact-link:hover { color: #3b82f6; text-decoration: underline; }
 
   .email-cell {
     color: #6b7280;

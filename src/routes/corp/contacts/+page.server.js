@@ -5,6 +5,7 @@ export async function load() {
   const rows = await sql`
     SELECT
       c.corp_contact_id,
+      c.corp_company_id,
       c.company_name,
       c.first_name,
       c.last_name,
@@ -12,9 +13,9 @@ export async function load() {
       c.phone,
       c.city,
       c.state,
-      COUNT(e.corp_engagement_id)::int        AS engagement_count,
-      SUM(e.amount_paid)                      AS total_revenue,
-      MAX(e.engagement_date)::text            AS last_engagement_date
+      COUNT(e.corp_engagement_id)::int  AS engagement_count,
+      SUM(e.amount_paid)                AS total_revenue,
+      MAX(e.engagement_date)::text      AS last_engagement_date
     FROM corp_contacts c
     LEFT JOIN corp_engagements e ON e.corp_contact_id = c.corp_contact_id
     GROUP BY c.corp_contact_id
