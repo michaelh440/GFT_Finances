@@ -16,10 +16,10 @@
 				{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
 				{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' },
 				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
-				{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
-				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
+				{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
+				{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
+				{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
+				{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
 			]
 		},
 		{
@@ -95,8 +95,8 @@
 				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },	
 				{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Class Financial Reports', href: '/hsi/reports' },
-				{ label: 'Shows Financial Reports', href: '/shows/reports' },
-				{ label: 'Patron Zip Code Analytics', href: '/shows/patrons/zip_analytics' },
+				{ label: 'Shows Financial Reports', href: '/gft/reports' },
+				{ label: 'Patron Zip Code Analytics', href: '/gft/patrons/zip_analytics' },
 				{ label: 'Coming Soon', href: '#' }
 			]
 		}
