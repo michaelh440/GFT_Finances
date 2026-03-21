@@ -144,11 +144,20 @@
 			]
 		},		
 			
-				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-		
-				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
-		
-		
+		{
+			id: 'admin-gft-data',
+			label: 'GFT DATA',
+			fullName: 'GFT Data Entry',
+			icon: '✏️',
+			basePath: '/data',
+			children: [		
+				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
+				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
+				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
+				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
+				
+			]
+		},		
 				
 		{
 			id: 'admin-reporting',
