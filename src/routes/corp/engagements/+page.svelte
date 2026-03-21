@@ -20,31 +20,9 @@
   import { goto } from '$app/navigation';
   export let data;
 
-  const TYPES = [
-    ['', 'All Types'],
-    ['corporate_training', 'Corporate Training'],
-    ['private_show_gft',   'Private Show @ GFT'],
-    ['roadshow',           'Roadshow'],
-    ['space_rental',       'Space Rental'],
-    ['school_nonprofit',   'School / Nonprofit'],
-    ['other',              'Other'],
-  ];
-  const PIPELINES = [
-    ['', 'All Pipeline'],
-    ['lm_emailed',           'LM / Emailed'],
-    ['proposal_in_progress', 'Proposal In Progress'],
-    ['active_due',           'Active & Due'],
-    ['benji_follow_up',      'Benji Follow Up'],
-    ['paid_2026',            'Paid 2026'],
-    ['none',                 'None'],
-  ];
-  const CONTRACTS = [
-    ['', 'All Contracts'],
-    ['needs_sending', 'Needs Sending'],
-    ['sent',          'Sent'],
-    ['viewed',        'Viewed'],
-    ['signed',        'Signed'],
-  ];
+  $: TYPES     = [['', 'All Types'],     ...(data.workflow?.engagement_types  ?? []).map(r => [r.value, r.label])];
+  $: PIPELINES = [['', 'All Pipeline'], ...(data.workflow?.pipeline_statuses ?? []).map(r => [r.value, r.label])];
+  $: CONTRACTS = [['', 'All Contracts'],...(data.workflow?.contract_statuses ?? []).map(r => [r.value, r.label])];
 
   let { filters } = data;
   let fType     = filters.type     ?? '';

@@ -1,12 +1,13 @@
 <!-- src/routes/corp/engagements/[id]/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {any} */
   export let data;
 
   let editing = false;
   let { engagement: e, contacts } = data;
 
-  const fmt = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
+  const fmt = (/** @type {any} */ n) => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
   const TYPES = [
     ['corporate_training', 'Corporate Training'],
@@ -33,7 +34,7 @@
     ['signed',        'Signed'],
   ];
 
-  function audienceStr(eng) {
+  function audienceStr(/** @type {any} */ eng) {
     if (eng.audience_size_min == null) return '—';
     const approx = eng.audience_size_approx ? '~' : '';
     if (eng.audience_size_min === eng.audience_size_max) return approx + eng.audience_size_min;

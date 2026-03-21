@@ -14,7 +14,7 @@
   // ── Filters ───────────────────────────────────────────────────────────
   let dateStart  = '';
   let dateEnd    = '';
-  /** @type {string[]} */
+  /** @type {number[]} */
   let selectedYears = [];
   let selectedIndustry = '';
   let selectedEngType  = '';
@@ -92,7 +92,7 @@
   }
 
   // ── Apply all filters ─────────────────────────────────────────────────
-  $: filteredEngagements = data.engagements.filter(e => {
+  $: filteredEngagements = data.engagements.filter((/** @type {any} */ e) => {
     if (selectedIndustry && e.industry !== selectedIndustry) return false;
     if (selectedEngType  && e.engagement_type !== selectedEngType) return false;
     if (effectiveCompanies.length && !effectiveCompanies.includes(e.corp_company_id)) return false;

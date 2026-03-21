@@ -1,7 +1,9 @@
 <!-- src/routes/corp/dedupe_companies/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {any} */
   export let data;
+  /** @type {any} */
   export let form;
 
   // ── Shared ────────────────────────────────────────────────────────────
@@ -23,7 +25,7 @@
   let resolved   = 0;
 
   /** @type {any[]} */
-  let decisions = (data.groups ?? []).map(group => {
+  let decisions = (data.groups ?? []).map((/** @type {any} */ group) => {
     const canonical = group.companies[0];
     return {
       fields: Object.fromEntries(FIELDS.map(f => [f.key, canonical[f.key] ?? null])),
@@ -43,7 +45,7 @@
   /** @param {any} grp @param {string} key */
   function hasConflict(grp, key) {
     const c = String(grp.companies[0][key] ?? '').trim().toLowerCase();
-    return grp.companies.slice(1).some(co => String(co[key] ?? '').trim().toLowerCase() !== c);
+    return grp.companies.slice(1).some((/** @type {any} */ co) => String(co[key] ?? '').trim().toLowerCase() !== c);
   }
 
   /** @param {any} grp @param {string} key */

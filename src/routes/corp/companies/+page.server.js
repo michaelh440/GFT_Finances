@@ -21,20 +21,33 @@ export const load = async ({ url }) => {
     .map(y => parseInt(y)).filter(y => !isNaN(y));
 
   // ── Filter option lists ───────────────────────────────────────────────
-  const yearRows = await sql`
-    SELECT DISTINCT EXTRACT(YEAR FROM engagement_date)::int AS yr
-    FROM corp_engagements
-    WHERE engagement_date IS NOT NULL
-    ORDER BY yr DESC
-  `;
+  const [yearRows, parentRows, workflowRows] = await Promise.all([
+    sql`
+      SELECT DISTINCT EXTRACT(YEAR FROM engagement_date)::int AS yr
+      FROM corp_engagements
+      WHERE engagement_date IS NOT NULL
+      ORDER BY yr DESC
+    `,
+    sql`
+      SELECT corp_company_id, company_name
+      FROM corp_companies
+      WHERE parent_company_id IS NULL
+        AND status = 'active'
+      ORDER BY company_name
+    `,
+    sql`
+      SELECT category, value, label, sort_order
+      FROM corp_workflow
+      WHERE is_active = TRUE
+      ORDER BY category, sort_order
+    `,
+  ]);
 
-  const parentRows = await sql`
-    SELECT corp_company_id, company_name
-    FROM corp_companies
-    WHERE parent_company_id IS NULL
-      AND status = 'active'
-    ORDER BY company_name
-  `;
+  const workflow = {
+    engagement_types:  workflowRows.filter(r => r.category === 'engagement_type'),
+    pipeline_statuses: workflowRows.filter(r => r.category === 'pipeline_status'),
+    contract_statuses: workflowRows.filter(r => r.category === 'contract_status'),
+  };
 
   // ── Engagement-level filter conditions ────────────────────────────────
   const engConditions = [];
@@ -184,6 +197,7 @@ export const load = async ({ url }) => {
     },
     years:   yearRows.map(r => r.yr),
     parents: parentRows,
+    workflow,
     filters: { search, yearsParam, month, engType, pipelineStatus, contractStatus, hasRevenue, status, parentId },
   };
 };

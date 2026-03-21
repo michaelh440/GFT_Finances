@@ -5,39 +5,47 @@ import { error } from '@sveltejs/kit';
 export async function load({ params }) {
   const id = parseInt(params.id);
 
-  const contactRows = await sql`
-    SELECT
-      corp_contact_id, corp_company_id, company_name, first_name, last_name,
-      email, phone, address_line1, address_line2,
-      city, state, zip, country,
-      created_at::text, updated_at::text
-    FROM corp_contacts WHERE corp_contact_id = ${id}
-  `;
+  const [contactRows, engRows, historyRows, workflowRows] = await Promise.all([
+    sql`
+      SELECT
+        corp_contact_id, corp_company_id, company_name, first_name, last_name,
+        email, phone, address_line1, address_line2,
+        city, state, zip, country,
+        created_at::text, updated_at::text
+      FROM corp_contacts WHERE corp_contact_id = ${id}
+    `,
+    sql`
+      SELECT
+        corp_engagement_id, title, engagement_type,
+        pipeline_status, contract_status,
+        engagement_date::text, amount_paid, notes, is_archived
+      FROM corp_engagements
+      WHERE corp_contact_id = ${id}
+      ORDER BY engagement_date DESC NULLS LAST
+    `,
+    sql`
+      SELECT
+        history_id, company_name, email, phone, notes,
+        effective_date::text, created_at::text
+      FROM corp_contact_history
+      WHERE corp_contact_id = ${id}
+      ORDER BY created_at DESC
+    `,
+    sql`
+      SELECT category, value, label
+      FROM corp_workflow
+      WHERE is_active = TRUE
+      ORDER BY category, sort_order
+    `,
+  ]);
+
   if (!contactRows.length) throw error(404, 'Contact not found');
 
-  const engRows = await sql`
-    SELECT
-      corp_engagement_id, title, engagement_type,
-      pipeline_status, contract_status,
-      engagement_date::text, amount_paid, notes, is_archived
-    FROM corp_engagements
-    WHERE corp_contact_id = ${id}
-    ORDER BY engagement_date DESC NULLS LAST
-  `;
-
-  const historyRows = await sql`
-    SELECT
-      history_id,
-      company_name,
-      email,
-      phone,
-      notes,
-      effective_date::text,
-      created_at::text
-    FROM corp_contact_history
-    WHERE corp_contact_id = ${id}
-    ORDER BY created_at DESC
-  `;
+  const workflow = {
+    engagement_types:  workflowRows.filter(r => r.category === 'engagement_type'),
+    pipeline_statuses: workflowRows.filter(r => r.category === 'pipeline_status'),
+    contract_statuses: workflowRows.filter(r => r.category === 'contract_status'),
+  };
 
   return {
     contact:     contactRows[0],
@@ -46,6 +54,7 @@ export async function load({ params }) {
       amount_paid: r.amount_paid ? parseFloat(r.amount_paid) : null,
     })),
     history: historyRows,
+    workflow,
   };
 }
 

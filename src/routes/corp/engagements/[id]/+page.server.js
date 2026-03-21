@@ -5,6 +5,19 @@ import { error } from '@sveltejs/kit';
 export async function load({ params }) {
   const id = parseInt(params.id);
 
+  // Load workflow options for dropdowns
+  const workflowRows = await sql`
+    SELECT category, value, label, sort_order
+    FROM corp_workflow
+    WHERE is_active = TRUE
+    ORDER BY category, sort_order
+  `;
+  const workflow = {
+    engagement_types: workflowRows.filter(r => r.category === 'engagement_type'),
+    pipeline_statuses: workflowRows.filter(r => r.category === 'pipeline_status'),
+    contract_statuses: workflowRows.filter(r => r.category === 'contract_status'),
+  };
+
   const rows = await sql`
     SELECT
       e.corp_engagement_id, e.corp_contact_id,
@@ -33,6 +46,7 @@ export async function load({ params }) {
       amount_paid: rows[0].amount_paid ? parseFloat(rows[0].amount_paid) : null,
     },
     contacts: contacts.map(c => ({ ...c })),
+    workflow,
   };
 }
 

@@ -78,8 +78,8 @@ function buildFuzzyGroups(companies) {
 
   function find(/** @type {number} */ id) {
     while (parent.get(id) !== id) {
-      const p = parent.get(id);
-      parent.set(id, parent.get(p) ?? p);
+      const p = /** @type {number} */ (parent.get(id));
+      parent.set(id, /** @type {number} */ (parent.get(p) ?? p));
       id = p ?? id;
     }
     return id;
@@ -160,7 +160,7 @@ export async function load() {
   if (!allCompanies.length) return { groups: [] };
 
   const coMap = Object.fromEntries(
-    allCompanies.map(c => [c.corp_company_id, {
+    allCompanies.map((/** @type {any} */ c) => [c.corp_company_id, {
       ...c,
       contact_count:    c.contact_count    ?? 0,
       history_count:    c.history_count    ?? 0,
@@ -170,16 +170,16 @@ export async function load() {
   );
 
   // Run fuzzy grouping in JS
-  const groupIds = buildFuzzyGroups(allCompanies);
+  const groupIds = buildFuzzyGroups(/** @type {any} */ (allCompanies));
 
-  const groups = groupIds.map(ids => {
-    const companies = ids.map(id => coMap[id]).filter(Boolean);
+  const groups = groupIds.map((/** @type {number[]} */ ids) => {
+    const companies = ids.map((/** @type {number} */ id) => coMap[id]).filter(Boolean);
     const canonical = companies[0]; // lowest ID
 
     // Classify the match type for display
-    const norms = companies.map(c => normalize(c.company_name));
-    const hasExact   = norms.some((n, i) => i > 0 && similarity(norms[0], n) >= EXACT_THRESHOLD);
-    const hasPrefix  = companies.slice(1).some(c => {
+    const norms = companies.map((/** @type {any} */ c) => normalize(c.company_name));
+    const hasExact   = norms.some((/** @type {string} */ n, /** @type {number} */ i) => i > 0 && similarity(norms[0], n) >= EXACT_THRESHOLD);
+    const hasPrefix  = companies.slice(1).some((/** @type {any} */ c) => {
       const nb = normalize(c.company_name);
       return isPrefixOf(norms[0], nb) || isPrefixOf(nb, norms[0]);
     });
@@ -188,9 +188,9 @@ export async function load() {
       canonical_id: canonical.corp_company_id,
       match_type:   hasExact ? 'similar' : hasPrefix ? 'parent_division' : 'similar',
       companies,
-      total_contacts:    companies.reduce((s, c) => s + c.contact_count,    0),
-      total_engagements: companies.reduce((s, c) => s + c.engagement_count, 0),
-      total_revenue:     companies.reduce((s, c) => s + (c.total_revenue ?? 0), 0),
+      total_contacts:    companies.reduce((/** @type {number} */ s, /** @type {any} */ c) => s + c.contact_count,    0),
+      total_engagements: companies.reduce((/** @type {number} */ s, /** @type {any} */ c) => s + c.engagement_count, 0),
+      total_revenue:     companies.reduce((/** @type {number} */ s, /** @type {any} */ c) => s + (c.total_revenue ?? 0), 0),
     };
   });
 
@@ -235,7 +235,7 @@ export const actions = {
       success: true,
       action:  'search',
       target,
-      results: rows.map(r => ({
+      results: rows.map((/** @type {any} */ r) => ({
         ...r,
         total_revenue: r.total_revenue ? parseFloat(r.total_revenue) : null,
       })),
@@ -249,14 +249,14 @@ export const actions = {
     if (!mergesJson) return { success: false, error: 'No merge data.' };
 
     try {
-      const merges = JSON.parse(mergesJson);
+      const merges = /** @type {any[]} */ (JSON.parse(mergesJson));
       let merged = 0;
 
       for (const m of merges) {
         const { keep_id, discard_ids, updates } = m;
 
         // Run the whole group as a transaction so partial failures roll back
-        await sql.begin(async sql => {
+        await sql.begin(async (/** @type {any} */ sql) => {
 
           // Apply field overrides on the keeper — only update fields that have values
           if (updates && Object.keys(updates).length > 0) {

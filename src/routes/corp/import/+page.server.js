@@ -4,6 +4,7 @@ import sql from '$lib/db';
 export const load = async () => ({ });
 
 // ── Helper: find or create a corp_company, return its id ─────────────────
+/** @param {any} companyName */
 async function findOrCreateCompany(companyName) {
   if (!companyName || !companyName.trim()) return null;
   const name = companyName.trim();
@@ -37,6 +38,7 @@ async function findOrCreateCompany(companyName) {
 export const actions = {
 
   // ── Step 1: Parse CSV, deduplicate contacts, check DB ──────────────────
+  /** @param {any} event */
   csv_check: async ({ request }) => {
     const formData = await request.formData();
     const csvData  = (formData.get('csv_data') || '').toString();
@@ -144,6 +146,7 @@ export const actions = {
   },
 
   // ── Step 2: Write contacts (+ companies), then engagements ───────────
+  /** @param {any} event */
   csv_confirm: async ({ request }) => {
     const formData = await request.formData();
     const contactDecisionsJson    = (formData.get('contact_decisions')    || '').toString();

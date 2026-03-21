@@ -12,30 +12,10 @@
 
   const fmt = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0 });
 
-  const typeLabel = {
-    corporate_training: 'Corporate Training',
-    private_show_gft:   'Private Show @ GFT',
-    roadshow:           'Roadshow',
-    space_rental:       'Space Rental',
-    school_nonprofit:   'School / Nonprofit',
-    other:              'Other',
-  };
-
-  const pipelineLabel = {
-    lm_emailed:          'LM / Emailed',
-    proposal_in_progress:'Proposal In Progress',
-    active_due:          'Active & Due',
-    benji_follow_up:     'Benji Follow Up',
-    paid_2026:           'Paid 2026',
-    none:                '—',
-  };
-
-  const contractLabel = {
-    needs_sending: 'Needs Sending',
-    sent:          'Sent',
-    viewed:        'Viewed',
-    signed:        'Signed',
-  };
+  // Build label lookup maps from server-loaded workflow
+  $: typeLabel     = Object.fromEntries((data.workflow?.engagement_types  ?? []).map(/** @param {any} r */ r => [r.value, r.label]));
+  $: pipelineLabel = Object.fromEntries((data.workflow?.pipeline_statuses ?? []).map(/** @param {any} r */ r => [r.value, r.label]));
+  $: contractLabel = Object.fromEntries((data.workflow?.contract_statuses ?? []).map(/** @param {any} r */ r => [r.value, r.label]));
 
   $: totalRevenue = engagements.reduce((s, e) => s + (e.amount_paid ?? 0), 0);
   $: paidCount    = engagements.filter(e => e.amount_paid).length;

@@ -1,7 +1,9 @@
 <!-- src/routes/corp/companies/[id]/+page.svelte -->
 <script>
   import { enhance } from '$app/forms';
+  /** @type {any} */
   export let data;
+  /** @type {any} */
   export let form;
 
   let editing = false;
@@ -22,10 +24,10 @@
   $: divFilterOptions = [
     { value: 'all', label: 'All' },
     { value: String(company?.corp_company_id), label: company?.company_name ?? '' },
-    ...divisions.map(d => ({ value: String(d.corp_company_id), label: d.company_name })),
+    ...divisions.map((/** @type {any} */ d) => ({ value: String(d.corp_company_id), label: d.company_name })),
   ];
 
-  $: visibleEngagements = engagements.filter(e => {
+  $: visibleEngagements = engagements.filter((/** @type {any} */ e) => {
     if (engFilter === 'paid'   && !(e.amount_paid > 0)) return false;
     if (engFilter === 'active' && e.is_archived)        return false;
     if (divFilter !== 'all'   && String(e.corp_company_id) !== divFilter) return false;

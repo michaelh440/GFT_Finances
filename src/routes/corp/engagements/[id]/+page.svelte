@@ -9,30 +9,10 @@
 
   const fmt = n => n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-  const TYPES = [
-    ['corporate_training', 'Corporate Training'],
-    ['private_show_gft',   'Private Show @ GFT'],
-    ['roadshow',           'Roadshow'],
-    ['space_rental',       'Space Rental'],
-    ['school_nonprofit',   'School / Nonprofit'],
-    ['other',              'Other'],
-  ];
-
-  const PIPELINES = [
-    ['none',                 'None'],
-    ['lm_emailed',           'LM / Emailed'],
-    ['proposal_in_progress', 'Proposal In Progress'],
-    ['active_due',           'Active & Due'],
-    ['benji_follow_up',      'Benji Follow Up'],
-    ['paid_2026',            'Paid 2026'],
-  ];
-
-  const CONTRACTS = [
-    ['needs_sending', 'Needs Sending'],
-    ['sent',          'Sent'],
-    ['viewed',        'Viewed'],
-    ['signed',        'Signed'],
-  ];
+  // Pull from server-loaded workflow instead of hardcoded arrays
+  $: TYPES     = (data.workflow?.engagement_types  ?? []).map(/** @param {any} r */ r => [r.value, r.label]);
+  $: PIPELINES = (data.workflow?.pipeline_statuses ?? []).map(/** @param {any} r */ r => [r.value, r.label]);
+  $: CONTRACTS = (data.workflow?.contract_statuses ?? []).map(/** @param {any} r */ r => [r.value, r.label]);
 
   function audienceStr(eng) {
     if (eng.audience_size_min == null) return '—';

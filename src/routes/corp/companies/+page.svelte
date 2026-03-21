@@ -127,30 +127,10 @@
     'July','August','September','October','November','December'
   ];
 
-  const ENG_TYPES = [
-    { value: 'corporate_training',  label: 'Corporate Training'  },
-    { value: 'private_show_gft',    label: 'Private Show @ GFT'  },
-    { value: 'roadshow',            label: 'Roadshow'            },
-    { value: 'space_rental',        label: 'Space Rental'        },
-    { value: 'school_nonprofit',    label: 'School / Nonprofit'  },
-    { value: 'other',               label: 'Other'               },
-  ];
-
-  const PIPELINE_STATUSES = [
-    { value: 'lm_emailed',           label: 'LM / Emailed'          },
-    { value: 'proposal_in_progress', label: 'Proposal In Progress'   },
-    { value: 'active_due',           label: 'Active & Due'           },
-    { value: 'benji_follow_up',      label: 'Benji Follow Up'        },
-    { value: 'paid_2026',            label: 'Paid 2026'              },
-    { value: 'none',                 label: 'None'                   },
-  ];
-
-  const CONTRACT_STATUSES = [
-    { value: 'needs_sending', label: 'Needs Sending' },
-    { value: 'sent',          label: 'Sent'          },
-    { value: 'viewed',        label: 'Viewed'        },
-    { value: 'signed',        label: 'Signed'        },
-  ];
+  // Populated from server-loaded workflow
+  $: PIPELINE_STATUSES = (data.workflow?.pipeline_statuses ?? []);
+  $: CONTRACT_STATUSES = (data.workflow?.contract_statuses ?? []);
+  $: ENG_TYPES         = (data.workflow?.engagement_types  ?? []);
 </script>
 
 <svelte:head>
