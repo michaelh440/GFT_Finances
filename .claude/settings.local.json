@@ -75,7 +75,8 @@
       "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | grep \"Error:\" | sed 's/Variable .*/implicit any/' | sed 's/Parameter .*/implicit any/' | sort | uniq -c | sort -rn | head -20)",
       "Bash(npx svelte-check:*)",
       "Read(//tmp/**)",
-      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | tee /dev/stderr | grep -i \"error\" | head -30)"
+      "Bash(cd C:/Projects/GFT/GFT_Finances && npx svelte-check --output human 2>&1 | tee /dev/stderr | grep -i \"error\" | head -30)",
+      "Bash(cd C:/Projects/GFT/GFT_Finances && node -e \"\nconst postgres = require\\('postgres'\\);\nconst sql = postgres\\(process.env.DATABASE_URL || 'postgresql://postgres:Camaro_1967@localhost:5432/GFT_Finances', { ssl: false, max: 1 }\\);\n\\(async \\(\\) => {\n  try {\n    const tables = await sql\\\\`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN \\('app_users', 'app_sessions', 'audit_log'\\) ORDER BY tablename\\\\`;\n    console.log\\('Auth tables found:', tables.map\\(t => t.tablename\\)\\);\n    if \\(tables.length > 0\\) {\n      const users = await sql\\\\`SELECT user_id, email, is_active, is_super_admin FROM app_users LIMIT 5\\\\`;\n      console.log\\('Users:', users\\);\n    }\n    await sql.end\\(\\);\n  } catch\\(e\\) { console.error\\('DB error:', e.message\\); await sql.end\\(\\); }\n}\\)\\(\\);\n\" 2>&1)"
     ]
   }
 }
