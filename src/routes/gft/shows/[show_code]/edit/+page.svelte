@@ -5,6 +5,7 @@
 
 	/** @type {{ showInfo: any, form: any }} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	$: showInfo = data.showInfo;
@@ -29,12 +30,12 @@
 		<div class="not-found">
 			<h1>Show Not Found</h1>
 			<p>The show you're looking for doesn't exist.</p>
-			<a href={resolve('/shows')} class="btn-secondary">Back to Shows</a>
+			<a href={resolve(/** @type {any} */ ('/shows'))} class="btn-secondary">Back to Shows</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve(`/shows/${showInfo.show_code}`)} class="back-link">← Back to {showInfo.show_name}</a>
+				<a href={resolve(/** @type {any} */ (`/shows/${showInfo.show_code}`))} class="back-link">← Back to {showInfo.show_name}</a>
 				<h1>Edit Show</h1>
 			</div>
 		</header>
@@ -155,7 +156,7 @@
 				</div>
 
 				<div class="form-actions">
-					<a href={resolve(`/shows/${showInfo.show_code}`)} class="btn-secondary">Cancel</a>
+					<a href={resolve(/** @type {any} */ (`/shows/${showInfo.show_code}`))} class="btn-secondary">Cancel</a>
 					<button type="submit" class="btn-primary">Save Changes</button>
 				</div>
 			</form>

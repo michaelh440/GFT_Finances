@@ -42,7 +42,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href={resolve('/shows')} class="back-link">← Back to Shows</a>
+			<a href={resolve(/** @type {any} */ ('/shows'))} class="back-link">← Back to Shows</a>
 			<h1>Add New Show</h1>
 		</div>
 	</header>
@@ -151,7 +151,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href={resolve('/shows')} class="btn-secondary">Cancel</a>
+				<a href={resolve(/** @type {any} */ ('/shows'))} class="btn-secondary">Cancel</a>
 				<button type="submit" class="btn-primary" disabled={submitting}>
 					{submitting ? 'Creating...' : 'Create Show'}
 				</button>

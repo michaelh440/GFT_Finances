@@ -3,7 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
+	/** @type {any} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	let finding = false;
@@ -77,7 +79,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href={resolve('/shows/patrons')} class="back-link">← Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="back-link">← Back to Patrons</a>
 			<h1>Sync Patron Account IDs</h1>
 			<p class="subtitle">Copy VBO Account IDs from the students table to matching patrons</p>
 		</div>

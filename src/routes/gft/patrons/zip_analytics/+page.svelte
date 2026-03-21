@@ -125,11 +125,11 @@
 		if (showCode) params.set('show', showCode);
 		if (year) params.set('year', year);
 		const qs = params.toString();
-		goto(resolve(`/shows/patrons/zip_analytics${qs ? '?' + qs : ''}`), { invalidateAll: true });
+		goto(resolve(/** @type {any} */ (`/shows/patrons/zip_analytics${qs ? '?' + qs : ''}`)), { invalidateAll: true });
 	}
 
 	function clearFilters() {
-		goto(resolve('/shows/patrons/zip_analytics'), { invalidateAll: true });
+		goto(resolve(/** @type {any} */ ('/shows/patrons/zip_analytics')), { invalidateAll: true });
 	}
 
 	/** @param {number} amount */
@@ -145,12 +145,12 @@
 <div class="container">
 	<header>
 		<div>
-			<a href={resolve('/shows/patrons')} class="breadcrumb">← Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="breadcrumb">← Back to Patrons</a>
 			<h1>Zip Code Analytics</h1>
 			<p class="subtitle">Where your ticket buyers come from</p>
 		</div>
 		<div class="header-actions">
-			<a href={resolve('/shows/patrons/update_patrons')} class="btn-secondary-link">Update Patron Data</a>
+			<a href={resolve(/** @type {any} */ ('/shows/patrons/update_patrons'))} class="btn-secondary-link">Update Patron Data</a>
 		</div>
 	</header>
 
@@ -215,7 +215,7 @@
 	{#if (data.zipData || []).length === 0}
 		<div class="card">
 			<p class="empty-state">
-				No zip code data available yet. <a href={resolve('/shows/patrons/update_patrons')}>Upload patron address data</a> to see analytics.
+				No zip code data available yet. <a href={resolve(/** @type {any} */ ('/shows/patrons/update_patrons'))}>Upload patron address data</a> to see analytics.
 			</p>
 		</div>
 	{:else}

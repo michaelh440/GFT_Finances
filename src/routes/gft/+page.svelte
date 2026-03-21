@@ -20,12 +20,12 @@
 		<div class="quick-links">
 			<h2>Quick Access</h2>
 			<div class="link-grid">
-				<a href={resolve('/shows')} class="quick-card">
+				<a href={resolve(/** @type {any} */ ('/shows'))} class="quick-card">
 					<span class="card-icon">🎭</span>
 					<span class="card-label">Shows</span>
 					<span class="card-desc">Manage Shows</span>
 				</a>
-				<a href={resolve('/patrons')} class="quick-card">
+				<a href={resolve(/** @type {any} */ ('/patrons'))} class="quick-card">
 					<span class="card-icon">👥</span>
 					<span class="card-label">Patrons</span>
 					<span class="card-desc">Manage Patrons</span>
@@ -40,7 +40,7 @@
 					<span class="card-label">Teachers</span>
 					<span class="card-desc">Manage HSI Teachers</span>
 				</a-->
-				<a href={resolve('/shows/reports')} class="quick-card">
+				<a href={resolve(/** @type {any} */ ('/shows/reports'))} class="quick-card">
 					<span class="card-icon">📊</span>
 					<span class="card-label">Reports</span>
 					<span class="card-desc">Show Reports</span>

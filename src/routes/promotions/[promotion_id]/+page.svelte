@@ -124,7 +124,7 @@
 					<span class="info-label">Linked Shows ({linkedShows.length})</span>
 					<div class="linked-shows">
 						{#each linkedShows as ls (ls.show_code)}
-							<a href={resolve(`/shows/${ls.show_code}`)} class="show-chip">{ls.show_name}</a>
+							<a href={resolve(/** @type {any} */ (`/shows/${ls.show_code}`))} class="show-chip">{ls.show_name}</a>
 						{/each}
 					</div>
 				</div>
@@ -197,7 +197,7 @@
 								{@const avgPerTicket = ss.tickets_sold > 0 ? ss.revenue / ss.tickets_sold : 0}
 								<tr>
 									<td>
-										<a href={resolve(`/shows/${ss.show_code}`)} class="link">{ss.show_name}</a>
+										<a href={resolve(/** @type {any} */ (`/shows/${ss.show_code}`))} class="link">{ss.show_name}</a>
 									</td>
 									<td class="text-muted">{ss.format || '—'}</td>
 									<td class="col-right">{ss.transaction_count}</td>

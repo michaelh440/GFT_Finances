@@ -5,6 +5,7 @@
 
 	/** @type {any} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	let submitting = false;

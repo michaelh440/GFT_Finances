@@ -30,7 +30,7 @@
 		}
 		acc[format].push(show);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, ShowItem[]>} */ ({}));
 
 	$: formats = Object.keys(showsByFormat).sort();
 
@@ -115,9 +115,9 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href={resolve(`/shows/${show.show_code}`)} class="btn-action">View</a>
+											<a href={resolve(/** @type {any} */ (`/shows/${show.show_code}`))} class="btn-action">View</a>
 											<a
-												href={resolve(`/shows/${show.show_code}/edit`)}
+												href={resolve(/** @type {any} */ (`/shows/${show.show_code}/edit`))}
 												class="btn-action">Edit</a
 											>
 										</div>

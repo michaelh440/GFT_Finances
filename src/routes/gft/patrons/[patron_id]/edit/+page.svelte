@@ -5,6 +5,7 @@
 
 	/** @type {{ patron: any, form: any }} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	$: patron = data.patron;
@@ -25,12 +26,12 @@
 		<div class="not-found">
 			<h1>Patron Not Found</h1>
 			<p>The patron you're looking for doesn't exist.</p>
-			<a href={resolve('/shows/patrons')} class="btn-secondary">Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="btn-secondary">Back to Patrons</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve(`/shows/patrons/${patron.patron_id}`)} class="back-link">← Back to {patron.first_name} {patron.last_name}</a>
+				<a href={resolve(/** @type {any} */ (`/shows/patrons/${patron.patron_id}`))} class="back-link">← Back to {patron.first_name} {patron.last_name}</a>
 				<h1>Edit Patron</h1>
 			</div>
 		</header>
@@ -72,7 +73,7 @@
 				</div>
 
 				<div class="form-actions">
-					<a href={resolve(`/shows/patrons/${patron.patron_id}`)} class="btn-secondary">Cancel</a>
+					<a href={resolve(/** @type {any} */ (`/shows/patrons/${patron.patron_id}`))} class="btn-secondary">Cancel</a>
 					<button type="submit" class="btn-primary">Save Changes</button>
 				</div>
 			</form>

@@ -63,12 +63,12 @@
 	$: primaryEndYear = monthSlots.length > 0 ? monthSlots[monthSlots.length - 1].year : new Date().getFullYear();
 
 	// ---- Show filter ----
-	$: showsByFormat = (data.shows || []).reduce((acc, s) => {
+	$: showsByFormat = (data.shows || []).reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ s) => {
 		const fmt = s.format || 'Other';
 		if (!acc[fmt]) acc[fmt] = [];
 		acc[fmt].push(s);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: formats = Object.keys(showsByFormat).sort();
 	$: allShowCodes = (data.shows || []).map((s) => s.show_code);
 	$: effectiveShows = selectedShows.length === 0 ? allShowCodes : selectedShows;

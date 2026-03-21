@@ -3,7 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 
+	/** @type {any} */
 	export let data;
+	/** @type {any} */
 	export let form;
 
 	let activeTab = 'manual';
@@ -336,7 +338,7 @@
 			<h1>Enter Ticket Purchases</h1>
 			<p class="subtitle">Add ticket purchases manually or import from CSV</p>
 		</div>
-		<a href={resolve('/shows/ticket_purchases')} class="btn-secondary">Back to Purchases</a>
+		<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases'))} class="btn-secondary">Back to Purchases</a>
 	</header>
 
 	{#if form?.success && form?.action === 'manual'}
@@ -817,7 +819,7 @@
 
 				<div class="form-actions">
 					<button class="btn-secondary" on:click={resetCsv}>Import Another File</button>
-					<a href={resolve('/shows/ticket_purchases')} class="btn-secondary">View Ticket Purchases</a>
+					<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases'))} class="btn-secondary">View Ticket Purchases</a>
 				</div>
 			{/if}
 		</div>

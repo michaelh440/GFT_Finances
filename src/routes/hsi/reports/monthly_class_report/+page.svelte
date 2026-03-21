@@ -76,12 +76,12 @@
 	$: primaryEndYear = monthSlots.length > 0 ? monthSlots[monthSlots.length - 1].year : new Date().getFullYear();
 
 	// ---- Class filter ----
-	$: classesByTrack = (data.classes || []).reduce((acc, c) => {
+	$: classesByTrack = (data.classes || []).reduce((/** @type {Record<string, any[]>} */ acc, /** @type {any} */ c) => {
 		const track = c.track || 'Other';
 		if (!acc[track]) acc[track] = [];
 		acc[track].push(c);
 		return acc;
-	}, {});
+	}, /** @type {Record<string, any[]>} */ ({}));
 	$: tracks = Object.keys(classesByTrack).sort();
 	$: allClassCodes = (data.classes || []).map((c) => c.class_code);
 	$: effectiveClasses = selectedClasses.length === 0 ? allClassCodes : selectedClasses;

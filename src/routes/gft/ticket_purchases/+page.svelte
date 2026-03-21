@@ -39,7 +39,7 @@
 		if (paymentMethod) params.set('payment', paymentMethod);
 		if (page && page > 1) params.set('page', page.toString());
 		const qs = params.toString();
-		return `${resolve('/shows/ticket_purchases')}${qs ? '?' + qs : ''}`;
+		return `${resolve(/** @type {any} */ ('/shows/ticket_purchases'))}${qs ? '?' + qs : ''}`;
 	}
 
 	function applyFilters() {
@@ -47,7 +47,7 @@
 	}
 
 	function clearFilters() {
-		window.location.href = `${resolve('/shows/ticket_purchases')}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/shows/ticket_purchases'))}`;
 	}
 
 	/** @param {number} page */
@@ -62,7 +62,7 @@
 		if (data.filters?.paymentMethod) params.set('payment', data.filters.paymentMethod);
 		if (page > 1) params.set('page', page.toString());
 		const qs = params.toString();
-		window.location.href = `${resolve('/shows/ticket_purchases')}${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/shows/ticket_purchases'))}${qs ? '?' + qs : ''}`;
 	}
 
 	/** @param {any} y */
@@ -136,8 +136,8 @@
 			</p>
 		</div>
 		<div class="header-actions">
-			<a href={resolve('/shows/ticket_purchases/enter_ticket_purchases')} class="btn-primary">Enter Ticket Purchases</a>
-			<a href={resolve('/shows/patrons')} class="btn-secondary-link">View Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases/enter_ticket_purchases'))} class="btn-primary">Enter Ticket Purchases</a>
+			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="btn-secondary-link">View Patrons</a>
 		</div>
 	</header>
 
@@ -277,12 +277,12 @@
 						<tr>
 							<td class="col-date">{formatDate(ticket.show_date)}</td>
 							<td>
-								<a href={resolve(`/shows/${ticket.show_code}`)} class="link">{ticket.show_name}</a>
+								<a href={resolve(/** @type {any} */ (`/shows/${ticket.show_code}`))} class="link">{ticket.show_name}</a>
 								<span class="show-format">{ticket.format || ''}</span>
 							</td>
 							<td>
 								{#if ticket.patron_id}
-									<a href={resolve(`/shows/patrons/${ticket.patron_id}`)} class="link">
+									<a href={resolve(/** @type {any} */ (`/shows/patrons/${ticket.patron_id}`))} class="link">
 										{ticket.patron_first_name} {ticket.patron_last_name}
 									</a>
 									{#if ticket.patron_email}
