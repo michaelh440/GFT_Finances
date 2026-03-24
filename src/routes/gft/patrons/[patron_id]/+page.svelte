@@ -45,16 +45,16 @@
 		<div class="not-found">
 			<h1>Patron Not Found</h1>
 			<p>The patron you're looking for doesn't exist.</p>
-			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="btn-secondary">Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/gft/patrons'))} class="btn-secondary">Back to Patrons</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="back-link">← Back to Patrons</a>
+				<a href={resolve(/** @type {any} */ ('/gft/patrons'))} class="back-link">← Back to Patrons</a>
 				<h1>{patron.first_name} {patron.last_name}</h1>
 			</div>
 			<div class="header-actions">
-				<a href={resolve(/** @type {any} */ (`/shows/patrons/${patron.patron_id}/edit`))} class="btn-primary">Edit Patron</a>
+				<a href={resolve(/** @type {any} */ (`/gft/patrons/${patron.patron_id}/edit`))} class="btn-primary">Edit Patron</a>
 			</div>
 		</header>
 
@@ -119,7 +119,7 @@
 						{#each tickets as ticket (ticket.ticket_id)}
 							<tr>
 								<td>
-									<a href={resolve(/** @type {any} */ (`/shows/${ticket.show_code}`))} class="show-link">{ticket.show_name}</a>
+									<a href={resolve(/** @type {any} */ (`/gft/shows/${ticket.show_code}`))} class="show-link">{ticket.show_name}</a>
 									<span class="show-format">{ticket.format || ''}</span>
 								</td>
 								<td>{formatDate(ticket.show_date)}</td>

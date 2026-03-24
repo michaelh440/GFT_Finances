@@ -1,7 +1,9 @@
 // src/routes/shows/patrons/zip_analytics/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ url }) => {
+export const load = async ({ url, locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	const showCode = url.searchParams.get('show') || '';
 	const year = url.searchParams.get('year') || '';
 

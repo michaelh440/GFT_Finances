@@ -97,6 +97,6 @@ export const actions = {
 			});
 		}
 
-		throw redirect(303, `/shows/${show_code}`);
+		throw redirect(303, `/gft/shows/${show_code}`);
 	}
 };

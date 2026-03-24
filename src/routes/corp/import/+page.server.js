@@ -1,7 +1,11 @@
 // src/routes/corp/import/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => ({ });
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'corp', 'manager');
+  return {};
+};
 
 // ── Helper: find or create a corp_company, return its id ─────────────────
 /** @param {any} companyName */
@@ -39,7 +43,8 @@ export const actions = {
 
   // ── Step 1: Parse CSV, deduplicate contacts, check DB ──────────────────
   /** @param {any} event */
-  csv_check: async ({ request }) => {
+  csv_check: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const csvData  = (formData.get('csv_data') || '').toString();
     if (!csvData) return { success: false, error: 'No CSV data provided.' };
@@ -147,7 +152,8 @@ export const actions = {
 
   // ── Step 2: Write contacts (+ companies), then engagements ───────────
   /** @param {any} event */
-  csv_confirm: async ({ request }) => {
+  csv_confirm: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const contactDecisionsJson    = (formData.get('contact_decisions')    || '').toString();
     const engagementDecisionsJson = (formData.get('engagement_decisions') || '').toString();
@@ -269,7 +275,8 @@ export const actions = {
   },
 
   // ── Reset sequence ────────────────────────────────────────────────────
-  reset_sequence: async () => {
+  reset_sequence: async ({ locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     try {
       await sql`ALTER SEQUENCE corp_contacts_corp_contact_id_seq  RESTART WITH 1`;
       await sql`ALTER SEQUENCE corp_companies_corp_company_id_seq RESTART WITH 1`;

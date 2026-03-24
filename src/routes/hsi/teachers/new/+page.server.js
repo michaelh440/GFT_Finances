@@ -1,9 +1,16 @@
 // src/routes/hsi/teachers/new/+page.server.js
 import sql from '$lib/db';
 import { redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
+
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'hsi', 'data_entry');
+	return { user: locals.user };
+};
 
 export const actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		requirePermission(locals.user, 'hsi', 'data_entry');
 		const formData = await request.formData();
 
 		const firstName = (formData.get('first_name') || '').toString().trim();

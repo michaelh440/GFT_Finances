@@ -34,10 +34,12 @@
 	 */
 
 	import { resolve } from '$app/paths';
+	import { canDataEntry } from '$lib/permissions';
 
-	/** @type {{ classInfo: ClassInfo|null, session: Session|null, students: Student[], totalRevenue: number }} */
+	/** @type {{ classInfo: ClassInfo|null, session: Session|null, students: Student[], totalRevenue: number, user: any }} */
 	export let data;
 
+	$: user = data.user;
 	$: classInfo = data.classInfo;
 	$: session = data.session;
 	$: students = data.students;
@@ -96,6 +98,11 @@
 				</div>
 				<h1>{session.session_name}</h1>
 			</div>
+			<div class="header-actions">
+				{#if canDataEntry(user, 'hsi')}
+					<a href={resolve(`/hsi/classes/${classInfo.class_code}/sessions/${session.session_id}/edit`)} class="btn-primary">Edit Session</a>
+				{/if}
+			</div>
 		</header>
 
 		<!-- Session Info Card -->
@@ -129,6 +136,18 @@
 				<div class="info-item">
 					<span class="info-label">Location</span>
 					<span class="info-value">{session.location || '—'}</span>
+				</div>
+				<div class="info-item">
+					<span class="info-label">Duration</span>
+					<span class="info-value">
+						{#if session.duration_value}
+							{session.duration_value} {session.duration_unit}
+						{:else if classInfo.duration_value}
+							{classInfo.duration_value} {classInfo.duration_unit} <span class="inherited">(class default)</span>
+						{:else}
+							—
+						{/if}
+					</span>
 				</div>
 				<div class="info-item">
 					<span class="info-label">Status</span>
@@ -209,7 +228,32 @@
 	}
 
 	header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
 		margin-bottom: 2rem;
+	}
+
+	.header-actions {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+		padding-top: 1.5rem;
+	}
+
+	.btn-primary {
+		background-color: #3b82f6;
+		color: white;
+		padding: 0.6rem 1.25rem;
+		border-radius: 0.5rem;
+		text-decoration: none;
+		font-weight: 500;
+		font-size: 0.9rem;
+		transition: background-color 0.2s;
+	}
+
+	.btn-primary:hover {
+		background-color: #2563eb;
 	}
 
 	.breadcrumb {
@@ -292,6 +336,8 @@
 		color: #6366f1;
 		margin-right: 0.4rem;
 	}
+
+	.inherited { font-size: 0.8rem; color: #9ca3af; font-style: italic; }
 
 	.status-badge {
 		display: inline-block;

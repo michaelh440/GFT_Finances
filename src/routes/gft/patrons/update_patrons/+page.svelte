@@ -35,7 +35,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="breadcrumb">← Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/gft/patrons'))} class="breadcrumb">← Back to Patrons</a>
 			<h1>Update Patron Data</h1>
 			<p class="subtitle">Import address and contact data from updated CSZ report</p>
 		</div>
@@ -72,7 +72,7 @@
 	{#if updateApplied}
 		<div class="alert alert-success">
 			✓ Updated {form?.updated} patron{form?.updated !== 1 ? 's' : ''}{(form?.skipped || 0) > 0 ? `, skipped ${form?.skipped} with no new data` : ''}.
-			<a href={resolve(/** @type {any} */ ('/shows/patrons/update_patrons'))} class="alert-link">Upload another file</a>
+			<a href={resolve(/** @type {any} */ ('/gft/patrons/update_patrons'))} class="alert-link">Upload another file</a>
 		</div>
 	{/if}
 
@@ -214,7 +214,7 @@
 							<button type="submit" class="btn-primary" disabled={applying}>
 								{applying ? 'Updating...' : `Update ${matched.filter((m) => m.hasNewData).length} Patrons`}
 							</button>
-							<a href={resolve(/** @type {any} */ ('/shows/patrons/update_patrons'))} class="btn-secondary">Cancel</a>
+							<a href={resolve(/** @type {any} */ ('/gft/patrons/update_patrons'))} class="btn-secondary">Cancel</a>
 						</div>
 					</div>
 				</form>
@@ -222,7 +222,7 @@
 		{:else}
 			<div class="card">
 				<p class="empty-state">All matched patrons already have address data. Nothing to update.</p>
-				<a href={resolve(/** @type {any} */ ('/shows/patrons/update_patrons'))} class="btn-secondary" style="display:inline-block;margin-top:1rem;">Upload Another File</a>
+				<a href={resolve(/** @type {any} */ ('/gft/patrons/update_patrons'))} class="btn-secondary" style="display:inline-block;margin-top:1rem;">Upload Another File</a>
 			</div>
 		{/if}
 

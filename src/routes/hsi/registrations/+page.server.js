@@ -1,7 +1,9 @@
 // src/routes/hsi/registrations/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'hsi', 'manager');
 	try {
 		// Get all distinct student+class+year combos for client-side funnel filtering
 		const allRegistrations = await sql`

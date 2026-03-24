@@ -1,7 +1,9 @@
 // src/routes/hsi/classes/[class_code]/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'hsi', 'viewer');
 	const { class_code } = params;
 
 	try {
@@ -16,6 +18,8 @@ export const load = async ({ params }) => {
 				track,
 				vbo_event_id,
 				description,
+				duration_value,
+				duration_unit,
 				is_active,
 				created_at,
 				updated_at
@@ -42,6 +46,8 @@ export const load = async ({ params }) => {
 				cs.end_date,
 				cs.instructor,
 				cs.location,
+				cs.duration_value,
+				cs.duration_unit,
 				cs.is_active,
 				cs.created_at,
 				COUNT(DISTINCT r.student_id) AS student_count,
@@ -50,8 +56,8 @@ export const load = async ({ params }) => {
 			FROM class_sessions cs
 			LEFT JOIN registrations r ON r.session_id = cs.session_id
 			WHERE cs.class_code = ${class_code}
-			GROUP BY cs.session_id, cs.session_name, cs.class_code, cs.start_date, 
-				cs.end_date, cs.instructor, cs.location, cs.is_active, cs.created_at
+			GROUP BY cs.session_id, cs.session_name, cs.class_code, cs.start_date,
+				cs.end_date, cs.instructor, cs.location, cs.duration_value, cs.duration_unit, cs.is_active, cs.created_at
 			ORDER BY cs.start_date DESC
 		`;
 
@@ -67,13 +73,16 @@ export const load = async ({ params }) => {
 			},
 			sessions: sessions.map((s) => ({
 				...s,
+				start_date: s.start_date ? s.start_date.toISOString().split('T')[0] : null,
+				end_date: s.end_date ? s.end_date.toISOString().split('T')[0] : null,
 				student_count: Number(s.student_count),
 				registration_count: Number(s.registration_count),
 				session_revenue: Number(s.session_revenue)
 			})),
 			totalStudents,
 			totalRegistrations,
-			totalRevenue
+			totalRevenue,
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading class detail:', error);

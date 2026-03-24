@@ -25,7 +25,7 @@ export const actions = {
 				RETURNING patron_id
 			`;
 
-			throw redirect(303, `/shows/patrons/${newPatron.patron_id}`);
+			throw redirect(303, `/gft/patrons/${newPatron.patron_id}`);
 		} catch (error) {
 			if (/** @type {any} */ (error).status === 303) throw error;
 

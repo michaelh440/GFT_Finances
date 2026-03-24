@@ -40,7 +40,7 @@
 					<span class="card-label">Teachers</span>
 					<span class="card-desc">Manage HSI Teachers</span>
 				</a-->
-				<a href={resolve(/** @type {any} */ ('/shows/reports'))} class="quick-card">
+				<a href={resolve(/** @type {any} */ ('/gft/reports'))} class="quick-card">
 					<span class="card-icon">📊</span>
 					<span class="card-label">Reports</span>
 					<span class="card-desc">Show Reports</span>

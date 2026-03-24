@@ -1,7 +1,9 @@
 // src/routes/corp/import_engagements/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'corp', 'manager');
   // Load contacts for the review step dropdown
   const contacts = await sql`
     SELECT corp_contact_id, company_name, first_name, last_name, email
@@ -13,7 +15,8 @@ export const load = async () => {
 
 export const actions = {
   // Step 1: Check CSV rows against existing engagements + match contacts
-  csv_check: async ({ request }) => {
+  csv_check: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const csvData = (formData.get('csv_data') || '').toString();
 
@@ -108,7 +111,8 @@ export const actions = {
   },
 
   // Step 2: Write engagements to DB
-  csv_confirm: async ({ request }) => {
+  csv_confirm: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const decisionsJson = (formData.get('decisions') || '').toString();
 

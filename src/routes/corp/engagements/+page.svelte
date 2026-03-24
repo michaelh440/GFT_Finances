@@ -18,7 +18,10 @@
    */
 
   import { goto } from '$app/navigation';
+  import { canDataEntry } from '$lib/permissions';
   export let data;
+
+  $: user = data.user;
 
   $: TYPES     = [['', 'All Types'],     ...(data.workflow?.engagement_types  ?? []).map(r => [r.value, r.label])];
   $: PIPELINES = [['', 'All Pipeline'], ...(data.workflow?.pipeline_statuses ?? []).map(r => [r.value, r.label])];
@@ -129,8 +132,10 @@
   <header>
     <h1>Corp Engagements</h1>
     <div class="header-actions">
-      <a href="/corp/import_engagements" class="btn-secondary">Import CSV</a>
-      <a href="/corp/engagements/new" class="btn-primary">+ New Engagement</a>
+      {#if canDataEntry(user, 'corp')}
+        <a href="/corp/import_engagements" class="btn-secondary">Import CSV</a>
+        <a href="/corp/engagements/new" class="btn-primary">+ New Engagement</a>
+      {/if}
     </div>
   </header>
 

@@ -1,9 +1,11 @@
 // src/routes/shows/patrons/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
 const PAGE_SIZE = 50;
 
-export const load = async ({ url }) => {
+export const load = async ({ url, locals }) => {
+	requirePermission(locals.user, 'gft', 'viewer');
 	const search = url.searchParams.get('search') || '';
 	const currentPage = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
 	const showCode = url.searchParams.get('show') || '';
@@ -180,7 +182,8 @@ export const load = async ({ url }) => {
 			audiences: audiences.map(a => a.audience_type),
 			days: days.map(d => d.day_of_week),
 			years: years.map(y => y.year),
-			filters: { showCode, format, audienceType, dayOfWeek, years: yearsParam }
+			filters: { showCode, format, audienceType, dayOfWeek, years: yearsParam },
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading patrons:', error);

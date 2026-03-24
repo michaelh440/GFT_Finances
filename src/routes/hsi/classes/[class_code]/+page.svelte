@@ -31,10 +31,12 @@
 	 */
 
 	import { resolve } from '$app/paths';
+	import { canDataEntry } from '$lib/permissions';
 
-	/** @type {{ classInfo: ClassInfo|null, sessions: Session[], totalStudents: number, totalRegistrations: number, totalRevenue: number }} */
+	/** @type {any} */
 	export let data;
 
+	$: user = data.user;
 	$: classInfo = data.classInfo;
 	$: sessions = data.sessions;
 	$: totalStudents = data.totalStudents;
@@ -84,7 +86,9 @@
 				<h1>{classInfo.class_name}</h1>
 			</div>
 			<div class="header-actions">
-				<a href={resolve(`/hsi/classes/${classInfo.class_code}/edit`)} class="btn-primary">Edit Class</a>
+				{#if canDataEntry(user, 'hsi')}
+					<a href={resolve(`/hsi/classes/${classInfo.class_code}/edit`)} class="btn-primary">Edit Class</a>
+				{/if}
 			</div>
 		</header>
 
@@ -110,6 +114,10 @@
 				<div class="info-item">
 					<span class="info-label">Standard Price</span>
 					<span class="info-value">{formatCurrency(classInfo.standard_price)}</span>
+				</div>
+				<div class="info-item">
+					<span class="info-label">Duration</span>
+					<span class="info-value">{classInfo.duration_value ? `${classInfo.duration_value} ${classInfo.duration_unit}` : '—'}</span>
 				</div>
 				<div class="info-item">
 					<span class="info-label">Status</span>
@@ -163,6 +171,7 @@
 						<tr>
 							<th>Session Name</th>
 							<th>Start Date</th>
+							<th>End Date</th>
 							<th>Instructor</th>
 							<th>Location</th>
 							<th class="col-right">Students</th>
@@ -176,6 +185,7 @@
 									<a href={resolve(`/hsi/classes/${classInfo.class_code}/sessions/${session.session_id}`)} class="session-link">{session.session_name}</a>
 								</td>
 								<td>{formatDate(session.start_date)}</td>
+								<td>{formatDate(session.end_date)}</td>
 								<td>{session.instructor || '—'}</td>
 								<td>{session.location || '—'}</td>
 								<td class="col-right">{session.student_count}</td>
@@ -185,7 +195,7 @@
 					</tbody>
 					<tfoot>
 						<tr>
-							<td colspan="4" class="total-label">Total</td>
+							<td colspan="5" class="total-label">Total</td>
 							<td class="col-right total-value">{totalStudents}</td>
 							<td class="col-right total-value">{formatCurrency(totalRevenue)}</td>
 						</tr>

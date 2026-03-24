@@ -1,4 +1,4 @@
-<!-- src/routes/shows/enter_new_show/+page.svelte -->
+<!-- src/routes/shows/new/+page.svelte -->
 <script>
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';

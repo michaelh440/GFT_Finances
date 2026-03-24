@@ -1,6 +1,7 @@
 <!-- src/routes/hsi/classes/+page.svelte -->
 <script>
 	import { resolve } from '$app/paths';
+	import { canDataEntry } from '$lib/permissions';
 
 	/**
 	 * @typedef {Object} ClassItem
@@ -16,9 +17,10 @@
 	 * @property {string} updated_at
 	 */
 
-	/** @type {{ classes: ClassItem[] }} */
+	/** @type {any} */
 	export let data;
 
+	$: user = data.user;
 	$: classes = data.classes;
 
 	// Group classes by track
@@ -57,10 +59,9 @@
 	<header>
 		<h1>Houston School of Improv - Classes</h1>
 		<div class="header-actions">
-			<!--a href="/hsi/enter_monthly_summary" class="btn-primary">Enter Monthly Summary</a>
-      <a href="/hsi/enter_class_registrations" class="btn-primary">Enter Registrations</a>
-      <a href="/hsi/students" class="btn-primary">Students</a>
-      <a href="/hsi/reports" class="btn-primary">View Reports</a-->
+			{#if canDataEntry(user, 'hsi')}
+				<a href={resolve('/hsi/classes/new')} class="btn-primary">Add Class</a>
+			{/if}
 		</div>
 	</header>
 
@@ -111,10 +112,12 @@
 											<a href={resolve(`/hsi/classes/${classItem.class_code}`)} class="btn-action"
 												>View</a
 											>
-											<a
-												href={resolve(`/hsi/classes/${classItem.class_code}/edit`)}
-												class="btn-action">Edit</a
-											>
+											{#if canDataEntry(user, 'hsi')}
+												<a
+													href={resolve(`/hsi/classes/${classItem.class_code}/edit`)}
+													class="btn-action">Edit</a
+												>
+											{/if}
 										</div>
 									</td>
 								</tr>
@@ -149,8 +152,10 @@
 
 	.header-actions {
 		display: flex;
-		gap: 1rem;
+		gap: 0.75rem;
 	}
+	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
+	.btn-primary:hover { background-color: #2563eb; }
 
 	.classes-content {
 		display: flex;

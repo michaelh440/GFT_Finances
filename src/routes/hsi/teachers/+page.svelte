@@ -1,9 +1,16 @@
 <!-- src/routes/hsi/teachers/+page.svelte -->
 <script>
 	import { resolve } from '$app/paths';
+	// canDataEntry: viewer + data_entry + manager can see add/edit
+	// canManage: manager only (delete, deactivate, etc.)
+	import { canDataEntry, canManage } from '$lib/permissions';
+
 
 	/** @type {any} */
 	export let data;
+
+// Pull user from data so permission checks work reactively
+	$: user = data.user;
 
 	let searchQuery = '';
 	let sortField = 'last_name';
@@ -75,7 +82,10 @@
 	<header>
 		<h1>Teachers</h1>
 		<div class="header-actions">
-			<a href={resolve('/hsi/teachers/new')} class="btn-primary">Add Teacher</a>
+			<!-- Add Teacher: only data_entry and above (hsi_role >= data_entry) -->
+			{#if canDataEntry(user, 'hsi')}
+				<a href={resolve('/hsi/teachers/new')} class="btn-primary">Add Teacher</a>
+			{/if}
 			<a href={resolve('/hsi')} class="btn-secondary">Back to Classes</a>
 		</div>
 	</header>

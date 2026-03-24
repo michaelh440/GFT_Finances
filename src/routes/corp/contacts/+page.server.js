@@ -1,7 +1,9 @@
 // src/routes/corp/contacts/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export async function load() {
+export async function load({ locals }) {
+  requirePermission(locals.user, 'corp', 'viewer');
   const rows = await sql`
     SELECT
       c.corp_contact_id,
@@ -28,5 +30,6 @@ export async function load() {
       total_revenue:    r.total_revenue    ? parseFloat(r.total_revenue) : null,
       engagement_count: r.engagement_count ?? 0,
     })),
+    user: locals.user,
   };
 }

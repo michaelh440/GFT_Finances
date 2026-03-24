@@ -1,13 +1,16 @@
 // src/routes/corp/import_contacts/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'corp', 'manager');
   return {};
 };
 
 export const actions = {
   // Step 1: Parse CSV and check for existing contacts
-  csv_check: async ({ request }) => {
+  csv_check: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const csvData = (formData.get('csv_data') || '').toString();
 
@@ -96,7 +99,8 @@ export const actions = {
   },
 
   // Step 2: Confirm and write to DB
-  csv_confirm: async ({ request }) => {
+  csv_confirm: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const formData = await request.formData();
     const decisionsJson = (formData.get('decisions') || '').toString();
 

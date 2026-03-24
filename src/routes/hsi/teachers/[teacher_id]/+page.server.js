@@ -21,8 +21,10 @@ export const load = async ({ params }) => {
 		}
 
 		// Get all sessions taught by this teacher with registration counts and revenue
+		// class_sessions stores instructor as "FirstName LastName" text, not a teacher_id FK
+		const instructorName = `${teacher.first_name} ${teacher.last_name}`;
 		const sessions = await sql`
-			SELECT 
+			SELECT
 				cs.session_id,
 				cs.session_name,
 				cs.class_code,
@@ -37,7 +39,7 @@ export const load = async ({ params }) => {
 			FROM class_sessions cs
 			JOIN classes c ON c.class_code = cs.class_code
 			LEFT JOIN registrations r ON r.session_id = cs.session_id
-			WHERE cs.teacher_id = ${teacherId}
+			WHERE cs.instructor = ${instructorName}
 			GROUP BY cs.session_id, cs.session_name, cs.class_code, cs.start_date,
 				cs.end_date, cs.location, cs.is_active, c.class_name, c.track
 			ORDER BY cs.start_date DESC
@@ -61,7 +63,7 @@ export const load = async ({ params }) => {
 			JOIN survey_questions sq ON sq.question_id = sa.question_id
 			JOIN survey_responses sr ON sr.response_id = sa.response_id
 			JOIN class_sessions cs ON cs.session_id = sr.session_id
-			WHERE cs.teacher_id = ${teacherId}
+			WHERE cs.instructor = ${instructorName}
 				AND sq.question_type IN ('likert', 'rating_1_5', 'rating_1_10')
 				AND sa.answer_int IS NOT NULL
 			GROUP BY sq.question_number, sq.question_text, sq.question_type

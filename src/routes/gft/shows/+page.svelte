@@ -1,6 +1,7 @@
 <!-- src/routes/shows/+page.svelte -->
 <script>
 	import { resolve } from '$app/paths';
+	import { canDataEntry } from '$lib/permissions';
 
 	/**
 	 * @typedef {Object} ShowItem
@@ -16,9 +17,10 @@
 	 * @property {string} updated_at
 	 */
 
-	/** @type {{ shows: ShowItem[] }} */
+	/** @type {any} */
 	export let data;
 
+	$: user = data.user;
 	$: shows = data.shows;
 
 	// Group shows by format
@@ -54,8 +56,9 @@
 	<header>
 		<h1>Good Friends Theater - Live Shows</h1>
 		<div class="header-actions">
-			<!--a href="/shows/enter_monthly_summary" class="btn-primary">Enter Monthly Summary</a>
-      <a href="/shows/reports" class="btn-primary">View Reports</a-->
+			{#if canDataEntry(user, 'gft')}
+				<a href={resolve(/** @type {any} */ ('/gft/shows/new'))} class="btn-primary">Add Show</a>
+			{/if}
 		</div>
 	</header>
 
@@ -115,11 +118,13 @@
 									</td>
 									<td>
 										<div class="actions">
-											<a href={resolve(/** @type {any} */ (`/shows/${show.show_code}`))} class="btn-action">View</a>
-											<a
-												href={resolve(/** @type {any} */ (`/shows/${show.show_code}/edit`))}
-												class="btn-action">Edit</a
-											>
+											<a href={resolve(/** @type {any} */ (`/gft/shows/${show.show_code}`))} class="btn-action">View</a>
+											{#if canDataEntry(user, 'gft')}
+												<a
+													href={resolve(/** @type {any} */ (`/gft/shows/${show.show_code}/edit`))}
+													class="btn-action">Edit</a
+												>
+											{/if}
 										</div>
 									</td>
 								</tr>
@@ -154,8 +159,10 @@
 
 	.header-actions {
 		display: flex;
-		gap: 1rem;
+		gap: 0.75rem;
 	}
+	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
+	.btn-primary:hover { background-color: #2563eb; }
 
 	.shows-content {
 		display: flex;

@@ -1,7 +1,9 @@
 // src/routes/shows/reports/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	try {
 		const summaries = await sql`
 			SELECT
@@ -36,7 +38,8 @@ export const load = async () => {
 				summary_year: Number(s.summary_year),
 				summary_month_num: Number(s.summary_month_num)
 			})),
-			shows
+			shows,
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading show reporting data:', error);

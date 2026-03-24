@@ -5,7 +5,7 @@
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
-	/** @type {{ summaries: any[], shows: any[] }} */
+	/** @type {{ summaries: any[], shows: any[], user: any }} */
 	export let data;
 
 	let mounted = false;

@@ -76,6 +76,6 @@ export const actions = {
 			});
 		}
 
-		throw redirect(303, `/shows/patrons/${patron_id}`);
+		throw redirect(303, `/gft/patrons/${patron_id}`);
 	}
 };

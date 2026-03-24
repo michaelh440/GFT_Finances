@@ -17,6 +17,8 @@
 	$: track = form?.values?.track ?? classInfo?.track ?? '';
 	$: vbo_event_id = form?.values?.vbo_event_id ?? classInfo?.vbo_event_id ?? '';
 	$: description = form?.values?.description ?? classInfo?.description ?? '';
+	$: duration_value = form?.values?.duration_value ?? classInfo?.duration_value ?? '';
+	$: duration_unit = form?.values?.duration_unit ?? classInfo?.duration_unit ?? '';
 	$: is_active = form?.values?.is_active ?? classInfo?.is_active ?? true;
 </script>
 
@@ -79,6 +81,8 @@
 							<option value="1 day workshop">1 Day Workshop</option>
 							<option value="intensive">Intensive</option>
 							<option value="private">Private</option>
+							<option value="audition">Audition</option>
+							<option value="conservatory">Conservatory</option>
 						</select>
 					</div>
 
@@ -132,6 +136,28 @@
 					</div>
 
 					<div class="form-group">
+						<label for="duration_value">Duration</label>
+						<div class="duration-input">
+							<input
+								type="number"
+								id="duration_value"
+								name="duration_value"
+								value={duration_value}
+								min="1"
+								placeholder="e.g. 8"
+							/>
+							<select id="duration_unit" name="duration_unit" value={duration_unit}>
+								<option value="">— Unit —</option>
+								<option value="minutes">Minutes</option>
+								<option value="hours">Hours</option>
+								<option value="days">Days</option>
+								<option value="weeks">Weeks</option>
+							</select>
+						</div>
+						<span class="help-text">Default duration for all sessions of this class.</span>
+					</div>
+
+					<div class="form-group">
 						<label for="is_active">Status</label>
 						<select id="is_active" name="is_active" value={is_active.toString()}>
 							<option value="true">Active</option>
@@ -179,6 +205,9 @@
 	.price-input { display: flex; align-items: center; }
 	.price-prefix { padding: 0.6rem 0.75rem; background-color: #f3f4f6; border: 1px solid #d1d5db; border-right: none; border-radius: 0.375rem 0 0 0.375rem; color: #6b7280; font-size: 0.95rem; }
 	.price-input input { border-radius: 0 0.375rem 0.375rem 0; flex: 1; }
+	.duration-input { display: flex; gap: 0.5rem; }
+	.duration-input input { flex: 1; }
+	.duration-input select { flex: 1; }
 	.form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #f3f4f6; }
 	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.5rem; border-radius: 0.5rem; border: none; font-weight: 500; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s; }
 	.btn-primary:hover { background-color: #2563eb; }

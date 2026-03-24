@@ -338,7 +338,7 @@
 			<h1>Enter Ticket Purchases</h1>
 			<p class="subtitle">Add ticket purchases manually or import from CSV</p>
 		</div>
-		<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases'))} class="btn-secondary">Back to Purchases</a>
+		<a href={resolve(/** @type {any} */ ('/gft/ticket_purchases'))} class="btn-secondary">Back to Purchases</a>
 	</header>
 
 	{#if form?.success && form?.action === 'manual'}
@@ -819,7 +819,7 @@
 
 				<div class="form-actions">
 					<button class="btn-secondary" on:click={resetCsv}>Import Another File</button>
-					<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases'))} class="btn-secondary">View Ticket Purchases</a>
+					<a href={resolve(/** @type {any} */ ('/gft/ticket_purchases'))} class="btn-secondary">View Ticket Purchases</a>
 				</div>
 			{/if}
 		</div>

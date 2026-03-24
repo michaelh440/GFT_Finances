@@ -2,43 +2,61 @@
 <script>
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
+	import { canView, canManage } from '$lib/permissions';
 
-	// Navigation structure
+	/** @type {any} */
+	export let data;
+
+	$: user = data?.user || $page.data?.user;
+
+	// Navigation structure — each section has an optional `area` for permission filtering
 	const navSections = [
 		{
+			id: 'Logout',
+			label: 'Logout',
+			fullName: 'Session Logout',
+			icon: '🚪',
+			basePath: '/logout',
+			area: null,
+			children: [{ label: 'Logout', href: '/logout' }]
+		},
+		/*{
 			id: 'data',
 			label: 'DATA',
 			fullName: 'Data Entry',
 			icon: '✏️',
 			basePath: '/data',
+			area: 'super_admin',
 			children: [
-				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
-				{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' },
-				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
-				{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
-				{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
+				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+				//{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
+				//{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' },
+				//{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
+				//{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
+				//{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
+				//{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
+				//{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
 			]
-		},
+		},*/
 		{
 			id: 'hsi',
 			label: 'HSI',
 			fullName: 'Houston School of Improv',
 			icon: '🎭',
 			basePath: '/hsi',
+			area: 'hsi',
 			children: [
 				{ label: 'Teachers', href: '/hsi/teachers' },
 				{ label: 'Classes', href: '/hsi/classes' },
 				{ label: 'Tracks', href: '/hsi/tracks' },
 				{ label: 'Students', href: '/hsi/students' },
+				{ label: 'Student Surveys', href: '/hsi/student_surveys' },
 				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
 				//{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
 				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				//{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
 				//{ label: 'Class Financial Reports', href: '/hsi/reports' }
-				
+
 			]
 		},
 		{
@@ -47,12 +65,13 @@
 			fullName: 'Good Friends Theater',
 			icon: '🎪',
 			basePath: '/gft',
+			area: 'gft',
 			children: [
 				{ label: 'Shows', href: '/gft/shows' },
 				{ label: 'Patrons', href: '/gft/patrons' },
 				//{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
 				{ label: 'Ticket Purchases', href: '/gft/ticket_purchases' },
-				{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
+				//{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
 				//{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
 				//{ label: 'Enter Monthly Summary', href: '/gft/enter_monthly_summary' },
 				//{ label: 'Shows Financial Reports', href: '/gft/reports' }
@@ -65,6 +84,7 @@
 			fullName: 'ComedySportz Houston',
 			icon: '⚡',
 			basePath: '/csz',
+			area: 'csz',
 			children: [{ label: 'Coming Soon', href: '#' }]
 		},
 		{
@@ -73,14 +93,11 @@
 			fullName: 'Corporate',
 			icon: '💼',
 			basePath: '/corp',
+			area: 'corp',
 			children: [
 				{ label: 'Contacts', href: '/corp/contacts' },
 				{ label: 'Engagements', href: '/corp/engagements' },
-				{ label: 'Companies', href: '/corp/companies' },{ label: 'Import Contacts', href: '/corp/import_contacts' },
-				{ label: 'Import Engagements', href: '/corp/import_engagements' },	
-				{ label: 'Import All', href: '/corp/import' },	
-				{ label: 'Dedupe Contacts', href: '/corp/dedupe_contacts' },	
-				{ label: 'Dedupe Companies', href: '/corp/dedupe_companies' },
+				{ label: 'Companies', href: '/corp/companies' },
 				{ label: 'Corporate Reporting', href: '/corp/reports' }
 			]
 		},
@@ -90,9 +107,10 @@
 			fullName: 'Reporting',
 			icon: '📊',
 			basePath: '/',
-			children: 
+			area: 'super_admin',
+			children:
 			[
-				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },	
+				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },
 				{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Class Financial Reports', href: '/hsi/reports' },
 				{ label: 'Shows Financial Reports', href: '/gft/reports' },
@@ -135,27 +153,12 @@
 			fullName: 'GFT Data Entry',
 			icon: '✏️',
 			basePath: '/data',
-			children: [		
+			children: [
 				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
-				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
-				
-			]
-		},		
-			
-		{
-			id: 'admin-gft-data',
-			label: 'GFT DATA',
-			fullName: 'GFT Data Entry',
-			icon: '✏️',
-			basePath: '/data',
-			children: [		
-				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
-				{ label: 'Enter Ticket Purchases', href: '/shows/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Ticket Summary', href: '/shows/enter_monthly_summary' }
-				
+				{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
+				{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
+				{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
+
 			]
 		},		
 				
@@ -168,12 +171,12 @@
 			children: [
 				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
 				//{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
-				{ label: '2026 Combined Reporting', href: '/shows/reports/2026/combined_reporting' },
-				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },	
+				{ label: '2026 Combined Reporting', href: '/gft/reports/2026/combined_reporting' },
+				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },
 				{ label: 'Registration Funnel', href: '/hsi/registrations' },
 				{ label: 'Class Financial Reports', href: '/hsi/reports' },
-				{ label: 'Shows Financial Reports', href: '/shows/reports' },
-				{ label: 'Patron Zip Code Analytics', href: '/shows/patrons/zip_analytics' }
+				{ label: 'Shows Financial Reports', href: '/gft/reports' },
+				{ label: 'Patron Zip Code Analytics', href: '/gft/patrons/zip_analytics' }
 				
 			]
 		},
@@ -194,7 +197,14 @@
 			id: 'admin-corp',
 			label: 'Corp',
 			basePath: '/admin/corp',
-			children: [{ label: 'Coming Soon', href: '#' }]
+			children: [
+				//{ label: 'Import Contacts', href: '/corp/import_contacts' },
+				//{ label: 'Import Engagements', href: '/corp/import_engagements' },
+				{ label: 'Import All', href: '/corp/import' },
+				{ label: 'Dedupe Contacts', href: '/corp/dedupe_contacts' },
+				{ label: 'Dedupe Companies', href: '/corp/dedupe_companies' },
+				
+			]
 		}
 	];
 
@@ -236,13 +246,44 @@
 
 	/** @param {string} href */
 	function isActive(href) {
-		return $page.url.pathname === href;
+		if (href === '#') return false;
+		const path = $page.url.pathname;
+		return path === href || path.startsWith(href + '/');
 	}
 
 	/** @param {string} basePath */
 	function isSectionActive(basePath) {
 		return $page.url.pathname.startsWith(basePath);
 	}
+
+	/**
+	 * Check if the current user can see a nav section.
+	 * @param {{ area: string|null }} section
+	 * @returns {boolean}
+	 */
+	function canSeeSection(section) {
+		if (!section.area) return true; // no restriction (e.g. Logout)
+		if (!user) return false;
+		if (user.is_super_admin) return true;
+		if (section.area === 'super_admin') return false; // only super admins
+		return canView(user, section.area);
+	}
+
+	/** @type {any[]} */
+	$: visibleNavSections = navSections.filter(s => canSeeSection(s));
+
+	/**
+	 * Check if the current user can see an admin sub-section.
+	 * @param {{ id: string }} sub
+	 * @returns {boolean}
+	 */
+	function canSeeAdminSub(sub) {
+		if (!user || !user.is_super_admin) return false;
+		return true;
+	}
+
+	/** @type {any[]} */
+	$: visibleAdminSubs = adminSubSections.filter(s => canSeeAdminSub(s));
 
 	let sidebarCollapsed = false;
 </script>
@@ -269,7 +310,7 @@
 		</div>
 
 		<nav class="sidebar-nav">
-			{#each navSections as section (section.id)}
+			{#each visibleNavSections as section (section.id)}
 				<div class="nav-section" class:active={isSectionActive(section.basePath)}>
 					<button
 						class="nav-section-header"
@@ -304,12 +345,13 @@
 				</div>
 			{/each}
 
+			<!-- Admin Section (super admins only) -->
+			{#if user?.is_super_admin}
 			<!-- Divider -->
 			{#if !sidebarCollapsed}
 				<div class="nav-divider"></div>
 			{/if}
 
-			<!-- Admin Section -->
 			<div class="nav-section" class:active={isSectionActive('/admin')}>
 				<button
 					class="nav-section-header"
@@ -327,7 +369,7 @@
 
 				{#if adminExpanded && !sidebarCollapsed}
 					<div class="admin-subsections">
-						{#each adminSubSections as sub (sub.id)}
+						{#each visibleAdminSubs as sub (sub.id)}
 							<div class="admin-sub">
 								<button
 									class="admin-sub-header"
@@ -360,6 +402,7 @@
 					</div>
 				{/if}
 			</div>
+			{/if}
 		</nav>
 	</aside>
 

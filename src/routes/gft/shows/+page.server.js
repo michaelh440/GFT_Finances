@@ -1,7 +1,9 @@
 // src/routes/shows/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'viewer');
 	try {
 		const shows = await sql`
       SELECT 
@@ -26,7 +28,8 @@ export const load = async () => {
 			shows: shows.map((s) => ({
 				...s,
 				standard_ticket_price: Number(s.standard_ticket_price || 0)
-			}))
+			})),
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading shows:', error);

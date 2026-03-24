@@ -1,7 +1,9 @@
 // src/routes/corp/dedupe_contacts/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export async function load() {
+export async function load({ locals }) {
+  requirePermission(locals.user, 'corp', 'manager');
   // ── Find all duplicate groups ─────────────────────────────────────────
   // A "group" is contacts that share the same normalized email OR
   // same (first_name + last_name + phone) combination.
@@ -105,7 +107,8 @@ export async function load() {
 }
 
 export const actions = {
-  merge: async ({ request }) => {
+  merge: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form       = await request.formData();
     const mergesJson = (form.get('merges') || '').toString();
     if (!mergesJson) return { success: false, error: 'No merge data.' };
@@ -258,7 +261,8 @@ export const actions = {
     }
   },
 
-  skip: async ({ request }) => {
+  skip: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     // Just a no-op — user chose to skip a group without merging
     return { success: true, message: 'Group skipped.' };
   },

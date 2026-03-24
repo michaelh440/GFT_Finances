@@ -63,7 +63,7 @@
 <div class="container">
 	<header>
 		<div>
-			<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="back-link">← Back to Patrons</a>
+			<a href={resolve(/** @type {any} */ ('/gft/patrons'))} class="back-link">← Back to Patrons</a>
 			<h1>Record Ticket Purchase</h1>
 		</div>
 	</header>
@@ -162,7 +162,7 @@
 			</div>
 
 			<div class="form-actions">
-				<a href={resolve(/** @type {any} */ ('/shows/patrons'))} class="btn-secondary">Cancel</a>
+				<a href={resolve(/** @type {any} */ ('/gft/patrons'))} class="btn-secondary">Cancel</a>
 				<button type="submit" class="btn-primary">Save Purchase</button>
 			</div>
 		</form>

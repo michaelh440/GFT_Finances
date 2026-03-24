@@ -1,4 +1,4 @@
-// src/routes/shows/enter_new_show/+page.server.js
+// src/routes/shows/new/+page.server.js
 import sql from '$lib/db';
 import { fail, redirect } from '@sveltejs/kit';
 
@@ -52,6 +52,6 @@ export const actions = {
 			return fail(500, { error: 'An unexpected error occurred. Please try again.', values });
 		}
 
-		throw redirect(303, `/shows/${show_code}`);
+		throw redirect(303, `/gft/shows/${show_code}`);
 	}
 };

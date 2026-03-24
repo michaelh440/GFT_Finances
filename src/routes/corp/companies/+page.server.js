@@ -1,9 +1,11 @@
 // src/routes/corp/companies/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
 const PAGE_SIZE = 50;
 
-export const load = async ({ url }) => {
+export const load = async ({ url, locals }) => {
+  requirePermission(locals.user, 'corp', 'viewer');
 
   // ── Read filter params ────────────────────────────────────────────────
   const search         = url.searchParams.get('search')          || '';
@@ -199,5 +201,6 @@ export const load = async ({ url }) => {
     parents: parentRows,
     workflow,
     filters: { search, yearsParam, month, engType, pipelineStatus, contractStatus, hasRevenue, status, parentId },
+    user: locals.user,
   };
 };

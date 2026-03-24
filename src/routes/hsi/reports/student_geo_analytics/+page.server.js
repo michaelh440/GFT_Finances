@@ -1,7 +1,9 @@
 // src/routes/hsi/reports/student_geo_analytics/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ url }) => {
+export const load = async ({ url, locals }) => {
+	requirePermission(locals.user, 'hsi', 'manager');
 	const classCode = url.searchParams.get('class') || '';
 	const track = url.searchParams.get('track') || '';
 	const yearsParam = url.searchParams.get('years') || '';

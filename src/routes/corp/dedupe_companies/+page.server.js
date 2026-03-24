@@ -1,5 +1,6 @@
 // src/routes/corp/dedupe_companies/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
 // ── Fuzzy matching helpers ────────────────────────────────────────────────
 
@@ -134,7 +135,8 @@ function buildFuzzyGroups(companies) {
 
 // ── Load ──────────────────────────────────────────────────────────────────
 
-export async function load() {
+export async function load({ locals }) {
+  requirePermission(locals.user, 'corp', 'manager');
   // Load all companies with stats
   const allCompanies = await sql`
     SELECT
@@ -201,7 +203,8 @@ export async function load() {
 
 export const actions = {
   // ── Manual merge search ───────────────────────────────────────────────
-  search: async ({ request }) => {
+  search: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form   = await request.formData();
     const query  = (form.get('query')  || '').toString().trim();
     const target = (form.get('target') || '').toString().trim(); // 'discard' | 'keep'
@@ -243,7 +246,8 @@ export const actions = {
   },
 
   // ── Merge action ──────────────────────────────────────────────────────
-  merge: async ({ request }) => {
+  merge: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form       = await request.formData();
     const mergesJson = (form.get('merges') || '').toString();
     if (!mergesJson) return { success: false, error: 'No merge data.' };

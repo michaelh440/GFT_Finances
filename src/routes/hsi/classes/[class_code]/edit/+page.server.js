@@ -16,6 +16,8 @@ export const load = async ({ params }) => {
 				track,
 				vbo_event_id,
 				description,
+				duration_value,
+				duration_unit,
 				is_active
 			FROM classes
 			WHERE class_code = ${class_code}
@@ -49,20 +51,30 @@ export const actions = {
 		const track = formData.get('track')?.toString().trim() || null;
 		const vbo_event_id = formData.get('vbo_event_id')?.toString().trim() || null;
 		const description = formData.get('description')?.toString().trim() || null;
+		const duration_value_str = formData.get('duration_value')?.toString().trim();
+		const duration_unit = formData.get('duration_unit')?.toString().trim() || null;
+		const duration_value = duration_value_str ? parseInt(duration_value_str) : null;
 		const is_active = formData.get('is_active') === 'true';
 
 		// Validation
 		if (!class_name) {
 			return fail(400, {
 				error: 'Class name is required.',
-				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, duration_value, duration_unit, is_active }
 			});
 		}
 
 		if (isNaN(standard_price) || standard_price < 0) {
 			return fail(400, {
 				error: 'Standard price must be a valid non-negative number.',
-				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, duration_value, duration_unit, is_active }
+			});
+		}
+
+		if ((duration_value && !duration_unit) || (!duration_value && duration_unit)) {
+			return fail(400, {
+				error: 'Duration value and unit must both be set or both be empty.',
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, duration_value, duration_unit, is_active }
 			});
 		}
 
@@ -77,6 +89,8 @@ export const actions = {
 					track = ${track},
 					vbo_event_id = ${vbo_event_id},
 					description = ${description},
+					duration_value = ${duration_value},
+					duration_unit = ${duration_unit},
 					is_active = ${is_active},
 					updated_at = CURRENT_TIMESTAMP
 				WHERE class_code = ${class_code}
@@ -87,13 +101,13 @@ export const actions = {
 			if (/** @type {any} */ (error).code === '23505') {
 				return fail(400, {
 					error: 'A class with that name already exists.',
-					values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
+					values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, duration_value, duration_unit, is_active }
 				});
 			}
 
 			return fail(500, {
 				error: 'An unexpected error occurred. Please try again.',
-				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, is_active }
+				values: { class_name, class_type, student_type, standard_price, track, vbo_event_id, description, duration_value, duration_unit, is_active }
 			});
 		}
 

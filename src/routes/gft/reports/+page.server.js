@@ -1,7 +1,9 @@
 // src/routes/shows/reports/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	try {
 		// Get all active shows
 		const shows = await sql`

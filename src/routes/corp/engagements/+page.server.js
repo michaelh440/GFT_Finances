@@ -1,7 +1,9 @@
 // src/routes/corp/engagements/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export async function load({ url }) {
+export async function load({ url, locals }) {
+  requirePermission(locals.user, 'corp', 'viewer');
   const type     = url.searchParams.get('type')     ?? '';
   const pipeline = url.searchParams.get('pipeline') ?? '';
   const contract = url.searchParams.get('contract') ?? '';
@@ -46,5 +48,6 @@ export async function load({ url }) {
     engagements,
     workflow,
     filters: { type, pipeline, contract, archived },
+    user: locals.user,
   };
 }

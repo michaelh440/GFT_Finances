@@ -16,8 +16,12 @@
    * @property {string|null} last_engagement_date
    */
 
-  /** @type {{ contacts: Contact[] }} */
+  import { canDataEntry } from '$lib/permissions';
+
+  /** @type {{ contacts: Contact[], user: any }} */
   export let data;
+
+  $: user = data.user;
 
   let searchQuery = '';
   /** @type {keyof Contact} */
@@ -96,8 +100,10 @@
   <header>
     <h1>Corp Contacts</h1>
     <div class="header-actions">
-      <a href="/corp/import_contacts" class="btn-secondary">Import CSV</a>
-      <a href="/corp/contacts/new" class="btn-primary">+ New Contact</a>
+      {#if canDataEntry(user, 'corp')}
+        <a href="/corp/import_contacts" class="btn-secondary">Import CSV</a>
+        <a href="/corp/contacts/new" class="btn-primary">+ New Contact</a>
+      {/if}
     </div>
   </header>
 

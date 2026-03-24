@@ -2,10 +2,12 @@
 <script>
 	import { resolve } from '$app/paths';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { canDataEntry } from '$lib/permissions';
 
-	/** @type {{ patrons: any[], stats: any, pagination: any, search: string, shows: any[], formats: string[], audiences: string[], days: string[], years: number[], filters: any }} */
+	/** @type {any} */
 	export let data;
 
+	$: user = data.user;
 	$: patrons = data.patrons || [];
 	$: stats = data.stats || {};
 	$: pagination = data.pagination || { currentPage: 1, totalPages: 1, pageSize: 50, totalCount: 0 };
@@ -69,27 +71,27 @@
 
 	function applyFilters() {
 		const qs = buildFilterParams(1);
-		window.location.href = `${resolve(/** @type {any} */ ('/shows/patrons'))}${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/gft/patrons'))}${qs ? '?' + qs : ''}`;
 	}
 
 	function clearFilters() {
-		window.location.href = `${resolve(/** @type {any} */ ('/shows/patrons'))}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/gft/patrons'))}`;
 	}
 
 	function applySearch() {
 		const qs = buildFilterParams(1);
-		window.location.href = `${resolve(/** @type {any} */ ('/shows/patrons'))}${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/gft/patrons'))}${qs ? '?' + qs : ''}`;
 	}
 
 	function clearSearch() {
 		searchTerm = '';
-		window.location.href = `${resolve(/** @type {any} */ ('/shows/patrons'))}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/gft/patrons'))}`;
 	}
 
 	/** @param {number} page */
 	function goToPage(page) {
 		const qs = buildFilterParams(page);
-		window.location.href = `${resolve(/** @type {any} */ ('/shows/patrons'))}${qs ? '?' + qs : ''}`;
+		window.location.href = `${resolve(/** @type {any} */ ('/gft/patrons'))}${qs ? '?' + qs : ''}`;
 	}
 
 	/**
@@ -135,8 +137,10 @@
 	<header>
 		<h1>Patrons</h1>
 		<div class="header-actions">
-			<a href={resolve(/** @type {any} */ ('/shows/ticket_purchases'))} class="btn-secondary-link">Ticket Purchases</a>
-			<a href={resolve(/** @type {any} */ ('/shows/patrons/new'))} class="btn-primary">Add Patron</a>
+			<a href={resolve(/** @type {any} */ ('/gft/ticket_purchases'))} class="btn-secondary-link">Ticket Purchases</a>
+			{#if canDataEntry(user, 'gft')}
+				<a href={resolve(/** @type {any} */ ('/gft/patrons/new'))} class="btn-primary">Add Patron</a>
+			{/if}
 		</div>
 	</header>
 
@@ -298,7 +302,7 @@
 					{#each patrons as patron (patron.patron_id)}
 						<tr class:inactive={!patron.is_active}>
 							<td>
-								<a href={resolve(/** @type {any} */ (`/shows/patrons/${patron.patron_id}`))} class="patron-link">
+								<a href={resolve(/** @type {any} */ (`/gft/patrons/${patron.patron_id}`))} class="patron-link">
 									{patron.last_name}, {patron.first_name}
 								</a>
 							</td>

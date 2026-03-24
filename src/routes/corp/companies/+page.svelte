@@ -1,7 +1,11 @@
 <!-- src/routes/corp/companies/+page.svelte -->
 <script>
-  /** @type {{ companies: any[], stats: any, pagination: any, years: number[], parents: any[], filters: any }} */
+  import { canDataEntry } from '$lib/permissions';
+
+  /** @type {{ companies: any[], stats: any, pagination: any, years: number[], parents: any[], filters: any, user: any }} */
   export let data;
+
+  $: user = data.user;
 
   $: companies  = data.companies  || [];
   $: stats      = data.stats      || {};
@@ -141,8 +145,10 @@
   <header>
     <h1>Corp Companies</h1>
     <div class="header-actions">
-      <a href="/corp/dedupe_companies" class="btn-secondary">Dedupe</a>
-      <a href="/corp/companies/new"    class="btn-primary">+ New Company</a>
+      {#if canDataEntry(user, 'corp')}
+        <a href="/corp/dedupe_companies" class="btn-secondary">Dedupe</a>
+        <a href="/corp/companies/new"    class="btn-primary">+ New Company</a>
+      {/if}
     </div>
   </header>
 

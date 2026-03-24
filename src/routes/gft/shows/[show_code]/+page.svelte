@@ -67,16 +67,16 @@
 		<div class="not-found">
 			<h1>Show Not Found</h1>
 			<p>The show you're looking for doesn't exist.</p>
-			<a href={resolve(/** @type {any} */ ('/shows'))} class="btn-secondary">Back to Shows</a>
+			<a href={resolve(/** @type {any} */ ('/gft/shows'))} class="btn-secondary">Back to Shows</a>
 		</div>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve(/** @type {any} */ ('/shows'))} class="back-link">← Back to Shows</a>
+				<a href={resolve(/** @type {any} */ ('/gft/shows'))} class="back-link">← Back to Shows</a>
 				<h1>{showInfo.show_name}</h1>
 			</div>
 			<div class="header-actions">
-				<a href={resolve(/** @type {any} */ (`/shows/${showInfo.show_code}/edit`))} class="btn-primary">Edit Show</a>
+				<a href={resolve(/** @type {any} */ (`/gft/shows/${showInfo.show_code}/edit`))} class="btn-primary">Edit Show</a>
 			</div>
 		</header>
 

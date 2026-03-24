@@ -1,7 +1,9 @@
 // src/routes/hsi/classes/[class_code]/sessions/[session_id]/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'hsi', 'viewer');
 	const { class_code, session_id } = params;
 
 	try {
@@ -11,7 +13,9 @@ export const load = async ({ params }) => {
 				class_code,
 				class_name,
 				track,
-				standard_price
+				standard_price,
+				duration_value,
+				duration_unit
 			FROM classes
 			WHERE class_code = ${class_code}
 		`;
@@ -35,6 +39,8 @@ export const load = async ({ params }) => {
 				end_date,
 				instructor,
 				location,
+				duration_value,
+				duration_unit,
 				is_active,
 				created_at
 			FROM class_sessions
@@ -84,7 +90,8 @@ export const load = async ({ params }) => {
 				...s,
 				amount_paid: Number(s.amount_paid)
 			})),
-			totalRevenue
+			totalRevenue,
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading session detail:', error);

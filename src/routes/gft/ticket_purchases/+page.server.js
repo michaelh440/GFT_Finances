@@ -1,9 +1,11 @@
 // src/routes/shows/ticket_purchases/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
 const PAGE_SIZE = 50;
 
-export const load = async ({ url }) => {
+export const load = async ({ url, locals }) => {
+	requirePermission(locals.user, 'gft', 'viewer');
 	// Read filter params from URL
 	const showCode = url.searchParams.get('show') || '';
 	const year = url.searchParams.get('year') || '';
@@ -129,7 +131,8 @@ export const load = async ({ url }) => {
 			shows,
 			years: years.map((y) => y.year),
 			paymentMethods: paymentMethods.map((p) => p.payment_method),
-			filters: { showCode, year, dateFrom, dateTo, patronSearch, paymentMethod }
+			filters: { showCode, year, dateFrom, dateTo, patronSearch, paymentMethod },
+			user: locals.user
 		};
 	} catch (error) {
 		console.error('Error loading ticket purchases:', error);

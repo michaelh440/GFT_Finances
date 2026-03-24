@@ -1,7 +1,9 @@
 // src/routes/corp/reports/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'corp', 'manager');
   try {
     // All engagements with company/industry info
     const engagements = await sql`
