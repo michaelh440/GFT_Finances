@@ -4,10 +4,26 @@
   import { browser } from '$app/environment';
   import Chart from 'chart.js/auto';
 
-  /** @type {{ engagements: any[], companies: any[], industries: string[] }} */
+  /** @type {{ engagements: any[], companies: any[], industries: string[], pastReports: any[] }} */
   export let data;
+  /** @type {any} */
+  export let form;
 
   let mounted = false;
+  let generating = false;
+  let reportTitle = 'Corp Report';
+
+  // PDF section toggles
+  let pdfIncludeRevenue = true;
+  let pdfIncludeEngagements = true;
+  let pdfIncludeIndustry = true;
+  let pdfIncludeCompany = true;
+
+  // PDF section notes
+  let pdfNotesRevenue = '';
+  let pdfNotesEngagements = '';
+  let pdfNotesIndustry = '';
+  let pdfNotesCompany = '';
   /** @type {Record<string, any>} */
   let charts = {};
 
@@ -91,11 +107,20 @@
       selectedCompanyCodes = [...selectedCompanyCodes, s];
   }
 
-  // ── Apply all filters ─────────────────────────────────────────────────
+  // ── Apply all filters (including date range) ─────────────────────────
   $: filteredEngagements = data.engagements.filter((/** @type {any} */ e) => {
     if (selectedIndustry && e.industry !== selectedIndustry) return false;
     if (selectedEngType  && e.engagement_type !== selectedEngType) return false;
     if (effectiveCompanies.length && !effectiveCompanies.includes(e.corp_company_id)) return false;
+    // Date range filter
+    if (dateStart) {
+      const [sy, sm] = dateStart.split('-').map(Number);
+      if (e.eng_year < sy || (e.eng_year === sy && e.eng_month < sm)) return false;
+    }
+    if (dateEnd) {
+      const [ey, em] = dateEnd.split('-').map(Number);
+      if (e.eng_year > ey || (e.eng_year === ey && e.eng_month > em)) return false;
+    }
     return true;
   });
 
@@ -181,6 +206,7 @@
     }
     return Object.entries(m)
       .map(([k, v]) => ({ industry: k, ...v }))
+      .filter(d => d.revenue > 0)
       .sort((a, b) => b.revenue - a.revenue);
   })();
 
@@ -323,14 +349,15 @@
           }
         });
 
-        // 7. Engagement Count by Company (top 20)
+        // 7. Engagement Count by Company (top 20, sorted by count)
+        const topByCount = [...companyBreakdown].sort((a, b) => b.count - a.count).slice(0, 20);
         rc('chart-company-count', {
           type: 'bar',
           data: {
-            labels: top.map(d => d.name),
+            labels: topByCount.map(d => d.name),
             datasets: [{
               label: 'Engagements',
-              data: top.map(d => d.count),
+              data: topByCount.map(d => d.count),
               backgroundColor: '#10b981',
             }]
           },
@@ -348,6 +375,169 @@
 
   onMount(() => { mounted = true; });
   onDestroy(() => { destroyCharts(); });
+
+  /** @param {any} d */
+  function formatDateTime(d) {
+    if (!d) return '—';
+    const x = new Date(d);
+    return isNaN(x.getTime()) ? '—' : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  /** @param {any} b */
+  function formatBytes(b) {
+    if (!b) return '—';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  async function generateAndSavePDF() {
+    generating = true;
+    try {
+      if (!window.jspdf) {
+        const cdns = [
+          'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+          'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+        ];
+        let loaded = false;
+        for (const src of cdns) {
+          try {
+            await new Promise((resolve, reject) => {
+              const s = document.createElement('script');
+              s.src = src;
+              s.onload = resolve;
+              s.onerror = () => reject(new Error(`Failed to load from ${src}`));
+              document.head.appendChild(s);
+            });
+            if (window.jspdf) { loaded = true; break; }
+          } catch { /* try next */ }
+        }
+        if (!loaded) throw new Error('Could not load jsPDF from any CDN.');
+      }
+      // @ts-ignore
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 50;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      // Title
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text(reportTitle, margin, y + 22);
+      y += 40;
+
+      // Metadata
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      const filterDesc = [
+        dateRangeLabel,
+        selectedIndustry ? `Industry: ${selectedIndustry}` : null,
+        selectedEngType ? `Type: ${ENG_TYPES.find(t => t.value === selectedEngType)?.label || selectedEngType}` : null,
+        selectedCompanyCodes.length > 0 ? `${selectedCompanyCodes.length} companies` : null,
+      ].filter(Boolean).join(' | ') || 'All Engagements';
+      doc.text(filterDesc, margin, y);
+      y += 14;
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, y);
+      doc.setTextColor(0);
+      y += 20;
+      doc.setDrawColor(200);
+      doc.line(margin, y, pageW - margin, y);
+      y += 20;
+
+      const sections = [
+        { include: pdfIncludeRevenue, title: 'Revenue', notes: pdfNotesRevenue, charts: [
+          { id: 'chart-revenue-ytd' }, { id: 'chart-revenue' },
+        ]},
+        { include: pdfIncludeEngagements, title: 'Engagements', notes: pdfNotesEngagements, charts: [
+          { id: 'chart-count-ytd' }, { id: 'chart-count' },
+        ]},
+        { include: pdfIncludeIndustry, title: 'Revenue by Industry', notes: pdfNotesIndustry, charts: [
+          { id: 'chart-industry-revenue' },
+        ]},
+        { include: pdfIncludeCompany, title: 'Revenue & Engagements by Company', notes: pdfNotesCompany, charts: [
+          { id: 'chart-company-revenue' }, { id: 'chart-company-count' },
+        ]},
+      ];
+
+      for (const section of sections) {
+        if (!section.include) continue;
+
+        if (y + 40 > pageH - margin) { doc.addPage(); y = margin; }
+        doc.setFontSize(15);
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.title, margin, y);
+        y += 8;
+        doc.setDrawColor(180);
+        doc.line(margin, y, pageW - margin, y);
+        y += 12;
+
+        const chartW = (contentW - 10) / 2;
+        const chartH = 180;
+        for (let i = 0; i < section.charts.length; i += 2) {
+          if (y + chartH + 10 > pageH - margin) { doc.addPage(); y = margin; }
+          const cvL = /** @type {HTMLCanvasElement | null} */ (document.getElementById(section.charts[i]?.id));
+          const cvR = section.charts[i + 1] ? /** @type {HTMLCanvasElement | null} */ (document.getElementById(section.charts[i + 1].id)) : null;
+          if (cvL && cvR) {
+            doc.addImage(cvL.toDataURL('image/png', 1.0), 'PNG', margin, y, chartW, chartH);
+            doc.addImage(cvR.toDataURL('image/png', 1.0), 'PNG', margin + chartW + 10, y, chartW, chartH);
+          } else if (cvL) {
+            doc.addImage(cvL.toDataURL('image/png', 1.0), 'PNG', margin, y, contentW, chartH);
+          }
+          y += chartH + 15;
+        }
+
+        if (section.notes.trim()) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(80);
+          const noteLines = typeof doc.splitTextToSize === 'function'
+            ? doc.splitTextToSize(section.notes.trim(), contentW)
+            : section.notes.trim().split('\n');
+          for (const line of noteLines) {
+            if (y + 14 > pageH - margin) { doc.addPage(); y = margin; }
+            doc.text(String(line), margin, y);
+            y += 14;
+          }
+          doc.setTextColor(0);
+        }
+        y += 25;
+      }
+
+      const chartIds = sections.filter(s => s.include).flatMap(s => s.charts.map(c => c.id));
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      doc.save(reportTitle.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+
+      const fd = new FormData();
+      fd.append('report_title', reportTitle);
+      fd.append('date_range_start', dateStart);
+      fd.append('date_range_end', dateEnd);
+      fd.append('filters', JSON.stringify({ industry: selectedIndustry, engType: selectedEngType, years: selectedYears }));
+      fd.append('charts', JSON.stringify(chartIds));
+      fd.append('pdf_base64', pdfBase64);
+
+      const resp = await fetch('?/generate_pdf', {
+        method: 'POST', body: fd,
+        headers: { 'x-sveltekit-action': 'true' },
+      });
+      const text = await resp.text();
+      if (resp.ok && text.includes('"success"')) {
+        alert('Report saved successfully!');
+        window.location.reload();
+      } else {
+        console.warn('Save response:', resp.status, text.slice(0, 500));
+        alert('PDF downloaded but may not have saved to database.');
+      }
+    } catch (/** @type {any} */ err) {
+      console.error('PDF error:', err);
+      alert('Error generating PDF: ' + (err?.message || err?.toString() || JSON.stringify(err)));
+    } finally {
+      generating = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -362,6 +552,54 @@
       <p class="subtitle">Revenue and engagement analytics for corporate business</p>
     </div>
   </header>
+
+  {#if form?.success}
+    <div class="alert alert-success">{form.message}</div>
+  {:else if form?.error}
+    <div class="alert alert-error">{form.error}</div>
+  {/if}
+
+  <!-- PDF Generation -->
+  <div class="pdf-panel">
+    <div class="pdf-panel-row">
+      <div class="pdf-title-group">
+        <label for="reportTitle">Report Title</label>
+        <input type="text" id="reportTitle" bind:value={reportTitle}
+          placeholder="e.g. Q1 2026 Corp Performance" class="pdf-title-input" />
+      </div>
+      <button class="btn-generate" on:click={generateAndSavePDF}
+        disabled={generating || !mounted || !filteredEngagements.length || (!pdfIncludeRevenue && !pdfIncludeEngagements && !pdfIncludeIndustry && !pdfIncludeCompany)}>
+        {generating ? 'Generating...' : 'Generate & Download PDF'}
+      </button>
+    </div>
+    <div class="pdf-sections">
+      <span class="pdf-sections-label">Include in PDF:</span>
+      <div class="pdf-section-item">
+        <label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeRevenue} /> Revenue</label>
+        {#if pdfIncludeRevenue}
+          <textarea class="pdf-notes" bind:value={pdfNotesRevenue} placeholder="Add notes for this section..." rows="2"></textarea>
+        {/if}
+      </div>
+      <div class="pdf-section-item">
+        <label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeEngagements} /> Engagements</label>
+        {#if pdfIncludeEngagements}
+          <textarea class="pdf-notes" bind:value={pdfNotesEngagements} placeholder="Add notes for this section..." rows="2"></textarea>
+        {/if}
+      </div>
+      <div class="pdf-section-item">
+        <label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeIndustry} /> Industry</label>
+        {#if pdfIncludeIndustry}
+          <textarea class="pdf-notes" bind:value={pdfNotesIndustry} placeholder="Add notes for this section..." rows="2"></textarea>
+        {/if}
+      </div>
+      <div class="pdf-section-item">
+        <label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeCompany} /> Company</label>
+        {#if pdfIncludeCompany}
+          <textarea class="pdf-notes" bind:value={pdfNotesCompany} placeholder="Add notes for this section..." rows="2"></textarea>
+        {/if}
+      </div>
+    </div>
+  </div>
 
   <!-- ── Filters ────────────────────────────────────────────────────── -->
   <div class="filter-section">
@@ -466,8 +704,8 @@
         <span class="section-range">{dateRangeLabel} · {selectedYears.join(', ')}</span>
       </div>
       <div class="charts-grid">
+        <div class="chart-card"><h3>Revenue Year-to-Date</h3><canvas id="chart-revenue-ytd"></canvas></div>
         <div class="chart-card"><h3>Monthly Revenue</h3><canvas id="chart-revenue"></canvas></div>
-        <div class="chart-card"><h3>Revenue Cumulative</h3><canvas id="chart-revenue-ytd"></canvas></div>
         <div class="chart-card wide"><h3>Revenue by Industry</h3><canvas id="chart-industry-revenue"></canvas></div>
         <div class="chart-card wide"><h3>Revenue by Company (Top 20)</h3><canvas id="chart-company-revenue"></canvas></div>
       </div>
@@ -480,8 +718,8 @@
         <span class="section-range">{dateRangeLabel} · {selectedYears.join(', ')}</span>
       </div>
       <div class="charts-grid">
+        <div class="chart-card"><h3>Engagements Year-to-Date</h3><canvas id="chart-count-ytd"></canvas></div>
         <div class="chart-card"><h3>Monthly Engagements</h3><canvas id="chart-count"></canvas></div>
-        <div class="chart-card"><h3>Engagements Cumulative</h3><canvas id="chart-count-ytd"></canvas></div>
         <div class="chart-card wide"><h3>Engagements by Company (Top 20)</h3><canvas id="chart-company-count"></canvas></div>
       </div>
     </div>
@@ -563,6 +801,40 @@
   {:else}
     <div class="empty-state">No engagements found for the selected filters.</div>
   {/if}
+
+  {#if data.pastReports && data.pastReports.length > 0}
+    <div class="report-section past-reports">
+      <div class="section-header">
+        <h2>Previously Generated Reports</h2>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Generated</th>
+              <th>By</th>
+              <th>Size</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each data.pastReports as r (r.report_id)}
+              <tr>
+                <td class="rpt-title">{r.report_title}</td>
+                <td>{formatDateTime(r.created_at)}</td>
+                <td>{r.generated_by || '—'}</td>
+                <td>{formatBytes(r.file_size_bytes)}</td>
+                <td>
+                  <a href="/corp/reports/download/{r.report_id}" class="btn-download" target="_blank">Download</a>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -635,6 +907,35 @@
   .rank { font-size: 0.72rem; color: #9ca3af; font-family: monospace; }
 
   .empty-state { text-align: center; padding: 3rem; color: #6b7280; background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* PDF panel */
+  .pdf-panel { background: white; padding: 1.25rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+  .pdf-panel-row { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+  .pdf-title-group { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; min-width: 250px; }
+  .pdf-title-group label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pdf-title-input { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.9rem; }
+  .pdf-title-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+  .btn-generate { background: #3b82f6; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+  .btn-generate:hover { background: #2563eb; }
+  .btn-generate:disabled { background: #93c5fd; cursor: not-allowed; }
+  .pdf-sections { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f3f4f6; }
+  .pdf-sections-label { grid-column: 1 / -1; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pdf-section-item { display: flex; flex-direction: column; gap: 0.4rem; }
+  .pdf-section-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; color: #374151; cursor: pointer; }
+  .pdf-section-toggle input { cursor: pointer; accent-color: #3b82f6; }
+  .pdf-notes { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.8rem; font-family: inherit; resize: vertical; color: #374151; }
+  .pdf-notes:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+  .pdf-notes::placeholder { color: #9ca3af; }
+
+  /* Alerts */
+  .alert { padding: 0.875rem 1.25rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-weight: 500; }
+  .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+  /* Past reports */
+  .rpt-title { font-weight: 500; }
+  .btn-download { display: inline-block; padding: 0.3rem 0.75rem; background: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+  .btn-download:hover { background: #2563eb; }
 
   @media (max-width: 768px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }

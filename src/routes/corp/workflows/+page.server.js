@@ -1,7 +1,9 @@
 // src/routes/corp/workflow/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export async function load() {
+export async function load({ locals }) {
+  requirePermission(locals.user, 'corp', 'manager');
   const rows = await sql`
     SELECT workflow_id, category, value, label, sort_order, is_active,
            created_at::text, updated_at::text
@@ -22,7 +24,8 @@ export async function load() {
 
 export const actions = {
 
-  add: async ({ request }) => {
+  add: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form = await request.formData();
     const category  = form.get('category')?.toString().trim()  || '';
     const value     = form.get('value')?.toString().trim()     || '';
@@ -45,7 +48,8 @@ export const actions = {
     }
   },
 
-  update: async ({ request }) => {
+  update: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form = await request.formData();
     const id        = parseInt(form.get('workflow_id')?.toString() || '0');
     const label     = form.get('label')?.toString().trim()     || '';
@@ -66,7 +70,8 @@ export const actions = {
     return { success: true, action: 'update' };
   },
 
-  delete: async ({ request }) => {
+  delete: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form = await request.formData();
     const id = parseInt(form.get('workflow_id')?.toString() || '0');
     if (!id) return { success: false, error: 'No ID provided.' };
@@ -91,7 +96,8 @@ export const actions = {
     return { success: true, action: 'delete' };
   },
 
-  reorder: async ({ request }) => {
+  reorder: async ({ request, locals }) => {
+    requirePermission(locals.user, 'corp', 'manager');
     const form = await request.formData();
     const ordersJson = form.get('orders')?.toString() || '';
     if (!ordersJson) return { success: false, error: 'No order data.' };
