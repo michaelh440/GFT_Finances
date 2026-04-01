@@ -24,6 +24,13 @@ export const load = async ({ locals }) => {
       ORDER BY year ASC
     `;
 
+		// Get class names for display
+		const classNames = await sql`
+      SELECT class_code, class_name
+      FROM classes
+      WHERE class_code IN ('CT1', 'CT2', 'CT3', 'AGT1')
+    `;
+
 		// Monthly breakdown for monthly charts
 		const monthlyFunnel = await sql`
       WITH student_classes AS (
@@ -59,7 +66,14 @@ export const load = async ({ locals }) => {
       ORDER BY reg_month ASC, er.class_code ASC
     `;
 
+		/** @type {Record<string, string>} */
+		const classNameMap = {};
+		for (const c of classNames) {
+			classNameMap[c.class_code] = c.class_name;
+		}
+
 		return {
+			classNameMap,
 			registrations: allRegistrations.map((r) => ({
 				student_id: r.student_id,
 				class_code: r.class_code,

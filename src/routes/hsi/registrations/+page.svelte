@@ -20,14 +20,20 @@
 	 * @property {number} continued
 	 */
 
-	/** @type {{ registrations: RegistrationData[], years: number[], monthlyFunnel: MonthlyFunnelData[] }} */
+	/** @type {{ registrations: RegistrationData[], years: number[], monthlyFunnel: MonthlyFunnelData[], classNameMap: Record<string, string> }} */
 	export let data;
+
+	/** @param {string} code */
+	function className(code) {
+		return (data.classNameMap && data.classNameMap[code]) || code;
+	}
 
 	/** @type {Record<string, Chart>} */
 	let charts = {};
 	let mounted = false;
-	/** @type {string|number} */
-	let selectedMonthlyYear = 'all';
+	// Monthly breakdown year filter — all checked by default
+	/** @type {Record<number, boolean>} */
+	let selectedMonthlyYears = {};
 
 	// Year filter for overall progression - all checked by default
 	/** @type {Record<number, boolean>} */
@@ -111,13 +117,39 @@
 		return years.sort((a, b) => b - a);
 	})();
 
-	// Filter monthly data by year
+	// Initialize monthly year checkboxes — all checked by default
+	$: {
+		if (availableMonthlyYears.length > 0 && Object.keys(selectedMonthlyYears).length === 0) {
+			availableMonthlyYears.forEach((y) => { selectedMonthlyYears[y] = true; });
+			selectedMonthlyYears = selectedMonthlyYears;
+		}
+	}
+
+	$: activeMonthlyYears = Object.entries(selectedMonthlyYears)
+		.filter(([, v]) => v)
+		.map(([k]) => Number(k));
+
+	$: allMonthlyYearsSelected = availableMonthlyYears.length > 0 && availableMonthlyYears.every((y) => selectedMonthlyYears[y]);
+
+	/** @param {number} year */
+	function toggleMonthlyYear(year) {
+		selectedMonthlyYears[year] = !selectedMonthlyYears[year];
+		selectedMonthlyYears = selectedMonthlyYears;
+	}
+
+	/** @param {boolean} checked */
+	function toggleAllMonthlyYears(checked) {
+		availableMonthlyYears.forEach((y) => { selectedMonthlyYears[y] = checked; });
+		selectedMonthlyYears = selectedMonthlyYears;
+	}
+
+	// Filter monthly data by selected years
 	$: filteredMonthly = (() => {
 		if (!data.monthlyFunnel) return [];
-		if (selectedMonthlyYear === 'all') return data.monthlyFunnel;
+		if (activeMonthlyYears.length === 0) return [];
 		return data.monthlyFunnel.filter((r) => {
 			const year = new Date(r.reg_month + 'T12:00:00').getFullYear();
-			return year === selectedMonthlyYear;
+			return activeMonthlyYears.includes(year);
 		});
 	})();
 
@@ -150,7 +182,8 @@
 		function buildMonthlyData(classCode) {
 			const classData = filteredMonthly.filter((r) => r.class_code === classCode);
 
-			if (selectedMonthlyYear === 'all') {
+			if (activeMonthlyYears.length !== 1) {
+				// Multiple years or all — show each month with year label
 				const sorted = classData.sort((a, b) => a.reg_month.localeCompare(b.reg_month));
 				return {
 					labels: sorted.map((r) => {
@@ -161,6 +194,7 @@
 					continued: sorted.map((r) => r.continued)
 				};
 			} else {
+				// Single year — aggregate by month
 				const byMonth = Array(12)
 					.fill(null)
 					.map(() => ({ stopped: 0, continued: 0 }));
@@ -300,7 +334,7 @@
 	// Monthly charts - reactive to year filter
 	$: if (browser && mounted && monthlyChartData) {
 		setTimeout(() => {
-			const yearLabel = selectedMonthlyYear === 'all' ? 'All Time' : selectedMonthlyYear;
+			const yearLabel = activeMonthlyYears.length === availableMonthlyYears.length ? 'All Years' : activeMonthlyYears.join(', ');
 
 			createChart('monthlyCT1Chart', {
 				type: 'bar',
@@ -407,19 +441,19 @@
 		{#if funnel}
 			<div class="summary-cards">
 				<div class="card">
-					<div class="card-label">CT1 Students</div>
+					<div class="card-label">{className('CT1')} Students</div>
 					<div class="card-value">{funnel.ct1_total}</div>
 				</div>
 				<div class="card">
-					<div class="card-label">CT2 Students</div>
+					<div class="card-label">{className('CT2')} Students</div>
 					<div class="card-value">{funnel.ct2_total}</div>
 				</div>
 				<div class="card">
-					<div class="card-label">CT3 Students</div>
+					<div class="card-label">{className('CT3')} Students</div>
 					<div class="card-value">{funnel.ct3_total}</div>
 				</div>
 				<div class="card">
-					<div class="card-label">AGT1 Students</div>
+					<div class="card-label">{className('AGT1')} Students</div>
 					<div class="card-value">{funnel.agt1_total}</div>
 				</div>
 			</div>
@@ -472,13 +506,23 @@
 
 			<div class="filter-section">
 				<div class="filter-group">
-					<label for="monthlyYearSelect">Year:</label>
-					<select id="monthlyYearSelect" bind:value={selectedMonthlyYear} class="filter-select">
-						<option value="all">All Years</option>
+					<span class="filter-heading">Years:</span>
+					<label class="checkbox-label">
+						<input type="checkbox"
+							checked={allMonthlyYearsSelected}
+							on:change={(e) => toggleAllMonthlyYears(/** @type {HTMLInputElement} */ (e.target).checked)} />
+						<span>All</span>
+					</label>
+					<div class="year-checkboxes">
 						{#each availableMonthlyYears as year (year)}
-							<option value={year}>{year}</option>
+							<label class="checkbox-label">
+								<input type="checkbox"
+									checked={selectedMonthlyYears[year]}
+									on:change={() => toggleMonthlyYear(year)} />
+								<span>{year}</span>
+							</label>
 						{/each}
-					</select>
+					</div>
 				</div>
 			</div>
 
