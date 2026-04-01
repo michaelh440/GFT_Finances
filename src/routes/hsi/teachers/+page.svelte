@@ -9,8 +9,12 @@
 	/** @type {any} */
 	export let data;
 
-// Pull user from data so permission checks work reactively
+	// Pull user from data so permission checks work reactively
 	$: user = data.user;
+	$: canSeePII = data.canSeePII;
+
+	// PII masking — starts masked, resets on every navigation (component remount)
+	let showPII = false;
 
 	let searchQuery = '';
 	let sortField = 'last_name';
@@ -86,7 +90,7 @@
 			{#if canDataEntry(user, 'hsi')}
 				<a href={resolve('/hsi/teachers/new')} class="btn-primary">Add Teacher</a>
 			{/if}
-			<a href={resolve('/hsi')} class="btn-secondary">Back to Classes</a>
+			<a href={resolve('/hsi')} class="btn-secondary">Back to HSI Dashboard</a>
 		</div>
 	</header>
 
@@ -99,7 +103,12 @@
 				class="search-input"
 			/>
 		</div>
-		<div class="stats">
+		<div class="toolbar-right">
+			{#if canSeePII}
+				<button class="btn-unmask" on:click={() => showPII = !showPII}>
+					{showPII ? 'Hide PII' : 'Show PII'}
+				</button>
+			{/if}
 			<span class="stat">{filteredTeachers.length} teacher{filteredTeachers.length !== 1 ? 's' : ''}</span>
 		</div>
 	</div>
@@ -143,8 +152,8 @@
 									{teacher.first_name} {teacher.last_name}
 								</a>
 							</td>
-							<td class="teacher-email">{teacher.email || '—'}</td>
-							<td>{teacher.phone || '—'}</td>
+							<td class="teacher-email">{(showPII ? teacher.email : teacher.email_masked) || '—'}</td>
+							<td>{(showPII ? teacher.phone : teacher.phone_masked) || '—'}</td>
 							<td class="col-center">
 								<span class="count-badge">{teacher.session_count}</span>
 							</td>
@@ -200,8 +209,20 @@
 	.search-group { flex: 1; max-width: 400px; }
 	.search-input { width: 100%; padding: 0.625rem 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.95rem; background-color: white; }
 	.search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-	.stats { color: #6b7280; font-size: 0.9rem; }
-	.stat { font-weight: 500; }
+	.toolbar-right { display: flex; align-items: center; gap: 1rem; }
+	.stat { font-weight: 500; color: #6b7280; font-size: 0.9rem; }
+	.btn-unmask {
+		padding: 0.4rem 0.85rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		background: white;
+		color: #374151;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+	.btn-unmask:hover { background: #f3f4f6; border-color: #3b82f6; color: #3b82f6; }
 
 	.table-wrapper { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 1.5rem; }
 	table { width: 100%; border-collapse: collapse; }

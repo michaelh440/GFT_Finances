@@ -29,12 +29,15 @@
 
 	import { resolve } from '$app/paths';
 
-	/** @type {{ student: Student|null, registrations: Registration[], totalPaid: number }} */
+	/** @type {{ student: Student|null, registrations: Registration[], totalPaid: number, user: any, canSeePII: boolean }} */
 	export let data;
 
 	$: student = data.student;
 	$: registrations = data.registrations;
 	$: totalPaid = data.totalPaid;
+	$: canSeePII = data.canSeePII;
+
+	let showPII = false;
 
 	/**
 	 * @param {number} amount
@@ -77,6 +80,11 @@
 				<a href={resolve('/hsi/students')} class="back-link">← Back to Students</a>
 				<h1>{student.first_name} {student.last_name}</h1>
 			</div>
+			{#if canSeePII}
+				<button class="btn-unmask" on:click={() => showPII = !showPII}>
+					{showPII ? 'Hide PII' : 'Show PII'}
+				</button>
+			{/if}
 		</header>
 
 		<!-- Student Info Card -->
@@ -84,11 +92,11 @@
 			<div class="info-grid">
 				<div class="info-item">
 					<span class="info-label">Email</span>
-					<span class="info-value">{student.email || '—'}</span>
+					<span class="info-value">{(showPII ? student.email : student.email_masked) || '—'}</span>
 				</div>
 				<div class="info-item">
 					<span class="info-label">Phone</span>
-					<span class="info-value">{student.phone || '—'}</span>
+					<span class="info-value">{(showPII ? student.phone : student.phone_masked) || '—'}</span>
 				</div>
 				<div class="info-item">
 					<span class="info-label">Member Since</span>
@@ -146,7 +154,12 @@
 									<span class="class-name">{reg.class_name}</span>
 								</td>
 								<td>
-									{#if reg.session_name}
+									{#if reg.session_name && reg.session_id}
+										<a href={resolve(`/hsi/classes/${reg.class_code}/sessions/${reg.session_id}`)} class="session-link">{reg.session_name}</a>
+										{#if reg.instructor}
+											<span class="session-detail">{reg.instructor}</span>
+										{/if}
+									{:else if reg.session_name}
 										<span class="session-name">{reg.session_name}</span>
 										{#if reg.instructor}
 											<span class="session-detail">{reg.instructor}</span>
@@ -181,8 +194,24 @@
 	}
 
 	header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
 		margin-bottom: 2rem;
 	}
+	.btn-unmask {
+		padding: 0.4rem 0.85rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		background: white;
+		color: #374151;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+		margin-top: 1.5rem;
+	}
+	.btn-unmask:hover { background: #f3f4f6; border-color: #3b82f6; color: #3b82f6; }
 
 	.back-link {
 		color: #6b7280;
@@ -349,6 +378,13 @@
 		font-size: 0.9rem;
 		color: #374151;
 	}
+	.session-link {
+		display: block;
+		font-size: 0.9rem;
+		color: #3b82f6;
+		text-decoration: none;
+	}
+	.session-link:hover { text-decoration: underline; }
 
 	.session-detail {
 		display: block;

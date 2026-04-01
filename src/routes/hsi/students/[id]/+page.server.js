@@ -1,7 +1,27 @@
 // src/routes/hsi/students/[id]/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
+import { hasPermission } from '$lib/permissions';
 
-export const load = async ({ params }) => {
+/** @param {string|null} email */
+function maskEmail(email) {
+	if (!email) return null;
+	const [local, domain] = email.split('@');
+	if (!domain) return '***';
+	return local[0] + '***@' + domain;
+}
+
+/** @param {string|null} phone */
+function maskPhone(phone) {
+	if (!phone) return null;
+	const digits = phone.replace(/\D/g, '');
+	if (digits.length <= 4) return '***';
+	return '***-***-' + digits.slice(-4);
+}
+
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'hsi', 'viewer');
+	const canSeePII = hasPermission(locals.user, 'hsi', 'data_entry');
 	const studentId = parseInt(params.id);
 
 	if (isNaN(studentId)) {
@@ -34,8 +54,13 @@ export const load = async ({ params }) => {
 			? earliestReg[0].first_class_date.toISOString().split('T')[0]
 			: accountDate;
 
+		const raw = studentResult[0];
 		const student = {
-			...studentResult[0],
+			...raw,
+			email: canSeePII ? raw.email : maskEmail(raw.email),
+			phone: canSeePII ? raw.phone : maskPhone(raw.phone),
+			email_masked: maskEmail(raw.email),
+			phone_masked: maskPhone(raw.phone),
 			account_date: accountDate,
 			member_since: memberSince
 		};
@@ -52,11 +77,12 @@ export const load = async ({ params }) => {
         c.class_name,
         c.track,
         cs.session_name,
-        cs.instructor,
+        COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor,
         cs.location
       FROM registrations r
       JOIN classes c ON r.class_code = c.class_code
       LEFT JOIN class_sessions cs ON r.session_id = cs.session_id
+      LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
       WHERE r.student_id = ${studentId}
       ORDER BY r.class_date DESC
     `;
@@ -78,7 +104,9 @@ export const load = async ({ params }) => {
 					: null,
 				amount_paid: Number(r.amount_paid || 0)
 			})),
-			totalPaid: Number(totalResult[0].total_paid)
+			totalPaid: Number(totalResult[0].total_paid),
+			user: locals.user,
+			canSeePII,
 		};
 	} catch (error) {
 		console.error('Error loading student detail:', error);

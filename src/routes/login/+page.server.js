@@ -44,7 +44,7 @@ export const actions = {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
-			secure: false, // Set to true in production with HTTPS
+			secure: true,
 			expires: expiresAt
 		});
 

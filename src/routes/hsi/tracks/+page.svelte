@@ -21,6 +21,7 @@
 			{#if canManage(user, 'hsi')}
 				<a href={resolve('/hsi/tracks/new')} class="btn-primary">Add Track</a>
 			{/if}
+			<a href={resolve('/hsi')} class="btn-secondary">Back to HSI Dashboard</a>
 		</div>
 	</header>
 
@@ -70,6 +71,8 @@
 	.header-actions { display: flex; gap: 0.75rem; }
 	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
 	.btn-primary:hover { background-color: #2563eb; }
+	.btn-secondary { background-color: #e5e7eb; color: #374151; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
+	.btn-secondary:hover { background-color: #d1d5db; }
 
 	.tracks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
 

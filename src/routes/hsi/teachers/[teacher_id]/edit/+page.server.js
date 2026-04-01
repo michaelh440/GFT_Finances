@@ -1,8 +1,10 @@
 // src/routes/hsi/teachers/[teacher_id]/edit/+page.server.js
 import sql from '$lib/db';
 import { redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'hsi', 'data_entry');
 	const teacherId = parseInt(params.teacher_id);
 
 	if (isNaN(teacherId)) {
@@ -24,7 +26,8 @@ export const load = async ({ params }) => {
 };
 
 export const actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
+		requirePermission(locals.user, 'hsi', 'data_entry');
 		const teacherId = parseInt(params.teacher_id);
 		const formData = await request.formData();
 

@@ -12,6 +12,9 @@
 	$: stats = data.stats || {};
 	/** @type {any[]} */
 	$: surveyStats = data.surveyStats || [];
+	$: canSeePII = data.canSeePII;
+
+	let showPII = false;
 
 	/** @param {number} amount */
 	function formatCurrency(amount) {
@@ -59,22 +62,29 @@
 					{teacher.is_active ? 'Active' : 'Inactive'}
 				</span>
 			</div>
-			<a href={resolve(`/hsi/teachers/${teacher.teacher_id}/edit`)} class="btn-primary">Edit Teacher</a>
+			<div class="header-actions">
+				{#if canSeePII}
+					<button class="btn-unmask" on:click={() => showPII = !showPII}>
+						{showPII ? 'Hide PII' : 'Show PII'}
+					</button>
+				{/if}
+				<a href={resolve(`/hsi/teachers/${teacher.teacher_id}/edit`)} class="btn-primary">Edit Teacher</a>
+			</div>
 		</header>
 
 		<!-- Info Card -->
 		<div class="info-card">
 			<div class="info-grid">
-				{#if teacher.email}
+				{#if teacher.email || teacher.email_masked}
 					<div class="info-item">
 						<span class="info-label">Email</span>
-						<span class="info-value">{teacher.email}</span>
+						<span class="info-value">{(showPII ? teacher.email : teacher.email_masked) || '—'}</span>
 					</div>
 				{/if}
-				{#if teacher.phone}
+				{#if teacher.phone || teacher.phone_masked}
 					<div class="info-item">
 						<span class="info-label">Phone</span>
-						<span class="info-value">{teacher.phone}</span>
+						<span class="info-value">{(showPII ? teacher.phone : teacher.phone_masked) || '—'}</span>
 					</div>
 				{/if}
 				{#if teacher.created_at}
@@ -209,8 +219,11 @@
 	.breadcrumb { color: #3b82f6; text-decoration: none; font-size: 0.85rem; }
 	.breadcrumb:hover { text-decoration: underline; }
 
+	.header-actions { display: flex; gap: 0.75rem; align-items: center; }
 	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
 	.btn-primary:hover { background-color: #2563eb; }
+	.btn-unmask { padding: 0.4rem 0.85rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #374151; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+	.btn-unmask:hover { background: #f3f4f6; border-color: #3b82f6; color: #3b82f6; }
 	.btn-secondary { background-color: #e5e7eb; color: #374151; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; }
 
 	.status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; background-color: #fee2e2; color: #991b1b; }

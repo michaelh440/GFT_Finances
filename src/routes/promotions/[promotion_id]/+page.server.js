@@ -1,7 +1,9 @@
 // src/routes/promotions/[promotion_id]/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'gft', 'viewer');
 	const promotionId = parseInt(params.promotion_id);
 
 	if (isNaN(promotionId)) {

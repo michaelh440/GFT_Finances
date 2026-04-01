@@ -1,13 +1,16 @@
 // src/routes/hsi/update_student_phones/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'hsi', 'manager');
   return {};
 };
 
 export const actions = {
   // Step 1: Parse CSV and match students
-  csv_check: async ({ request }) => {
+  csv_check: async ({ request, locals }) => {
+    requirePermission(locals.user, 'hsi', 'manager');
     const formData = await request.formData();
     const csvData = formData.get('csv_data');
 
@@ -141,7 +144,8 @@ export const actions = {
   },
 
   // Step 2: Apply updates
-  csv_confirm: async ({ request }) => {
+  csv_confirm: async ({ request, locals }) => {
+    requirePermission(locals.user, 'hsi', 'manager');
     const formData = await request.formData();
     const decisionsJson = formData.get('decisions');
 
