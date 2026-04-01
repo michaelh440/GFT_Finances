@@ -23,12 +23,13 @@ export const load = async ({ locals, url, depends }) => {
 				cs.session_id,
 				cs.session_name,
 				cs.class_code,
-				cs.instructor,
+				COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor,
 				cs.start_date,
 				cs.end_date,
 				c.class_name
 			FROM class_sessions cs
 			JOIN classes c ON c.class_code = cs.class_code
+			LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 			ORDER BY cs.start_date DESC
 			LIMIT 100
 		`;

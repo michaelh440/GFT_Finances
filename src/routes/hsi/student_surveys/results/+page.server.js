@@ -28,11 +28,12 @@ export const load = async ({ locals, url, depends }) => {
 		`;
 
 		const instructors = await sql`
-			SELECT DISTINCT cs.instructor
+			SELECT DISTINCT COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor
 			FROM class_sessions cs
+			LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 			JOIN survey_responses sr ON sr.session_id = cs.session_id
-			WHERE cs.instructor IS NOT NULL
-			ORDER BY cs.instructor ASC
+			WHERE cs.teacher_id IS NOT NULL OR (cs.instructor IS NOT NULL AND TRIM(cs.instructor) != '')
+			ORDER BY instructor ASC
 		`;
 
 		const sessions = await sql`
@@ -56,7 +57,7 @@ export const load = async ({ locals, url, depends }) => {
 			// Build filter conditions using postgres library's fragment helper
 			const templateFilter = templateId ? sql`AND sr.template_id = ${parseInt(templateId)}` : sql``;
 			const classFilter = classCode ? sql`AND cs.class_code = ${classCode}` : sql``;
-			const instructorFilter = instructor ? sql`AND cs.instructor = ${instructor}` : sql``;
+			const instructorFilter = instructor ? sql`AND COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) = ${instructor}` : sql``;
 			const sessionFilter = sessionId ? sql`AND cs.session_id = ${parseInt(sessionId)}` : sql``;
 
 			// Get response count
@@ -64,6 +65,7 @@ export const load = async ({ locals, url, depends }) => {
 				SELECT COUNT(DISTINCT sr.response_id)::int AS count
 				FROM survey_responses sr
 				JOIN class_sessions cs ON cs.session_id = sr.session_id
+				LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 				WHERE 1=1
 				${templateFilter}
 				${classFilter}
@@ -87,6 +89,7 @@ export const load = async ({ locals, url, depends }) => {
 				JOIN survey_questions sq ON sq.question_id = sa.question_id
 				JOIN survey_responses sr ON sr.response_id = sa.response_id
 				JOIN class_sessions cs ON cs.session_id = sr.session_id
+				LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 				WHERE sq.question_type IN ('likert', 'rating_1_5', 'rating_1_10')
 				AND sa.answer_int IS NOT NULL
 				${templateFilter}
@@ -110,6 +113,7 @@ export const load = async ({ locals, url, depends }) => {
 				JOIN survey_questions sq ON sq.question_id = sa.question_id
 				JOIN survey_responses sr ON sr.response_id = sa.response_id
 				JOIN class_sessions cs ON cs.session_id = sr.session_id
+				LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 				WHERE sq.question_type = 'yes_no'
 				AND sa.answer_bool IS NOT NULL
 				${templateFilter}
@@ -133,6 +137,7 @@ export const load = async ({ locals, url, depends }) => {
 				JOIN survey_questions sq ON sq.question_id = sa.question_id
 				JOIN survey_responses sr ON sr.response_id = sa.response_id
 				JOIN class_sessions cs ON cs.session_id = sr.session_id
+				LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 				JOIN classes c ON c.class_code = cs.class_code
 				LEFT JOIN students s ON s.student_id = sr.student_id
 				WHERE sq.question_type = 'free_text'

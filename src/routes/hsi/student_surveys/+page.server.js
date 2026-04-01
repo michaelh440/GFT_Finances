@@ -35,11 +35,12 @@ export const load = async ({ locals }) => {
 			COALESCE(s.first_name || ' ' || s.last_name, 'Anonymous') AS student_name,
 			cs.session_name,
 			c.class_name,
-			cs.instructor
+			COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor
 		FROM survey_responses sr
 		JOIN survey_templates st ON st.template_id = sr.template_id
 		LEFT JOIN students s ON s.student_id = sr.student_id
 		JOIN class_sessions cs ON cs.session_id = sr.session_id
+		LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 		JOIN classes c ON c.class_code = cs.class_code
 		ORDER BY sr.${sql(dateCol)} DESC
 		LIMIT 20

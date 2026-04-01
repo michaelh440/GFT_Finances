@@ -24,6 +24,7 @@
 				<a href={resolve('/hsi/student_surveys/templates/new')} class="btn-secondary">New Template</a>
 			{/if}
 			<a href={resolve('/hsi/student_surveys/results')} class="btn-secondary">View Results</a>
+			<a href={resolve('/hsi')} class="btn-secondary">Back to HSI Dashboard</a>
 		</div>
 	</header>
 
