@@ -1,8 +1,10 @@
 // src/routes/shows/tickets/new/+page.server.js
 import sql from '$lib/db';
 import { fail, redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'data_entry');
 	try {
 		const shows = await sql`
 			SELECT show_code, show_name, format, standard_ticket_price
@@ -32,7 +34,8 @@ export const load = async () => {
 };
 
 export const actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 
 		const patron_id = parseInt(formData.get('patron_id')?.toString() || '0');

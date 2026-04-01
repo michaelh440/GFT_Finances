@@ -1,7 +1,9 @@
 // src/routes/shows/patrons/update_patrons/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	try {
 		const [stats] = await sql`
 			SELECT
@@ -19,7 +21,8 @@ export const load = async () => {
 
 export const actions = {
 	// Step 1: Parse CSV and return preview of matches
-	csv_upload: async ({ request }) => {
+	csv_upload: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		const formData = await request.formData();
 		const file = formData.get('csv_file');
 
@@ -213,7 +216,8 @@ export const actions = {
 	},
 
 	// Step 2: Apply updates
-	apply_updates: async ({ request }) => {
+	apply_updates: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		const formData = await request.formData();
 		const matchedJson = formData.get('matched_json')?.toString();
 		const mode = formData.get('update_mode') || 'fill'; // 'fill' or 'overwrite'

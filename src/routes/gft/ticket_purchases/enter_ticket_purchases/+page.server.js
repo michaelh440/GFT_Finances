@@ -1,7 +1,9 @@
 // src/routes/shows/ticket_purchases/enter_ticket_purchases/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'data_entry');
 	try {
 		const shows = await sql`
 			SELECT show_code, show_name, format, standard_ticket_price, vbo_event_id
@@ -118,9 +120,9 @@ function parseCSZReport(text) {
 				eventDateStr: fields[15] || '',
 				qty: parseInt(fields[16]) || 0,
 				discountCode: fields[17] || '',
-				discountValue: parseFloat(fields[18]) || 0,
+				discountValue: parseMoney(fields[18]),
 				dateCreated: fields[20] || '',
-				itemTotal: parseFloat(fields[22]) || 0,
+				itemTotal: parseMoney(fields[22]),
 				showDate: /** @type {string|null} */ (null),
 				purchaseDate: /** @type {string|null} */ (null)
 			};
@@ -147,9 +149,9 @@ function parseCSZReport(text) {
 				eventDateStr: fields[14] || '',
 				qty: parseInt(fields[15]) || 0,
 				discountCode: fields[16] || '',
-				discountValue: parseFloat(fields[17]) || 0,
+				discountValue: parseMoney(fields[17]),
 				dateCreated: fields[19] || '',
-				itemTotal: parseFloat(fields[21]) || 0,
+				itemTotal: parseMoney(fields[21]),
 				showDate: /** @type {string|null} */ (null),
 				purchaseDate: /** @type {string|null} */ (null)
 			};
@@ -172,9 +174,9 @@ function parseCSZReport(text) {
 				eventDateStr: fields[13] || '',
 				qty: parseInt(fields[14]) || 0,
 				discountCode: fields[15] || '',
-				discountValue: parseFloat(fields[16]) || 0,
+				discountValue: parseMoney(fields[16]),
 				dateCreated: fields[18] || '',
-				itemTotal: parseFloat(fields[20]) || 0,
+				itemTotal: parseMoney(fields[20]),
 				showDate: /** @type {string|null} */ (null),
 				purchaseDate: /** @type {string|null} */ (null)
 			};
@@ -191,9 +193,9 @@ function parseCSZReport(text) {
 				eventDateStr: fields[7] || '',
 				qty: parseInt(fields[8]) || 0,
 				discountCode: fields[9] || '',
-				discountValue: parseFloat(fields[10]) || 0,
+				discountValue: parseMoney(fields[10]),
 				dateCreated: fields[12] || '',
-				itemTotal: parseFloat(fields[14]) || 0,
+				itemTotal: parseMoney(fields[14]),
 				address_line1: '',
 				address_line2: '',
 				city: '',
@@ -232,6 +234,12 @@ function parseCSZReport(text) {
 	};
 }
 
+/** @param {string|null|undefined} val */
+function parseMoney(val) {
+	if (!val) return 0;
+	return parseFloat(String(val).replace(/[$,]/g, '')) || 0;
+}
+
 /** @param {string|null|undefined} str */
 function parseDate(str) {
 	if (!str) return null;
@@ -268,7 +276,8 @@ const norm = (/** @type {string} */ s) => (s || '').toLowerCase().trim();
 
 export const actions = {
 	// Manual row entry (unchanged)
-	manual: async ({ request }) => {
+	manual: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 		const rowCount = parseInt(String(formData.get('row_count'))) || 0;
 
@@ -352,7 +361,8 @@ export const actions = {
 	},
 
 	// Step 1: Parse CSV → return data + event names for mapping (client-side mapping UI)
-	csv_upload: async ({ request }) => {
+	csv_upload: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 		const file = formData.get('csv_file');
 
@@ -389,7 +399,8 @@ export const actions = {
 
 	// Step 2: After event mapping, match patrons and return results for review
 	// (Mirrors the student registration csv_check pattern)
-	csv_check: async ({ request }) => {
+	csv_check: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 		const rowsJson = formData.get('rows_json')?.toString();
 		const mappingsJson = formData.get('mappings_json')?.toString();
@@ -648,7 +659,8 @@ export const actions = {
 	},
 
 	// Step 3: Final import with patron decisions
-	csv_confirm: async ({ request }) => {
+	csv_confirm: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 		const rowsJson = formData.get('rows_json')?.toString();
 		const mappingsJson = formData.get('mappings_json')?.toString();

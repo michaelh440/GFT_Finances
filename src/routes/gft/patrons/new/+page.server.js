@@ -1,9 +1,11 @@
 // src/routes/shows/patrons/new/+page.server.js
 import sql from '$lib/db';
 import { fail, redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
 export const actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 
 		const first_name = formData.get('first_name')?.toString().trim();

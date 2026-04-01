@@ -1,8 +1,10 @@
 // src/routes/shows/[show_code]/edit/+page.server.js
 import sql from '$lib/db';
 import { fail, redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'gft', 'data_entry');
 	const { show_code } = params;
 
 	try {
@@ -38,7 +40,8 @@ export const load = async ({ params }) => {
 };
 
 export const actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const { show_code } = params;
 		const formData = await request.formData();
 

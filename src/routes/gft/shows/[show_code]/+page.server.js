@@ -1,7 +1,9 @@
 // src/routes/shows/[show_code]/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'gft', 'viewer');
 	const { show_code } = params;
 
 	try {

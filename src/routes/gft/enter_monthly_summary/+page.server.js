@@ -1,7 +1,9 @@
 // src/routes/shows/enter_monthly_summary/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'data_entry');
 	try {
 		const shows = await sql`
 			SELECT 
@@ -25,7 +27,8 @@ export const load = async () => {
 };
 
 export const actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'data_entry');
 		const formData = await request.formData();
 		const rowCount = parseInt(String(formData.get('row_count'))) || 0;
 

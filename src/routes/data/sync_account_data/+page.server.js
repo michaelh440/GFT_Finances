@@ -1,9 +1,11 @@
 // src/routes/shows/patrons/sync_acct_id/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
 const norm = (/** @type {string} */ s) => (s || '').trim().toLowerCase();
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	try {
 		const patronCount = await sql`SELECT COUNT(*) AS count FROM patrons`;
 		const withAcctId = await sql`SELECT COUNT(*) AS count FROM patrons WHERE vbo_account_id IS NOT NULL AND TRIM(vbo_account_id) != ''`;
@@ -25,7 +27,8 @@ export const load = async () => {
 };
 
 export const actions = {
-	find_matches: async () => {
+	find_matches: async ({ locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		try {
 			// Get all students that have a vbo_account_id
 			const students = await sql`
@@ -154,7 +157,8 @@ export const actions = {
 		}
 	},
 
-	apply_updates: async ({ request }) => {
+	apply_updates: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		const formData = await request.formData();
 		const updatesJson = formData.get('updates_json')?.toString() || '[]';
 
