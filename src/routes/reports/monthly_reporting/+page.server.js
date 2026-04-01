@@ -1,7 +1,9 @@
 // src/routes/reports/2026/monthly_reporting/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'gft', 'manager');
 	try {
 		const summaries = await sql`
 			SELECT
@@ -71,7 +73,8 @@ export const load = async () => {
 };
 
 export const actions = {
-	generate_pdf: async ({ request }) => {
+	generate_pdf: async ({ request, locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		const formData = await request.formData();
 
 		const reportTitle = formData.get('report_title')?.toString().trim() || 'Monthly Report';
@@ -162,7 +165,8 @@ export const actions = {
 		}
 	},
 
-	download_report: async () => {
+	download_report: async ({ locals }) => {
+		requirePermission(locals.user, 'gft', 'manager');
 		// This action is handled by a separate endpoint
 		return { success: false, error: 'Use the download endpoint instead.' };
 	}

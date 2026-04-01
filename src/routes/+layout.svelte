@@ -2,288 +2,207 @@
 <script>
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
-	import { canView, canManage } from '$lib/permissions';
+	import { hasPermission, canView, canDataEntry, canManage } from '$lib/permissions';
+	import { afterNavigate } from '$app/navigation';
+	import { onDestroy } from 'svelte';
 
 	/** @type {any} */
 	export let data;
 
 	$: user = data?.user || $page.data?.user;
 
-	// Navigation structure — each section has an optional `area` for permission filtering
-	const navSections = [
-		{
-			id: 'Logout',
-			label: 'Logout',
-			fullName: 'Session Logout',
-			icon: '🚪',
-			basePath: '/logout',
-			area: null,
-			children: [{ label: 'Logout', href: '/logout' }]
-		},
-		/*{
-			id: 'data',
-			label: 'DATA',
-			fullName: 'Data Entry',
-			icon: '✏️',
-			basePath: '/data',
-			area: 'super_admin',
-			children: [
-				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				//{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
-				//{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' },
-				//{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				//{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
-				//{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
-				//{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
-				//{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
-			]
-		},*/
-		{
-			id: 'hsi',
-			label: 'HSI',
-			fullName: 'Houston School of Improv',
-			icon: '🎭',
-			basePath: '/hsi',
-			area: 'hsi',
-			children: [
-				{ label: 'Teachers', href: '/hsi/teachers' },
-				{ label: 'Classes', href: '/hsi/classes' },
-				{ label: 'Tracks', href: '/hsi/tracks' },
-				{ label: 'Students', href: '/hsi/students' },
-				{ label: 'Student Surveys', href: '/hsi/student_surveys' },
-				//{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				//{ label: 'Update Student Phones', href: '/hsi/update_student_phones' },
-				//{ label: 'Registration Funnel', href: '/hsi/registrations' },
-				//{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
-				//{ label: 'Class Financial Reports', href: '/hsi/reports' }
+	// Manual store subscription — bypasses Svelte 5 auto-subscription issues
+	let currentPath = '';
+	const unsubscribePage = page.subscribe(($p) => {
+		if ($p?.url?.pathname) currentPath = $p.url.pathname;
+	});
+	onDestroy(unsubscribePage);
 
+	afterNavigate(({ to }) => {
+		if (to?.url) currentPath = to.url.pathname;
+	});
+
+	// Toggle this to true to keep all nav sections expanded at all times
+	const NAV_ALWAYS_EXPANDED = true;
+
+	/**
+	 * @typedef {{ label: string, href: string }} NavLink
+	 * @typedef {{ tier: string, links: NavLink[] }} NavTier
+	 * @typedef {{ id: string, label: string, fullName: string, icon: string, basePath: string, area: string, tiers: NavTier[] }} AreaSection
+	 */
+
+	/** @type {AreaSection[]} */
+	const areaSections = [
+		{
+			id: 'hsi', label: 'HSI', fullName: 'Houston School of Improv', icon: '🎭',
+			basePath: '/hsi', area: 'hsi',
+			tiers: [
+				{ tier: 'viewer', links: [
+					{ label: 'Teachers', href: '/hsi/teachers' },
+					{ label: 'Classes', href: '/hsi/classes' },
+					{ label: 'Tracks', href: '/hsi/tracks' },
+					{ label: 'Students', href: '/hsi/students' },
+					{ label: 'Student Surveys', href: '/hsi/student_surveys' },
+				]},
+				{ tier: 'data_entry', links: [
+					{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
+					{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
+					{ label: 'Enter Monthly Summary', href: '/hsi/enter_monthly_summary' },
+				]},
+				{ tier: 'manager', links: [
+					{ label: 'Class Reports', href: '/hsi/reports' },
+					{ label: 'Registration Funnel', href: '/hsi/registrations' },
+					{ label: 'Geo Analytics', href: '/hsi/reports/student_geo_analytics' },
+					{ label: 'Student ZIP Demographics', href: '/hsi/student_zip_demographics' },
+				]},
+				{ tier: 'admin', links: [
+					{ label: 'Workflow Settings', href: '/hsi/workflows' },
+				]},
 			]
 		},
 		{
-			id: 'gft',
-			label: 'GFT',
-			fullName: 'Good Friends Theater',
-			icon: '🎪',
-			basePath: '/gft',
-			area: 'gft',
-			children: [
-				{ label: 'Shows', href: '/gft/shows' },
-				{ label: 'Patrons', href: '/gft/patrons' },
-				//{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
-				{ label: 'Ticket Purchases', href: '/gft/ticket_purchases' },
-				//{ label: 'Enter New Shows', href: '/gft/enter_new_shows' },
-				//{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
-				//{ label: 'Enter Monthly Summary', href: '/gft/enter_monthly_summary' },
-				//{ label: 'Shows Financial Reports', href: '/gft/reports' }
-				{ label: '2026 Combined Reporting', href: '/gft/reports/2026/combined_reporting' }
+			id: 'gft', label: 'GFT', fullName: 'Good Friends Theater', icon: '🎪',
+			basePath: '/gft', area: 'gft',
+			tiers: [
+				{ tier: 'viewer', links: [
+					{ label: 'Shows', href: '/gft/shows' },
+					{ label: 'Patrons', href: '/gft/patrons' },
+					{ label: 'Ticket Purchases', href: '/gft/ticket_purchases' },
+				]},
+				{ tier: 'data_entry', links: [
+					{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
+					{ label: 'Enter Monthly Summary', href: '/gft/enter_monthly_summary' },
+				]},
+				{ tier: 'manager', links: [
+					{ label: 'Show Reports', href: '/gft/reports' },
+					{ label: 'Combined Reporting', href: '/gft/reports/2026/combined_reporting' },
+					{ label: 'Patron ZIP Analytics', href: '/gft/patrons/zip_analytics' },
+				]},
+				{ tier: 'admin', links: [
+					{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
+				]},
 			]
 		},
 		{
-			id: 'csz',
-			label: 'CSz',
-			fullName: 'ComedySportz Houston',
-			icon: '⚡',
-			basePath: '/csz',
-			area: 'csz',
-			children: [{ label: 'Coming Soon', href: '#' }]
-		},
-		{
-			id: 'corp',
-			label: 'Corp',
-			fullName: 'Corporate',
-			icon: '💼',
-			basePath: '/corp',
-			area: 'corp',
-			children: [
-				{ label: 'Contacts', href: '/corp/contacts' },
-				{ label: 'Engagements', href: '/corp/engagements' },
-				{ label: 'Companies', href: '/corp/companies' },
-				{ label: 'Corporate Reporting', href: '/corp/reports' }
+			id: 'corp', label: 'Corp', fullName: 'Corporate', icon: '💼',
+			basePath: '/corp', area: 'corp',
+			tiers: [
+				{ tier: 'viewer', links: [
+					{ label: 'Companies', href: '/corp/companies' },
+					{ label: 'Contacts', href: '/corp/contacts' },
+					{ label: 'Engagements', href: '/corp/engagements' },
+				]},
+				{ tier: 'data_entry', links: [
+					{ label: 'Import', href: '/corp/import' },
+					{ label: 'Dedupe Contacts', href: '/corp/dedupe_contacts' },
+					{ label: 'Dedupe Companies', href: '/corp/dedupe_companies' },
+				]},
+				{ tier: 'manager', links: [
+					{ label: 'Corp Reports', href: '/corp/reports' },
+				]},
+				{ tier: 'admin', links: [
+					{ label: 'Workflow Settings', href: '/corp/workflows' },
+					{ label: 'Company Lookup', href: '/corp/website_sync' },
+				]},
 			]
 		},
 		{
-			id: 'reporting',
-			label: 'Reporting',
-			fullName: 'Reporting',
-			icon: '📊',
-			basePath: '/',
-			area: 'super_admin',
-			children:
-			[
-				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },
-				{ label: 'Registration Funnel', href: '/hsi/registrations' },
-				{ label: 'Class Financial Reports', href: '/hsi/reports' },
-				{ label: 'Shows Financial Reports', href: '/gft/reports' },
-				{ label: 'Patron Zip Code Analytics', href: '/gft/patrons/zip_analytics' },
-				{ label: 'Coming Soon', href: '#' }
+			id: 'reviews', label: 'Reviews', fullName: 'Customer Reviews', icon: '⭐',
+			basePath: '/reviews', area: 'hsi',
+			tiers: [
+				{ tier: 'viewer', links: [
+					{ label: 'All Reviews', href: '/reviews' },
+				]},
 			]
-		}
+		},
+		{
+			id: 'csz', label: 'CSz', fullName: 'ComedySportz Houston', icon: '⚡',
+			basePath: '/csz', area: 'csz',
+			tiers: [
+				{ tier: 'viewer', links: [
+					{ label: 'Coming Soon', href: '#' },
+				]},
+			]
+		},
 	];
 
-	// Admin sub-sections (each expandable independently)
-	const adminSubSections = [
-		{
-			id: 'admin-user-management',
-			label: 'User Management',
-			basePath: '/admin/users',
-			children: 
-			[
-				{ label: 'View Users', href: '/admin/users' },
-				{ label: 'Add Users', href: '/admin/users/new' }		
-			
-			]
-		},
-		
-		{
-			id: 'admin-hsi-data',
-			label: 'HSI DATA',
-			fullName: 'HSI Data Entry',
-			icon: '✏️',
-			basePath: '/data',
-			children: [
-				{ label: 'Enter Registrations', href: '/hsi/enter_class_registrations' },
-				{ label: 'Update Student Phone', href: '/hsi/update_student_phone' },
-				{ label: 'Enter HSI Monthly Summary', href: '/hsi/enter_monthly_summary' }
-			]
-		},			
-				
-		{
-			id: 'admin-gft-data',
-			label: 'GFT DATA',
-			fullName: 'GFT Data Entry',
-			icon: '✏️',
-			basePath: '/data',
-			children: [
-				{ label: 'Sync VBO Account IDs', href: '/data/sync_account_data' },
-				{ label: 'Update Patrons Zip Code', href: '/gft/patrons/zip_analytics' },
-				{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
-				{ label: 'Enter Monthly Ticket Summary', href: '/gft/enter_monthly_summary' }
-
-			]
-		},		
-				
-		{
-			id: 'admin-reporting',
-			label: 'Reporting',
-			fullName: 'Admin Combined Reporting',
-			icon: '🎪',
-			basePath: '/reports',
-			children: [
-				//{ label: 'Update Patrons Zip Code', href: '/shows/patrons/zip_analytics' },
-				//{ label: 'Enter New Shows', href: '/shows/enter_new_shows' },
-				{ label: '2026 Combined Reporting', href: '/gft/reports/2026/combined_reporting' },
-				{ label: 'Student Geo Reports', href: '/hsi/reports/student_geo_analytics' },
-				{ label: 'Registration Funnel', href: '/hsi/registrations' },
-				{ label: 'Class Financial Reports', href: '/hsi/reports' },
-				{ label: 'Shows Financial Reports', href: '/gft/reports' },
-				{ label: 'Patron Zip Code Analytics', href: '/gft/patrons/zip_analytics' }
-				
-			]
-		},
-		
-		{
-			id: 'admin-logs',
-			label: 'Audit Logs',
-			basePath: '/admin/audit-log',
-			children: [{ label: 'Session Logs', href: '/admin/audit-log' }]
-		},
-		{
-			id: 'admin-csz',
-			label: 'CSz',
-			basePath: '/admin/csz',
-			children: [{ label: 'Coming Soon', href: '#' }]
-		},
-		{
-			id: 'admin-corp',
-			label: 'Corp',
-			basePath: '/admin/corp',
-			children: [
-				//{ label: 'Import Contacts', href: '/corp/import_contacts' },
-				//{ label: 'Import Engagements', href: '/corp/import_engagements' },
-				{ label: 'Import All', href: '/corp/import' },
-				{ label: 'Dedupe Contacts', href: '/corp/dedupe_contacts' },
-				{ label: 'Dedupe Companies', href: '/corp/dedupe_companies' },
-				
-			]
-		}
+	// Platform-wide admin section (super admin only)
+	const platformAdminLinks = [
+		{ label: 'View Users', href: '/admin/users' },
+		{ label: 'Add Users', href: '/admin/users/new' },
+		{ label: 'Audit Logs', href: '/admin/audit-log' },
 	];
 
-	// Track which sections are expanded (covers both main nav + admin sub-sections)
+	// Tier labels for rendering sub-headers
+	const TIER_LABELS = {
+		viewer:     'Core',
+		data_entry: 'Data Entry',
+		manager:    'Reports',
+		admin:      'Admin',
+	};
+
+	// Permission level required to see each tier
+	const TIER_REQUIRED_LEVEL = {
+		viewer:     'viewer',
+		data_entry: 'data_entry',
+		manager:    'manager',
+		admin:      'manager',  // area admin visible to managers
+	};
+
 	/** @type {Record<string, boolean>} */
 	let expandedSections = {};
+	let adminExpanded = NAV_ALWAYS_EXPANDED;
 
-	// Whether the admin parent group is expanded
-	let adminExpanded = false;
-
-	// Auto-expand the section matching the current path
+	// Auto-expand
 	$: {
-		const path = $page.url.pathname;
-		navSections.forEach((section) => {
-			if (path.startsWith(section.basePath)) {
+		const path = currentPath;
+		let changed = false;
+		areaSections.forEach((section) => {
+			if ((NAV_ALWAYS_EXPANDED || path.startsWith(section.basePath)) && !expandedSections[section.id]) {
 				expandedSections[section.id] = true;
+				changed = true;
 			}
 		});
-		// Auto-expand admin if path starts with /admin
-		if (path.startsWith('/admin')) {
+		if (NAV_ALWAYS_EXPANDED || path.startsWith('/admin')) {
 			adminExpanded = true;
-			adminSubSections.forEach((sub) => {
-				if (path.startsWith(sub.basePath)) {
-					expandedSections[sub.id] = true;
-				}
-			});
 		}
+		if (changed) expandedSections = expandedSections;
 	}
 
 	/** @param {string} id */
 	function toggleSection(id) {
 		expandedSections[id] = !expandedSections[id];
-		expandedSections = expandedSections; // trigger reactivity
+		expandedSections = expandedSections;
 	}
 
 	function toggleAdmin() {
 		adminExpanded = !adminExpanded;
 	}
 
-	/** @param {string} href */
-	function isActive(href) {
-		if (href === '#') return false;
-		const path = $page.url.pathname;
-		return path === href || path.startsWith(href + '/');
-	}
-
-	/** @param {string} basePath */
-	function isSectionActive(basePath) {
-		return $page.url.pathname.startsWith(basePath);
-	}
-
 	/**
-	 * Check if the current user can see a nav section.
-	 * @param {{ area: string|null }} section
-	 * @returns {boolean}
+	 * Check if the current user can see an area at all.
+	 * @param {AreaSection} section
 	 */
-	function canSeeSection(section) {
-		if (!section.area) return true; // no restriction (e.g. Logout)
+	function canSeeArea(section) {
 		if (!user) return false;
 		if (user.is_super_admin) return true;
-		if (section.area === 'super_admin') return false; // only super admins
 		return canView(user, section.area);
 	}
 
-	/** @type {any[]} */
-	$: visibleNavSections = navSections.filter(s => canSeeSection(s));
-
 	/**
-	 * Check if the current user can see an admin sub-section.
-	 * @param {{ id: string }} sub
-	 * @returns {boolean}
+	 * Check if the current user can see a tier within an area.
+	 * @param {string} area
+	 * @param {string} tier
 	 */
-	function canSeeAdminSub(sub) {
-		if (!user || !user.is_super_admin) return false;
-		return true;
+	function canSeeTier(area, tier) {
+		if (!user) return false;
+		if (user.is_super_admin) return true;
+		const requiredLevel = TIER_REQUIRED_LEVEL[tier] || 'viewer';
+		return hasPermission(user, area, requiredLevel);
 	}
 
-	/** @type {any[]} */
-	$: visibleAdminSubs = adminSubSections.filter(s => canSeeAdminSub(s));
+	/** @type {AreaSection[]} */
+	$: visibleAreas = areaSections.filter(s => canSeeArea(s));
 
 	let sidebarCollapsed = false;
 </script>
@@ -310,8 +229,8 @@
 		</div>
 
 		<nav class="sidebar-nav">
-			{#each visibleNavSections as section (section.id)}
-				<div class="nav-section" class:active={isSectionActive(section.basePath)}>
+			{#each visibleAreas as section (section.id)}
+				<div class="nav-section" class:active={currentPath.startsWith(section.basePath)}>
 					<button
 						class="nav-section-header"
 						class:expanded={expandedSections[section.id]}
@@ -327,81 +246,78 @@
 					</button>
 
 					{#if expandedSections[section.id] && !sidebarCollapsed}
+						{#each section.tiers as t (t.tier)}
+							{#if canSeeTier(section.area, t.tier) && t.links.length > 0}
+								<div class="tier-label">{TIER_LABELS[t.tier] || t.tier}</div>
+								<ul class="nav-children">
+									{#each t.links as link (link.href)}
+										<li>
+											<a
+												href={link.href}
+												data-sveltekit-reload
+												class="nav-child-link"
+												class:active={link.href !== '#' && (currentPath === link.href || currentPath.startsWith(link.href + '/'))}
+												class:disabled={link.href === '#'}
+											>
+												{link.label}
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						{/each}
+					{/if}
+				</div>
+			{/each}
+
+			<!-- Logout -->
+			<div class="nav-section">
+				<a href="/logout" data-sveltekit-reload class="nav-section-header logout-link">
+					<span class="nav-icon">🚪</span>
+					{#if !sidebarCollapsed}
+						<span class="nav-label">Logout</span>
+					{/if}
+				</a>
+			</div>
+
+			<!-- Platform Admin (super admins only) -->
+			{#if user?.is_super_admin}
+				{#if !sidebarCollapsed}
+					<div class="nav-divider"></div>
+				{/if}
+
+				<div class="nav-section" class:active={currentPath.startsWith('/admin')}>
+					<button
+						class="nav-section-header"
+						class:expanded={adminExpanded}
+						on:click={toggleAdmin}
+						title={sidebarCollapsed ? 'Admin' : ''}
+					>
+						<span class="nav-icon">⚙️</span>
+						{#if !sidebarCollapsed}
+							<span class="nav-label">Admin</span>
+							<span class="nav-full-name">Platform</span>
+							<span class="nav-chevron">{adminExpanded ? '▾' : '›'}</span>
+						{/if}
+					</button>
+
+					{#if adminExpanded && !sidebarCollapsed}
 						<ul class="nav-children">
-							{#each section.children as child, i (i)}
+							{#each platformAdminLinks as link (link.href)}
 								<li>
 									<a
-										href={resolve(/** @type {any} */ (child.href))}
+										href={link.href}
+										data-sveltekit-reload
 										class="nav-child-link"
-										class:active={isActive(child.href)}
-										class:disabled={child.href === '#'}
+										class:active={currentPath === link.href || currentPath.startsWith(link.href + '/')}
 									>
-										{child.label}
+										{link.label}
 									</a>
 								</li>
 							{/each}
 						</ul>
 					{/if}
 				</div>
-			{/each}
-
-			<!-- Admin Section (super admins only) -->
-			{#if user?.is_super_admin}
-			<!-- Divider -->
-			{#if !sidebarCollapsed}
-				<div class="nav-divider"></div>
-			{/if}
-
-			<div class="nav-section" class:active={isSectionActive('/admin')}>
-				<button
-					class="nav-section-header"
-					class:expanded={adminExpanded}
-					on:click={toggleAdmin}
-					title={sidebarCollapsed ? 'Admin' : ''}
-				>
-					<span class="nav-icon">⚙️</span>
-					{#if !sidebarCollapsed}
-						<span class="nav-label">Admin</span>
-						<span class="nav-full-name">Administration</span>
-						<span class="nav-chevron">{adminExpanded ? '▾' : '›'}</span>
-					{/if}
-				</button>
-
-				{#if adminExpanded && !sidebarCollapsed}
-					<div class="admin-subsections">
-						{#each visibleAdminSubs as sub (sub.id)}
-							<div class="admin-sub">
-								<button
-									class="admin-sub-header"
-									class:expanded={expandedSections[sub.id]}
-									class:active={isSectionActive(sub.basePath)}
-									on:click={() => toggleSection(sub.id)}
-								>
-									<span class="admin-sub-label">{sub.label}</span>
-									<span class="admin-sub-chevron">{expandedSections[sub.id] ? '▾' : '›'}</span>
-								</button>
-
-								{#if expandedSections[sub.id]}
-									<ul class="nav-children admin-children">
-										{#each sub.children as child, i (i)}
-											<li>
-												<a
-													href={resolve(/** @type {any} */ (child.href))}
-													class="nav-child-link"
-													class:active={isActive(child.href)}
-													class:disabled={child.href === '#'}
-												>
-													{child.label}
-												</a>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
 			{/if}
 		</nav>
 	</aside>
@@ -409,6 +325,7 @@
 	<!-- Main Content -->
 	<main class="main-content">
 		<slot />
+
 	</main>
 </div>
 
@@ -563,9 +480,24 @@
 		margin-left: auto;
 	}
 
+	.tier-label {
+		padding: 0.3rem 1rem 0.15rem 3.25rem;
+		font-size: 0.65rem;
+		font-weight: 600;
+		color: #64748b;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin-top: 0.35rem;
+	}
+
 	.nav-children {
 		list-style: none;
-		padding: 0.25rem 0;
+		padding: 0.1rem 0;
+	}
+
+	.logout-link {
+		text-decoration: none;
+		color: #cbd5e1;
 	}
 
 	.nav-child-link {
@@ -603,56 +535,6 @@
 		margin: 0.75rem 1rem;
 	}
 
-	/* Admin Sub-sections */
-	.admin-subsections {
-		padding: 0.25rem 0;
-	}
-
-	.admin-sub {
-		margin-bottom: 0.1rem;
-	}
-
-	.admin-sub-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		padding: 0.35rem 1rem 0.35rem 3.25rem;
-		border: none;
-		background: none;
-		color: #94a3b8;
-		font-size: 0.85rem;
-		cursor: pointer;
-		text-align: left;
-		transition: all 0.15s;
-	}
-
-	.admin-sub-header:hover {
-		color: white;
-		background-color: #334155;
-	}
-
-	.admin-sub-header.active {
-		color: #cbd5e1;
-	}
-
-	.admin-sub-header.expanded {
-		color: #e2e8f0;
-	}
-
-	.admin-sub-label {
-		font-weight: 500;
-	}
-
-	.admin-sub-chevron {
-		font-size: 0.75rem;
-		color: #64748b;
-	}
-
-	.admin-children .nav-child-link {
-		padding-left: 4.25rem;
-		font-size: 0.8rem;
-	}
 
 	/* Main Content */
 	.main-content {
