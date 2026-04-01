@@ -1,14 +1,16 @@
 // src/routes/corp/companies/[id]/+page.server.js
 import sql from '$lib/db';
 import { error } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
+  requirePermission(locals.user, 'corp', 'viewer');
   const id = parseInt(params.id);
 
   // ── Company record ────────────────────────────────────────────────────
   const coRows = await sql`
     SELECT
-      co.corp_company_id, co.company_name, co.industry, co.website, co.notes,
+      co.corp_company_id, co.company_name, co.industry, co.website, co.notes, co.summary, co.company_size,
       co.status, co.merged_into_id, co.status_note, co.parent_company_id,
       co.created_at::text, co.updated_at::text,
       mc.company_name AS merged_into_name,
@@ -59,13 +61,31 @@ export async function load({ params }) {
     JOIN corp_companies co ON co.corp_company_id = c.corp_company_id
     LEFT JOIN corp_engagements e ON e.corp_contact_id = c.corp_contact_id
     WHERE c.corp_company_id = ANY(${allCompanyIds})
+      AND (c.is_active = true OR c.is_active IS NULL)
     GROUP BY c.corp_contact_id, co.company_name
     ORDER BY c.last_name NULLS LAST, c.first_name NULLS LAST
   `;
 
-  // ── Previous contacts ─────────────────────────────────────────────────
+  // ── Previous contacts (inactive contacts at this company + history-based) ──
   const activeIds = activeContacts.map(c => c.corp_contact_id);
-  const prevContacts = await sql`
+
+  // Contacts marked inactive at this company
+  const inactiveContacts = await sql`
+    SELECT
+      c.corp_contact_id, c.first_name, c.last_name,
+      c.email, c.phone,
+      c.company_name AS historical_company,
+      c.company_name AS current_company,
+      c.corp_company_id AS current_company_id,
+      c.updated_at::text AS recorded_at,
+      'Marked as previous contact' AS notes
+    FROM corp_contacts c
+    WHERE c.corp_company_id = ANY(${allCompanyIds})
+      AND c.is_active = false
+  `;
+
+  // Contacts with history at this company but now active elsewhere
+  const historyContacts = await sql`
     SELECT DISTINCT ON (h.corp_contact_id)
       h.corp_contact_id,
       c.first_name, c.last_name,
@@ -81,6 +101,14 @@ export async function load({ params }) {
       AND h.corp_contact_id != ALL(${activeIds.length ? activeIds : [0]})
     ORDER BY h.corp_contact_id, h.created_at DESC
   `;
+
+  // Combine and dedupe by contact ID
+  const prevContactMap = new Map();
+  for (const c of inactiveContacts) prevContactMap.set(c.corp_contact_id, c);
+  for (const c of historyContacts) {
+    if (!prevContactMap.has(c.corp_contact_id)) prevContactMap.set(c.corp_contact_id, c);
+  }
+  const prevContacts = [...prevContactMap.values()];
 
   // ── Engagements ───────────────────────────────────────────────────────
   const engagements = await sql`
@@ -136,7 +164,8 @@ export async function load({ params }) {
 }
 
 export const actions = {
-  updateCompany: async ({ request, params }) => {
+  updateCompany: async ({ request, params, locals }) => {
+    requirePermission(locals.user, 'corp', 'data_entry');
     const id   = parseInt(params.id);
     const form = await request.formData();
     const g    = (/** @type {string} */ k) => form.get(k)?.toString() || null;
@@ -160,6 +189,8 @@ export const actions = {
         industry          = ${g('industry')},
         website           = ${g('website')},
         notes             = ${g('notes')},
+        summary           = ${g('summary')},
+        company_size      = ${g('company_size')},
         parent_company_id = ${parentId},
         updated_at        = NOW()
       WHERE corp_company_id = ${id}

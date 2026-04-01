@@ -1,8 +1,10 @@
 // src/routes/corp/engagements/[id]/+page.server.js
 import sql from '$lib/db';
 import { error } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
+  requirePermission(locals.user, 'corp', 'viewer');
   const id = parseInt(params.id);
 
   // Load workflow options for dropdowns
@@ -51,7 +53,8 @@ export async function load({ params }) {
 }
 
 export const actions = {
-  updateEngagement: async ({ request, params }) => {
+  updateEngagement: async ({ request, params, locals }) => {
+    requirePermission(locals.user, 'corp', 'data_entry');
     const id   = parseInt(params.id);
     const form = await request.formData();
     const g  = (/** @type {string} */ k) => form.get(k)?.toString() || null;

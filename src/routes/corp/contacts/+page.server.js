@@ -20,6 +20,7 @@ export async function load({ locals }) {
       MAX(e.engagement_date)::text      AS last_engagement_date
     FROM corp_contacts c
     LEFT JOIN corp_engagements e ON e.corp_contact_id = c.corp_contact_id
+    WHERE (c.is_active = true OR c.is_active IS NULL)
     GROUP BY c.corp_contact_id
     ORDER BY c.company_name ASC NULLS LAST
   `;

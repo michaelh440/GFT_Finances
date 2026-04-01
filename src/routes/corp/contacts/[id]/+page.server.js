@@ -1,8 +1,10 @@
 // src/routes/corp/contacts/[id]/+page.server.js
 import sql from '$lib/db';
 import { error } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export async function load({ params }) {
+export async function load({ params, locals }) {
+  requirePermission(locals.user, 'corp', 'viewer');
   const id = parseInt(params.id);
 
   const [contactRows, engRows, historyRows, workflowRows] = await Promise.all([
@@ -59,7 +61,8 @@ export async function load({ params }) {
 }
 
 export const actions = {
-  updateContact: async ({ request, params }) => {
+  updateContact: async ({ request, params, locals }) => {
+    requirePermission(locals.user, 'corp', 'data_entry');
     const id   = parseInt(params.id);
     const form = await request.formData();
     const g = (/** @type {string} */ k) => form.get(k)?.toString() || null;
@@ -140,7 +143,8 @@ export const actions = {
     return { success: true };
   },
 
-  addHistory: async ({ request, params }) => {
+  addHistory: async ({ request, params, locals }) => {
+    requirePermission(locals.user, 'corp', 'data_entry');
     const id   = parseInt(params.id);
     const form = await request.formData();
     const g = (/** @type {string} */ k) => form.get(k)?.toString() || null;

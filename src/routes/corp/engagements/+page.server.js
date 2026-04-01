@@ -4,10 +4,11 @@ import { requirePermission } from '$lib/guards';
 
 export async function load({ url, locals }) {
   requirePermission(locals.user, 'corp', 'viewer');
-  const type     = url.searchParams.get('type')     ?? '';
-  const pipeline = url.searchParams.get('pipeline') ?? '';
-  const contract = url.searchParams.get('contract') ?? '';
-  const archived = url.searchParams.get('archived') !== '0';
+  const type       = url.searchParams.get('type')        ?? '';
+  const pipeline   = url.searchParams.get('pipeline')    ?? '';
+  const contract   = url.searchParams.get('contract')    ?? '';
+  const archived   = url.searchParams.get('archived') !== '0';
+  const hasRevenue = url.searchParams.get('has_revenue') ?? '';
 
   const [rows, workflowRows] = await Promise.all([
     sql`
@@ -33,6 +34,7 @@ export async function load({ url, locals }) {
     .filter(r => !type     || r.engagement_type  === type)
     .filter(r => !pipeline || r.pipeline_status  === pipeline)
     .filter(r => !contract || r.contract_status  === contract)
+    .filter(r => !hasRevenue || (hasRevenue === 'yes' ? parseFloat(r.amount_paid) > 0 : !r.amount_paid || parseFloat(r.amount_paid) === 0))
     .map(r => ({
       ...r,
       amount_paid: r.amount_paid ? parseFloat(r.amount_paid) : null,
@@ -47,7 +49,7 @@ export async function load({ url, locals }) {
   return {
     engagements,
     workflow,
-    filters: { type, pipeline, contract, archived },
+    filters: { type, pipeline, contract, archived, hasRevenue },
     user: locals.user,
   };
 }

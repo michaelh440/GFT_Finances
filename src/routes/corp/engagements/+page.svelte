@@ -32,6 +32,7 @@
   let fPipeline = filters.pipeline ?? '';
   let fContract = filters.contract ?? '';
   let fArchived = filters.archived ?? true;  // default true — all imported records are archived
+  let fRevenue  = filters.hasRevenue ?? '';
 
   let searchQuery = '';
   /** @type {keyof Engagement} */
@@ -47,6 +48,7 @@
     if (fPipeline)  p.set('pipeline', fPipeline);
     if (fContract)  p.set('contract', fContract);
     if (!fArchived) p.set('archived', '0');  // only add param when hiding archived
+    if (fRevenue)   p.set('has_revenue', fRevenue);
     goto(`/corp/engagements?${p.toString()}`, { invalidateAll: true });
   }
 
@@ -149,6 +151,11 @@
       </select>
       <select bind:value={fContract} on:change={applyFilters} class="filter-select">
         {#each CONTRACTS as [v, l]}<option value={v}>{l}</option>{/each}
+      </select>
+      <select bind:value={fRevenue} on:change={applyFilters} class="filter-select">
+        <option value="">Any Revenue</option>
+        <option value="yes">Has Revenue</option>
+        <option value="no">No Revenue</option>
       </select>
       <label class="archived-toggle">
         <input type="checkbox" bind:checked={fArchived} on:change={applyFilters} />

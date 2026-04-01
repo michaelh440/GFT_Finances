@@ -82,12 +82,18 @@
         {#if company?.industry}
           <span class="meta-pill industry">{company.industry}</span>
         {/if}
+        {#if company?.company_size}
+          <span class="meta-pill size">{company.company_size} employees</span>
+        {/if}
         {#if company?.website}
           <a href={company.website} target="_blank" rel="noopener" class="meta-pill website">
             🔗 {displayUrl(company.website)}
           </a>
         {/if}
       </div>
+      {#if company?.summary}
+        <p class="company-summary">{company.summary}</p>
+      {/if}
     </div>
     <div class="header-actions">
       <a href="/corp/engagements/new?company={company?.corp_company_id}" class="btn-secondary">
@@ -142,6 +148,21 @@
           </label>
           <label>Website
             <input name="website" type="url" value={company?.website ?? ''} placeholder="https://..." />
+          </label>
+          <label>Company Size
+            <select name="company_size" value={company?.company_size ?? ''}>
+              <option value="">— Select —</option>
+              <option value="1-10">1-10</option>
+              <option value="11-50">11-50</option>
+              <option value="51-200">51-200</option>
+              <option value="201-500">201-500</option>
+              <option value="501-1000">501-1000</option>
+              <option value="1001-5000">1001-5000</option>
+              <option value="5000+">5000+</option>
+            </select>
+          </label>
+          <label class="full">Summary
+            <textarea name="summary" rows="3" placeholder="Brief description of what this company does">{company?.summary ?? ''}</textarea>
           </label>
           <label class="full">Notes
             <textarea name="notes" rows="3">{company?.notes ?? ''}</textarea>
@@ -406,6 +427,8 @@
   h1 { font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0; }
   .division-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
   .header-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .company-summary { color: #4b5563; font-size: 0.9rem; line-height: 1.5; margin: 0.5rem 0 0; max-width: 700px; }
+  .meta-pill.size { background: #fef3c7; color: #92400e; }
   .meta-pill { display: inline-flex; align-items: center; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; }
   .meta-pill.industry { background: #e0e7ff; color: #4338ca; }
   .meta-pill.website  { background: #f0fdf4; color: #166534; text-decoration: none; }
