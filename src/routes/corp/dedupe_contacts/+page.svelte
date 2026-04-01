@@ -18,385 +18,355 @@
     { key: 'zip',           label: 'Zip' },
   ];
 
-  // decisions[i] = {
-  //   skipped: bool,
-  //   fields:  { field_key: chosen_value }  — starts as canonical contact's values
-  // }
-  // The canonical (kept) contact is ALWAYS contacts[0] (lowest ID).
+  // Roles: keep (primary), merge (delete & reassign), previous (save as history), skip
+  let currentIdx = 0;
+
   /** @type {any[]} */
-  let decisions = (data.groups ?? []).map(group => {
-    const canonical = group.contacts[0];
+  let decisions = (data.groups ?? []).map((/** @type {any} */ group) => {
+    /** @type {Record<number, string>} */
+    const roles = {};
+    group.contacts.forEach((/** @type {any} */ c, /** @type {number} */ i) => {
+      roles[c.corp_contact_id] = i === 0 ? 'keep' : 'merge';
+    });
+    const primary = group.contacts[0];
     return {
-      skipped: false,
-      fields:  Object.fromEntries(FIELDS.map(f => [f.key, canonical[f.key] ?? null])),
+      roles,
+      fields: Object.fromEntries(FIELDS.map(f => [f.key, primary[f.key] ?? null])),
     };
   });
 
-  /** @param {any} group @param {string} fieldKey */
-  function hasConflict(group, fieldKey) {
-    const canonical = String(group.contacts[0][fieldKey] ?? '').trim().toLowerCase();
-    return group.contacts.slice(1).some(
-      /** @param {any} c */ c => String(c[fieldKey] ?? '').trim().toLowerCase() !== canonical
-    );
-  }
+  $: groups    = data.groups ?? [];
+  $: total     = groups.length;
+  $: group     = groups[currentIdx];
+  $: decision  = decisions[currentIdx];
+  $: remaining = total - currentIdx;
+  $: pct       = total > 0 ? Math.round((currentIdx / total) * 100) : 0;
 
-  /** All non-canonical values for a field (unique, non-empty, different from canonical) */
-  /** @param {any} group @param {string} fieldKey */
-  function otherValues(group, fieldKey) {
-    const canonical = String(group.contacts[0][fieldKey] ?? '').trim().toLowerCase();
-    const seen = new Set([canonical]);
-    /** @type {{ val: any, ids: number[] }[]} */
-    const result = [];
-    for (const c of group.contacts.slice(1)) {
-      const raw = c[fieldKey] ?? null;
-      const key = String(raw ?? '').trim().toLowerCase();
-      if (!key || seen.has(key)) {
-        // Same value or empty — still track which contacts have it
-        if (key && key !== canonical) {
-          const existing = result.find(r => String(r.val ?? '').trim().toLowerCase() === key);
-          if (existing) existing.ids.push(c.corp_contact_id);
+  // Derived from roles
+  $: keepContact = group?.contacts.find((/** @type {any} */ c) => decision?.roles[c.corp_contact_id] === 'keep') ?? null;
+  $: mergeCos = group?.contacts.filter((/** @type {any} */ c) => decision?.roles[c.corp_contact_id] === 'merge') ?? [];
+  $: prevCos = group?.contacts.filter((/** @type {any} */ c) => decision?.roles[c.corp_contact_id] === 'previous') ?? [];
+  $: skipCos = group?.contacts.filter((/** @type {any} */ c) => decision?.roles[c.corp_contact_id] === 'skip') ?? [];
+  $: hasKeep = !!keepContact;
+  $: canApply = hasKeep && (mergeCos.length > 0 || prevCos.length > 0);
+
+  /** @param {number} contactId @param {string} role */
+  function setRole(contactId, role) {
+    if (!decisions[currentIdx]) return;
+    // Only one keep allowed
+    if (role === 'keep') {
+      for (const id of Object.keys(decisions[currentIdx].roles)) {
+        if (decisions[currentIdx].roles[Number(id)] === 'keep') {
+          decisions[currentIdx].roles[Number(id)] = 'merge';
         }
-        continue;
       }
-      seen.add(key);
-      result.push({ val: raw, ids: [c.corp_contact_id] });
+      const co = group.contacts.find((/** @type {any} */ c) => c.corp_contact_id === contactId);
+      if (co) {
+        for (const f of FIELDS) {
+          decisions[currentIdx].fields[f.key] = co[f.key] ?? null;
+        }
+      }
     }
-    return result;
+    decisions[currentIdx].roles[contactId] = role;
+    decisions = decisions;
   }
 
-  /** @param {number} i */
-  function buildMergePayload(i) {
-    const group    = data.groups[i];
-    const d        = decisions[i];
-    const canonical = group.contacts[0];
-    const discard_ids = group.contacts.slice(1).map(/** @param {any} c */ c => c.corp_contact_id);
+  /** @param {string} fieldKey @param {any} value */
+  function setFieldValue(fieldKey, value) {
+    if (!decisions[currentIdx]) return;
+    decisions[currentIdx].fields[fieldKey] = value;
+    decisions = decisions;
+  }
 
-    // Only include fields where the chosen value differs from what the canonical already has
+  function buildPayload() {
+    const d = decisions[currentIdx];
+    const g = groups[currentIdx];
+    if (!d || !g) return null;
+
+    const keep = g.contacts.find((/** @type {any} */ c) => d.roles[c.corp_contact_id] === 'keep');
+    if (!keep) return null;
+
+    const mergeIds = g.contacts
+      .filter((/** @type {any} */ c) => d.roles[c.corp_contact_id] === 'merge')
+      .map((/** @type {any} */ c) => c.corp_contact_id);
+    const previousIds = g.contacts
+      .filter((/** @type {any} */ c) => d.roles[c.corp_contact_id] === 'previous')
+      .map((/** @type {any} */ c) => c.corp_contact_id);
+
     /** @type {Record<string,any>} */
     const updates = {};
     for (const f of FIELDS) {
-      if (String(d.fields[f.key] ?? '') !== String(canonical[f.key] ?? '')) {
+      if (String(d.fields[f.key] ?? '') !== String(keep[f.key] ?? '')) {
         updates[f.key] = d.fields[f.key];
       }
     }
 
-    return { keep_id: canonical.corp_contact_id, discard_ids, updates };
+    return {
+      keep_id: keep.corp_contact_id,
+      discard_ids: mergeIds,
+      previous_ids: previousIds,
+      updates,
+    };
   }
 
-  /** @type {any[]} */
-  let pendingPayload = [];
-  function prepareMerge() {
-    pendingPayload = decisions
-      .map((d, i) => d.skipped ? null : buildMergePayload(i))
-      .filter(Boolean);
+  function advance() {
+    if (currentIdx < total - 1) currentIdx++;
   }
 
-  $: toMerge  = decisions.filter(d => !d.skipped).length;
-  $: toSkip   = decisions.filter(d =>  d.skipped).length;
+  /** @type {any} */
+  let pendingPayload = null;
+
+  /** @param {number} n */
+  function fmt(n) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n || 0);
+  }
 </script>
 
 <svelte:head><title>Dedupe Corp Contacts | B&C Financial Tracker</title></svelte:head>
 
-<div class="container">
+<div class="container" data-sveltekit-reload>
   <header>
     <div>
       <h1>Deduplicate Corp Contacts</h1>
       <p class="subtitle">
-        {data.groups?.length ?? 0} duplicate group{data.groups?.length !== 1 ? 's' : ''} found
-        — lowest contact ID is always kept
+        {total} duplicate group{total !== 1 ? 's' : ''} found — review one at a time
       </p>
     </div>
     <a href="/corp/contacts" class="btn-secondary">← Back to Contacts</a>
   </header>
 
   {#if form?.success}
-    <div class="alert alert-success">✓ {form.message}</div>
+    <div class="alert alert-success">{form.message}</div>
   {/if}
   {#if form?.error}
-    <div class="alert alert-error">✗ {form.error}</div>
+    <div class="alert alert-error">{form.error}</div>
   {/if}
 
-  {#if !data.groups?.length}
-    <div class="empty-state">🎉 No duplicate contacts found.</div>
+  {#if !total}
+    <div class="empty-state">No duplicate contacts found.</div>
 
-  {:else}
-    <form method="POST" action="?/merge" use:enhance={({ formData }) => {
-      prepareMerge();
-      formData.set('merges', JSON.stringify(pendingPayload));
-      return async ({ result, update }) => {
-        if (result.type === 'success') await update();
-      };
-    }}>
-      <input type="hidden" name="merges" value="" />
+  {:else if currentIdx >= total}
+    <div class="empty-state">All {total} groups reviewed. Reload to check for new duplicates.</div>
 
-      <div class="top-actions">
-        <button type="submit" class="btn-primary">
-          Merge {toMerge} group{toMerge !== 1 ? 's' : ''}
-        </button>
-        <button type="button" class="btn-secondary"
-          on:click={() => { decisions = decisions.map(d => ({ ...d, skipped: true })); }}>
-          Skip all
-        </button>
-        <button type="button" class="btn-link"
-          on:click={() => { decisions = decisions.map(d => ({ ...d, skipped: false })); }}>
-          Unskip all
-        </button>
-        {#if toSkip > 0}
-          <span class="skip-note">{toSkip} group{toSkip !== 1 ? 's' : ''} will be skipped</span>
+  {:else if group}
+    <!-- Progress bar -->
+    <div class="progress-strip">
+      <div class="progress-bar" style="width:{pct}%"></div>
+      <span class="progress-text">Group {currentIdx + 1} of {total} — {remaining} remaining</span>
+    </div>
+
+    <div class="group-card">
+      <!-- Header -->
+      <div class="group-header">
+        <div class="group-meta">
+          <span class="match-badge badge-{group.match_types?.includes('email') ? 'email' : 'phone'}">
+            {group.match_types === 'email' ? 'email match' : group.match_types === 'name_phone' ? 'name + phone' : 'email + name/phone'}
+          </span>
+          <span class="eng-total">
+            {group.contacts.reduce((/** @type {number} */ s, /** @type {any} */ c) => s + (c.engagement_count || 0), 0)} total engagements
+          </span>
+        </div>
+      </div>
+
+      <!-- Side-by-side comparison table -->
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="compare-field-col">Field</th>
+              {#each group.contacts as co (co.corp_contact_id)}
+                {@const role = decision?.roles[co.corp_contact_id] ?? 'skip'}
+                <th class:compare-keep={role === 'keep'} class:compare-skip={role === 'skip'}>
+                  <div class="compare-co-header">
+                    <span class="compare-co-name">{co.first_name} {co.last_name}</span>
+                    <span class="compare-co-id">ID {co.corp_contact_id}</span>
+                    <select class="role-select role-{role}"
+                      value={role}
+                      on:change={(e) => setRole(co.corp_contact_id, /** @type {HTMLSelectElement} */ (e.target).value)}>
+                      <option value="keep">Keep (Primary)</option>
+                      <option value="merge">Merge (Delete)</option>
+                      <option value="previous">Previous (History)</option>
+                      <option value="skip">Skip</option>
+                    </select>
+                  </div>
+                </th>
+              {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each FIELDS as f (f.key)}
+              <tr>
+                <td class="compare-field-label">{f.label}</td>
+                {#each group.contacts as co (co.corp_contact_id)}
+                  {@const val = co[f.key] ?? ''}
+                  {@const role = decision?.roles[co.corp_contact_id] ?? 'skip'}
+                  {@const isSelected = decision?.fields[f.key] === val && val !== ''}
+                  <td class="compare-cell"
+                    class:compare-keep={role === 'keep'}
+                    class:compare-skip={role === 'skip'}
+                    class:compare-selected={isSelected}
+                    on:click={() => { if (val) setFieldValue(f.key, val); }}
+                    style={val ? 'cursor:pointer' : ''}>
+                    {#if val}
+                      <div class="compare-val" class:compare-val-chosen={isSelected}>
+                        {#if isSelected}<span class="check-mark">✓</span>{/if}
+                        {val}
+                      </div>
+                    {:else}
+                      <span class="muted small">—</span>
+                    {/if}
+                  </td>
+                {/each}
+              </tr>
+            {/each}
+            <!-- Stats rows -->
+            <tr class="stats-row-sep">
+              <td class="compare-field-label">Engagements</td>
+              {#each group.contacts as co (co.corp_contact_id)}
+                <td class:compare-keep={decision?.roles[co.corp_contact_id] === 'keep'}>
+                  <span class="stat-pill">{co.engagement_count}</span>
+                </td>
+              {/each}
+            </tr>
+            <tr>
+              <td class="compare-field-label">Last Engagement</td>
+              {#each group.contacts as co (co.corp_contact_id)}
+                <td class:compare-keep={decision?.roles[co.corp_contact_id] === 'keep'}>
+                  <span class="stat-pill">{co.last_engagement || '—'}</span>
+                </td>
+              {/each}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action summary -->
+      <div class="action-summary">
+        {#if hasKeep}
+          <span class="action-summary-item">Keep: <strong>{keepContact.first_name} {keepContact.last_name}</strong> (ID {keepContact.corp_contact_id})</span>
+        {/if}
+        {#if mergeCos.length > 0}
+          <span class="action-summary-item">Merge & delete: {mergeCos.map(c => `ID ${c.corp_contact_id}`).join(', ')}</span>
+        {/if}
+        {#if prevCos.length > 0}
+          <span class="action-summary-item">Save as history: {prevCos.map(c => `ID ${c.corp_contact_id}`).join(', ')}</span>
+        {/if}
+        {#if skipCos.length > 0}
+          <span class="action-summary-item muted">Skip: {skipCos.map(c => `ID ${c.corp_contact_id}`).join(', ')}</span>
         {/if}
       </div>
 
-      <div class="groups">
-        {#each data.groups as group, i (group.canonical_id)}
-          {@const canonical = group.contacts[0]}
-          {@const dupes     = group.contacts.slice(1)}
-          {@const conflicts = FIELDS.filter(f => hasConflict(group, f.key))}
+      <!-- Action buttons -->
+      <div class="action-bar">
+        {#if canApply}
+          <form method="POST" action="?/merge" use:enhance={({ formData }) => {
+            pendingPayload = buildPayload();
+            formData.set('merges', JSON.stringify([pendingPayload]));
+            return async ({ result, update }) => {
+              await update();
+              if (result.type === 'success' && /** @type {any} */ (result.data)?.success) {
+                advance();
+              }
+            };
+          }}>
+            <input type="hidden" name="merges" value="" />
+            <button type="submit" class="btn-merge">
+              ✓ Apply
+              {#if mergeCos.length > 0}(merge {mergeCos.length}){/if}
+              {#if prevCos.length > 0}(save {prevCos.length} as history){/if}
+            </button>
+          </form>
+        {:else if !hasKeep}
+          <span class="action-hint">Select one contact as Keep to proceed</span>
+        {/if}
 
-          <div class="group-card" class:skipped={decisions[i]?.skipped}>
-
-            <!-- Header -->
-            <div class="group-header">
-              <div class="group-meta">
-                <span class="group-num">Group {i + 1}</span>
-                <span class="match-badge badge-{group.match_types?.includes('email') ? 'email' : 'phone'}">
-                  {group.match_types === 'email' ? 'email match' : group.match_types === 'name_phone' ? 'name + phone match' : 'email + name/phone'}
-                </span>
-                <span class="eng-total">
-                  {group.contacts.reduce((/** @type {any} */ s, /** @type {any} */ c) => s + (c.engagement_count || 0), 0)} engagements total
-                </span>
-              </div>
-              <button type="button" class="btn-skip"
-                on:click={() => { decisions[i].skipped = !decisions[i].skipped; }}>
-                {decisions[i]?.skipped ? 'Unskip' : 'Skip'}
-              </button>
-            </div>
-
-            {#if !decisions[i]?.skipped}
-
-              <!-- Canonical contact (the one being kept) -->
-              <div class="canonical-row">
-                <div class="canonical-label">
-                  <span class="keep-tag">KEEP</span>
-                  <span class="canonical-id">ID {canonical.corp_contact_id}</span>
-                  <span class="eng-badge">{canonical.engagement_count} eng</span>
-                </div>
-                <div class="field-summary">
-                  {#each FIELDS as f (f.key)}
-                    {#if canonical[f.key]}
-                      <span class="field-pill" class:conflict-pill={hasConflict(group, f.key)}>
-                        <span class="pill-label">{f.label}:</span>
-                        <span class="pill-val">
-                          {decisions[i]?.fields[f.key] ?? canonical[f.key]}
-                          {#if decisions[i]?.fields[f.key] && decisions[i].fields[f.key] !== canonical[f.key]}
-                            <span class="override-tag">↑ updated</span>
-                          {/if}
-                        </span>
-                      </span>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-
-              <!-- Duplicate contacts (being merged away) -->
-              {#each dupes as dupe (dupe.corp_contact_id)}
-                <div class="dupe-row">
-                  <div class="dupe-label">
-                    <span class="discard-tag">MERGE</span>
-                    <span class="dupe-id">ID {dupe.corp_contact_id}</span>
-                    <span class="eng-badge">{dupe.engagement_count} eng → moved to ID {canonical.corp_contact_id}</span>
-                  </div>
-                  <div class="field-summary">
-                    {#each FIELDS as f (f.key)}
-                      {#if dupe[f.key]}
-                        <span class="field-pill" class:conflict-pill={hasConflict(group, f.key)}>
-                          <span class="pill-label">{f.label}:</span>
-                          <span class="pill-val">{dupe[f.key]}</span>
-                        </span>
-                      {/if}
-                    {/each}
-                  </div>
-                </div>
-              {/each}
-
-              <!-- Conflict resolution -->
-              {#if conflicts.length > 0}
-                <div class="conflict-section">
-                  <div class="conflict-title">
-                    {conflicts.length} field{conflicts.length !== 1 ? 's' : ''} differ — choose which value to keep on ID {canonical.corp_contact_id}:
-                  </div>
-                  <div class="conflict-table">
-                    {#each conflicts as f (f.key)}
-                      {@const others = otherValues(group, f.key)}
-                      <div class="conflict-field-row">
-                        <span class="cf-label">{f.label}</span>
-                        <div class="cf-options">
-
-                          <!-- Current canonical value -->
-                          <label class="cf-option" class:selected={decisions[i]?.fields[f.key] === canonical[f.key]}>
-                            <input type="radio"
-                              name="cf_{i}_{f.key}"
-                              on:change={() => { decisions[i].fields[f.key] = canonical[f.key]; }}
-                              checked={decisions[i]?.fields[f.key] === canonical[f.key]}
-                            />
-                            <span class="cf-val">{canonical[f.key] ?? '(empty)'}</span>
-                            <span class="cf-source">current (ID {canonical.corp_contact_id})</span>
-                          </label>
-
-                          <!-- Values from duplicates -->
-                          {#each others as other (other.val)}
-                            <label class="cf-option" class:selected={decisions[i]?.fields[f.key] === other.val}>
-                              <input type="radio"
-                                name="cf_{i}_{f.key}"
-                                on:change={() => { decisions[i].fields[f.key] = other.val; }}
-                                checked={decisions[i]?.fields[f.key] === other.val}
-                              />
-                              <span class="cf-val">{other.val ?? '(empty)'}</span>
-                              <span class="cf-source">from ID {other.ids.join(', ')}</span>
-                            </label>
-                          {/each}
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {:else}
-                <div class="no-conflict">No field conflicts — all data matches.</div>
-              {/if}
-
-            {:else}
-              <div class="skipped-msg">Skipped — will not be merged.</div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-
-      <div class="bottom-actions">
-        <button type="submit" class="btn-primary">
-          Merge {toMerge} group{toMerge !== 1 ? 's' : ''}
+        <button type="button" class="btn-skip-action" on:click={advance}>
+          → Skip
         </button>
+
+        {#if currentIdx > 0}
+          <button type="button" class="btn-back" on:click={() => { currentIdx--; }}>
+            ← Back
+          </button>
+        {/if}
       </div>
-    </form>
+    </div>
   {/if}
 </div>
 
 <style>
   .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
-
   header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
   h1 { font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0 0 0.25rem; }
   .subtitle { color: #6b7280; margin: 0; font-size: 0.875rem; }
+  .muted { color: #9ca3af; }
+  .small { font-size: 0.8rem; }
 
   .alert { padding: 1rem 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-weight: 500; }
   .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
   .alert-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
   .empty-state { text-align: center; padding: 4rem; color: #6b7280; font-size: 1.1rem; background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 
-  .top-actions, .bottom-actions { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .bottom-actions { margin-top: 1.5rem; margin-bottom: 0; }
-  .skip-note { font-size: 0.875rem; color: #9ca3af; }
+  /* Progress */
+  .progress-strip { position: relative; background: #e5e7eb; border-radius: 0.5rem; height: 1.5rem; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-bar { position: absolute; top: 0; left: 0; height: 100%; background: #3b82f6; border-radius: 0.5rem; transition: width 0.3s; }
+  .progress-text { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 0.75rem; font-weight: 600; color: #1a202c; }
 
-  /* Group cards */
-  .groups { display: flex; flex-direction: column; gap: 1.25rem; }
-
-  .group-card {
-    background: white; border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1);
-    border: 1px solid #e5e7eb;
-    overflow: hidden;
-    transition: opacity 0.2s;
-  }
-  .group-card.skipped { opacity: 0.4; }
-
-  .group-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0.625rem 1rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
-    flex-wrap: wrap; gap: 0.5rem;
-  }
+  /* Group card */
+  .group-card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.1); border: 1px solid #e5e7eb; overflow: hidden; }
+  .group-header { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; gap: 0.5rem; }
   .group-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-  .group-num { font-weight: 600; color: #374151; font-size: 0.875rem; }
   .eng-total { font-size: 0.8rem; color: #6b7280; }
-
   .match-badge { padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.72rem; font-weight: 600; }
   .badge-email { background: #dcfce7; color: #166534; }
   .badge-phone { background: #dbeafe; color: #1e40af; }
 
-  /* Canonical / dupe rows */
-  .canonical-row {
-    display: flex; align-items: flex-start; gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: #f0fdf4; border-left: 4px solid #22c55e;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  .dupe-row {
-    display: flex; align-items: flex-start; gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: #fafafa; border-left: 4px solid #d1d5db;
-    border-bottom: 1px solid #f3f4f6;
-  }
+  /* Comparison table */
+  .compare-table-wrap { overflow-x: auto; }
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table thead th { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.8rem; border-bottom: 2px solid #e5e7eb; background: #f9fafb; vertical-align: top; }
+  .compare-table thead th.compare-keep { background: #f0fdf4; border-bottom-color: #22c55e; }
+  .compare-table thead th.compare-skip { background: #fafafa; opacity: 0.6; }
+  .compare-field-col { width: 90px; min-width: 90px; }
+  .compare-co-header { display: flex; flex-direction: column; gap: 0.25rem; }
+  .compare-co-name { font-weight: 600; color: #1a202c; font-size: 0.85rem; }
+  .compare-co-id { font-size: 0.7rem; color: #9ca3af; font-family: monospace; }
+  .role-select { padding: 0.25rem 0.4rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; margin-top: 0.2rem; width: 100%; }
+  .role-select.role-keep { background: #dcfce7; color: #166534; border-color: #86efac; }
+  .role-select.role-merge { background: #fef9c3; color: #92400e; border-color: #fde68a; }
+  .role-select.role-previous { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .role-select.role-skip { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
+  .compare-field-label { font-weight: 600; font-size: 0.78rem; color: #6b7280; padding: 0.5rem 0.75rem; vertical-align: top; white-space: nowrap; border-right: 1px solid #f3f4f6; }
+  .compare-cell { padding: 0.45rem 0.75rem; border-bottom: 1px solid #f3f4f6; vertical-align: top; font-size: 0.85rem; transition: background 0.1s; }
+  .compare-cell:hover { background: #f0f9ff; }
+  .compare-cell.compare-keep { background: #fafff9; }
+  .compare-cell.compare-skip { opacity: 0.4; }
+  .compare-cell.compare-selected { background: #eff6ff; }
+  .compare-val { color: #1a202c; line-height: 1.4; }
+  .compare-val-chosen { font-weight: 600; color: #1e40af; }
+  .check-mark { color: #22c55e; font-weight: 700; margin-right: 0.25rem; }
+  .stat-pill { font-size: 0.8rem; color: #374151; font-weight: 500; }
+  .stats-row-sep td { border-top: 2px solid #e5e7eb; }
 
-  .canonical-label, .dupe-label {
-    display: flex; flex-direction: column; align-items: flex-start;
-    gap: 0.25rem; min-width: 110px; flex-shrink: 0;
-  }
-  .keep-tag    { font-size: 0.7rem; font-weight: 700; background: #22c55e; color: white; padding: 0.15rem 0.4rem; border-radius: 0.2rem; letter-spacing: 0.05em; }
-  .discard-tag { font-size: 0.7rem; font-weight: 700; background: #9ca3af; color: white; padding: 0.15rem 0.4rem; border-radius: 0.2rem; letter-spacing: 0.05em; }
-  .canonical-id, .dupe-id { font-size: 0.78rem; font-weight: 600; color: #374151; font-family: monospace; }
-  .eng-badge { font-size: 0.72rem; color: #6b7280; }
+  /* Action summary */
+  .action-summary { padding: 0.625rem 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem; color: #374151; }
+  .action-summary-item { display: flex; gap: 0.25rem; }
 
-  .field-summary { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1; align-content: flex-start; }
-  .field-pill {
-    display: inline-flex; align-items: baseline; gap: 0.25rem;
-    background: #f3f4f6; border-radius: 0.25rem;
-    padding: 0.15rem 0.5rem; font-size: 0.8rem;
-  }
-  .field-pill.conflict-pill { background: #fef9c3; border: 1px solid #fde68a; }
-  .pill-label { color: #9ca3af; font-size: 0.72rem; }
-  .pill-val   { color: #1a202c; font-weight: 500; }
-  .override-tag { font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-left: 0.2rem; }
+  /* Action bar */
+  .action-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-top: 1px solid #e5e7eb; flex-wrap: wrap; }
+  .btn-merge { background: #22c55e; color: white; padding: 0.5rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+  .btn-merge:hover { background: #16a34a; }
+  .btn-skip-action { padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: white; color: #374151; font-weight: 500; font-size: 0.85rem; cursor: pointer; }
+  .btn-skip-action:hover { background: #f3f4f6; }
+  .btn-back { padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: white; color: #6b7280; font-size: 0.85rem; cursor: pointer; }
+  .btn-back:hover { background: #f3f4f6; }
+  .action-hint { font-size: 0.85rem; color: #9ca3af; }
 
-  /* Conflict section */
-  .conflict-section {
-    padding: 0.875rem 1rem;
-    background: #fffbeb; border-top: 1px solid #fde68a;
-  }
-  .conflict-title {
-    font-size: 0.78rem; font-weight: 600; color: #92400e;
-    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem;
-  }
-  .conflict-table { display: flex; flex-direction: column; gap: 0.5rem; }
-  .conflict-field-row { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
-  .cf-label { font-weight: 600; font-size: 0.85rem; color: #374151; min-width: 75px; padding-top: 0.3rem; flex-shrink: 0; }
-  .cf-options { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-
-  .cf-option {
-    display: flex; align-items: center; gap: 0.35rem;
-    padding: 0.3rem 0.75rem; border-radius: 0.375rem;
-    border: 1px solid #e5e7eb; background: white;
-    font-size: 0.82rem; cursor: pointer; transition: all 0.15s;
-  }
-  .cf-option:hover { border-color: #93c5fd; }
-  .cf-option.selected { border-color: #3b82f6; background: #eff6ff; }
-  .cf-option input { accent-color: #3b82f6; }
-  .cf-val    { font-weight: 500; color: #1a202c; }
-  .cf-source { font-size: 0.72rem; color: #9ca3af; }
-
-  .no-conflict { padding: 0.625rem 1rem; font-size: 0.82rem; color: #9ca3af; font-style: italic; }
-  .skipped-msg { padding: 0.75rem 1rem; font-size: 0.875rem; color: #9ca3af; font-style: italic; }
-
-  /* Buttons */
-  .btn-skip { padding: 0.3rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #374151; font-size: 0.8rem; cursor: pointer; }
-  .btn-skip:hover { background: #f3f4f6; }
-  .btn-primary { background: #3b82f6; color: white; padding: 0.625rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
-  .btn-primary:hover { background: #2563eb; }
   .btn-secondary { background: #e5e7eb; color: #374151; padding: 0.625rem 1.25rem; border-radius: 0.5rem; border: none; font-weight: 500; font-size: 0.95rem; cursor: pointer; text-decoration: none; display: inline-block; }
   .btn-secondary:hover { background: #d1d5db; }
-  .btn-link { background: none; border: none; color: #3b82f6; font-size: 0.875rem; cursor: pointer; text-decoration: underline; padding: 0; }
 
   @media (max-width: 768px) {
     .container { padding: 1rem; }
     header { flex-direction: column; gap: 1rem; }
-    .canonical-row, .dupe-row { flex-direction: column; gap: 0.5rem; }
-    .canonical-label, .dupe-label { flex-direction: row; align-items: center; min-width: unset; }
-    .conflict-field-row { flex-direction: column; gap: 0.3rem; }
   }
 </style>

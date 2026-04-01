@@ -11,10 +11,12 @@
   let activeTab = 'auto';
 
   const FIELDS = [
-    { key: 'company_name', label: 'Name' },
-    { key: 'industry',     label: 'Industry' },
-    { key: 'website',      label: 'Website' },
-    { key: 'notes',        label: 'Notes' },
+    { key: 'company_name',  label: 'Name' },
+    { key: 'industry',      label: 'Industry' },
+    { key: 'company_size',  label: 'Size' },
+    { key: 'website',       label: 'Website' },
+    { key: 'summary',       label: 'Summary' },
+    { key: 'notes',         label: 'Notes' },
   ];
 
   const fmt = (/** @type {any} */ n) =>
@@ -24,11 +26,21 @@
   let currentIdx = 0;
   let resolved   = 0;
 
+  // Roles: 'parent' | 'division' | 'merge' | 'skip'
+  const ROLES = ['parent', 'division', 'merge', 'skip'];
+
   /** @type {any[]} */
   let decisions = (data.groups ?? []).map((/** @type {any} */ group) => {
-    const canonical = group.companies[0];
+    // Default: first company is parent, rest are merge
+    /** @type {Record<number, string>} */
+    const roles = {};
+    group.companies.forEach((/** @type {any} */ co, /** @type {number} */ i) => {
+      roles[co.corp_company_id] = i === 0 ? 'parent' : 'merge';
+    });
+    const primary = group.companies[0];
     return {
-      fields: Object.fromEntries(FIELDS.map(f => [f.key, canonical[f.key] ?? null])),
+      roles,
+      fields: Object.fromEntries(FIELDS.map(f => [f.key, primary[f.key] ?? null])),
     };
   });
 
@@ -36,11 +48,47 @@
   $: total     = groups.length;
   $: group     = groups[currentIdx];
   $: decision  = decisions[currentIdx];
-  $: canonical = group?.companies[0];
-  $: dupes     = group?.companies.slice(1) ?? [];
-  $: conflicts = group ? FIELDS.filter(f => hasConflict(group, f.key)) : [];
   $: remaining = total - currentIdx;
   $: pct       = total > 0 ? Math.round((currentIdx / total) * 100) : 0;
+
+  // Derived from roles
+  $: parentCo = group?.companies.find((/** @type {any} */ c) => decision?.roles[c.corp_company_id] === 'parent') ?? null;
+  $: divisionCos = group?.companies.filter((/** @type {any} */ c) => decision?.roles[c.corp_company_id] === 'division') ?? [];
+  $: mergeCos = group?.companies.filter((/** @type {any} */ c) => decision?.roles[c.corp_company_id] === 'merge') ?? [];
+  $: skipCos = group?.companies.filter((/** @type {any} */ c) => decision?.roles[c.corp_company_id] === 'skip') ?? [];
+  $: hasParent = !!parentCo;
+  $: hasMergeTargets = mergeCos.length > 0;
+  $: hasDivisions = divisionCos.length > 0;
+  $: canApply = hasParent && (hasMergeTargets || hasDivisions);
+
+  /** @param {number} companyId @param {string} role */
+  function setRole(companyId, role) {
+    if (!decisions[currentIdx]) return;
+    // If setting parent, clear any other parent
+    if (role === 'parent') {
+      for (const id of Object.keys(decisions[currentIdx].roles)) {
+        if (decisions[currentIdx].roles[Number(id)] === 'parent') {
+          decisions[currentIdx].roles[Number(id)] = 'merge';
+        }
+      }
+      // Reset field choices to this company's values
+      const co = group.companies.find((/** @type {any} */ c) => c.corp_company_id === companyId);
+      if (co) {
+        for (const f of FIELDS) {
+          decisions[currentIdx].fields[f.key] = co[f.key] ?? null;
+        }
+      }
+    }
+    decisions[currentIdx].roles[companyId] = role;
+    decisions = decisions;
+  }
+
+  /** @param {string} fieldKey @param {any} value */
+  function setFieldValue(fieldKey, value) {
+    if (!decisions[currentIdx]) return;
+    decisions[currentIdx].fields[fieldKey] = value;
+    decisions = decisions;
+  }
 
   /** @param {any} grp @param {string} key */
   function hasConflict(grp, key) {
@@ -65,17 +113,34 @@
   }
 
   function buildAutoPayload() {
-    const d = decision;
+    const d = decisions[currentIdx];
+    const g = groups[currentIdx];
+    if (!d || !g) return null;
+
+    const parent = g.companies.find((/** @type {any} */ c) => d.roles[c.corp_company_id] === 'parent');
+    if (!parent) return null;
+
+    const mergeIds = g.companies
+      .filter((/** @type {any} */ c) => d.roles[c.corp_company_id] === 'merge')
+      .map((/** @type {any} */ c) => c.corp_company_id);
+
+    const divisionIds = g.companies
+      .filter((/** @type {any} */ c) => d.roles[c.corp_company_id] === 'division')
+      .map((/** @type {any} */ c) => c.corp_company_id);
+
+    // Field updates for the parent company
     /** @type {Record<string,any>} */
     const updates = {};
     for (const f of FIELDS) {
-      if (String(d.fields[f.key] ?? '') !== String(canonical[f.key] ?? '')) {
+      if (String(d.fields[f.key] ?? '') !== String(parent[f.key] ?? '')) {
         updates[f.key] = d.fields[f.key];
       }
     }
+
     return {
-      keep_id:     canonical.corp_company_id,
-      discard_ids: dupes.map(/** @param {any} c */ c => c.corp_company_id),
+      keep_id: parent.corp_company_id,
+      discard_ids: mergeIds,
+      division_ids: divisionIds,
       updates,
     };
   }
@@ -262,107 +327,134 @@
             </span>
           </div>
 
-          {#each group.companies as co (co.corp_company_id)}
-            {@const isKeep = co.corp_company_id === canonical.corp_company_id}
-            <div class="company-row" class:is-keep={isKeep}>
-              <div class="row-label">
-                <span class:keep-tag={isKeep} class:merge-tag={!isKeep}>
-                  {isKeep ? 'KEEP' : 'MERGE'}
-                </span>
-                <span class="co-id">ID {co.corp_company_id}</span>
-              </div>
-              <div class="row-fields">
+          <!-- Side-by-side comparison table with role selectors -->
+          <div class="compare-table-wrap">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th class="compare-field-col">Field</th>
+                  {#each group.companies as co (co.corp_company_id)}
+                    {@const role = decision?.roles[co.corp_company_id] ?? 'skip'}
+                    <th class:compare-parent={role === 'parent'} class:compare-skip={role === 'skip'}>
+                      <div class="compare-co-header">
+                        <span class="compare-co-name">{co.company_name}</span>
+                        <span class="compare-co-id">ID {co.corp_company_id}</span>
+                        <select class="role-select role-{role}"
+                          value={role}
+                          on:change={(e) => setRole(co.corp_company_id, /** @type {HTMLSelectElement} */ (e.target).value)}>
+                          <option value="parent">Parent (Keep)</option>
+                          <option value="division">Division</option>
+                          <option value="merge">Merge</option>
+                          <option value="skip">Skip</option>
+                        </select>
+                      </div>
+                    </th>
+                  {/each}
+                </tr>
+              </thead>
+              <tbody>
                 {#each FIELDS as f (f.key)}
-                  {#if co[f.key]}
-                    <span class="field-pill" class:conflict-pill={hasConflict(group, f.key)}>
-                      <span class="pill-label">{f.label}:</span>
-                      {co[f.key]}
-                    </span>
-                  {/if}
+                  <tr>
+                    <td class="compare-field-label">{f.label}</td>
+                    {#each group.companies as co (co.corp_company_id)}
+                      {@const val = co[f.key] ?? ''}
+                      {@const role = decision?.roles[co.corp_company_id] ?? 'skip'}
+                      {@const isSelected = decision?.fields[f.key] === val && val !== ''}
+                      <td class="compare-cell"
+                        class:compare-parent={role === 'parent'}
+                        class:compare-skip={role === 'skip'}
+                        class:compare-selected={isSelected}
+                        on:click={() => { if (val) setFieldValue(f.key, val); }}
+                        style={val ? 'cursor:pointer' : ''}>
+                        {#if val}
+                          <div class="compare-val" class:compare-val-chosen={isSelected}>
+                            {#if isSelected}<span class="check-mark">✓</span>{/if}
+                            {f.key === 'summary' || f.key === 'notes' ? (val.length > 80 ? val.slice(0, 80) + '…' : val) : val}
+                          </div>
+                        {:else}
+                          <span class="muted small">—</span>
+                        {/if}
+                      </td>
+                    {/each}
+                  </tr>
                 {/each}
-                <span class="stat-pill">{co.contact_count} contact{co.contact_count !== 1 ? 's' : ''}</span>
-                {#if co.history_count > 0}
-                  <span class="stat-pill">{co.history_count} history</span>
-                {/if}
-                <span class="stat-pill">{co.engagement_count} eng</span>
-                {#if co.total_revenue}
-                  <span class="stat-pill revenue">{fmt(co.total_revenue)}</span>
-                {/if}
-              </div>
-            </div>
-          {/each}
+                <!-- Stats rows -->
+                <tr class="stats-row-sep">
+                  <td class="compare-field-label">Contacts</td>
+                  {#each group.companies as co (co.corp_company_id)}
+                    <td class:compare-parent={decision?.roles[co.corp_company_id] === 'parent'}>
+                      <span class="stat-pill">{co.contact_count}</span>
+                    </td>
+                  {/each}
+                </tr>
+                <tr>
+                  <td class="compare-field-label">Engagements</td>
+                  {#each group.companies as co (co.corp_company_id)}
+                    <td class:compare-parent={decision?.roles[co.corp_company_id] === 'parent'}>
+                      <span class="stat-pill">{co.engagement_count}</span>
+                    </td>
+                  {/each}
+                </tr>
+                <tr>
+                  <td class="compare-field-label">Revenue</td>
+                  {#each group.companies as co (co.corp_company_id)}
+                    <td class:compare-parent={decision?.roles[co.corp_company_id] === 'parent'}>
+                      <span class="stat-pill revenue">{co.total_revenue ? fmt(co.total_revenue) : '—'}</span>
+                    </td>
+                  {/each}
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          {#if conflicts.length > 0}
-            <div class="conflict-section">
-              <div class="conflict-title">
-                {conflicts.length} field{conflicts.length !== 1 ? 's' : ''} differ — choose which value to keep on ID {canonical.corp_company_id}:
-              </div>
-              <div class="conflict-table">
-                {#each conflicts as f (f.key)}
-                  {@const others = otherValues(group, f.key)}
-                  <div class="conflict-row">
-                    <span class="cf-label">{f.label}</span>
-                    <div class="cf-options">
-                      <label class="cf-option" class:selected={decision?.fields[f.key] === canonical[f.key]}>
-                        <input type="radio" name="cf_{f.key}"
-                          on:change={() => { decisions[currentIdx].fields[f.key] = canonical[f.key]; }}
-                          checked={decision?.fields[f.key] === canonical[f.key]} />
-                        <span class="cf-val">{canonical[f.key] ?? '(empty)'}</span>
-                        <span class="cf-source">current (ID {canonical.corp_company_id})</span>
-                      </label>
-                      {#each others as other (other.val)}
-                        <label class="cf-option" class:selected={decision?.fields[f.key] === other.val}>
-                          <input type="radio" name="cf_{f.key}"
-                            on:change={() => { decisions[currentIdx].fields[f.key] = other.val; }}
-                            checked={decision?.fields[f.key] === other.val} />
-                          <span class="cf-val">{other.val ?? '(empty)'}</span>
-                          <span class="cf-source">from ID {other.ids.join(', ')}</span>
-                        </label>
-                      {/each}
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {:else}
-            <div class="no-conflict">No field conflicts — all data matches.</div>
-          {/if}
+          <!-- Action summary -->
+          <div class="action-summary">
+            {#if hasParent}
+              <span class="action-summary-item">Parent: <strong>{parentCo.company_name}</strong> (ID {parentCo.corp_company_id})</span>
+            {/if}
+            {#if hasDivisions}
+              <span class="action-summary-item">Divisions: {divisionCos.map(c => c.company_name).join(', ')}</span>
+            {/if}
+            {#if hasMergeTargets}
+              <span class="action-summary-item">Merge away: {mergeCos.map(c => c.company_name).join(', ')}</span>
+            {/if}
+            {#if skipCos.length > 0}
+              <span class="action-summary-item muted">Skip: {skipCos.map(c => c.company_name).join(', ')}</span>
+            {/if}
+          </div>
 
           <div class="action-bar">
-            <form method="POST" action="?/merge" use:enhance={({ formData }) => {
-              autoPendingPayload = buildAutoPayload();
-              formData.set('merges', JSON.stringify([autoPendingPayload]));
-              return async ({ result, update }) => {
-                await update();
-                if (result.type === 'success' && /** @type {any} */ (result.data)?.success) {
-                  advance();
-                }
-              };
-            }}>
-              <input type="hidden" name="merges" value="" />
-              <button type="submit" class="btn-merge">
-                ✓ Merge into ID {canonical.corp_company_id}
-              </button>
-            </form>
+            {#if canApply}
+              <form method="POST" action="?/merge" use:enhance={({ formData }) => {
+                autoPendingPayload = buildAutoPayload();
+                formData.set('merges', JSON.stringify([autoPendingPayload]));
+                return async ({ result, update }) => {
+                  await update();
+                  if (result.type === 'success' && /** @type {any} */ (result.data)?.success) {
+                    advance();
+                  }
+                };
+              }}>
+                <input type="hidden" name="merges" value="" />
+                <button type="submit" class="btn-merge">
+                  ✓ Apply
+                  {#if hasMergeTargets}(merge {mergeCos.length}){/if}
+                  {#if hasDivisions}(link {divisionCos.length} division{divisionCos.length !== 1 ? 's' : ''}){/if}
+                </button>
+              </form>
+            {:else if !hasParent}
+              <span class="action-hint">Select one company as Parent to proceed</span>
+            {/if}
 
             <button type="button" class="btn-skip-action" on:click={advance}>
-              → Skip
+              → Skip All
             </button>
 
             {#if currentIdx > 0}
-              <button type="button" class="btn-back"
-                on:click={() => { currentIdx--; }}>
+              <button type="button" class="btn-back" on:click={() => { currentIdx--; }}>
                 ← Back
               </button>
             {/if}
-
-            <span class="action-hint">
-              {#if matchIsDivision}
-                ⚠ Parent/division match — consider skipping if these are separate entities
-              {:else}
-                Merging will reassign all contacts and history to ID {canonical.corp_company_id}
-              {/if}
-            </span>
           </div>
         </div>
 
@@ -433,6 +525,7 @@
                 </div>
                 <div class="result-meta">
                   {#if co.industry}<span>{co.industry}</span>{/if}
+                  {#if co.company_size}<span>{co.company_size} emp</span>{/if}
                   <span>{co.contact_count} contacts</span>
                   <span>{co.engagement_count} eng</span>
                   {#if co.total_revenue}<span>{fmt(co.total_revenue)}</span>{/if}
@@ -510,6 +603,7 @@
                 </div>
                 <div class="result-meta">
                   {#if co.industry}<span>{co.industry}</span>{/if}
+                  {#if co.company_size}<span>{co.company_size} emp</span>{/if}
                   <span>{co.contact_count} contacts</span>
                   <span>{co.engagement_count} eng</span>
                   {#if co.total_revenue}<span>{fmt(co.total_revenue)}</span>{/if}
@@ -671,6 +765,36 @@
   .stat-pill.revenue { background: #dcfce7; color: #166534; }
 
   .no-conflict { padding: 0.625rem 1rem; font-size: 0.82rem; color: #9ca3af; font-style: italic; }
+
+  /* Comparison table */
+  .compare-table-wrap { overflow-x: auto; }
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table thead th { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.8rem; border-bottom: 2px solid #e5e7eb; background: #f9fafb; vertical-align: top; }
+  .compare-table thead th.compare-parent { background: #f0fdf4; border-bottom-color: #22c55e; }
+  .compare-table thead th.compare-skip { background: #fafafa; opacity: 0.6; }
+  .compare-field-col { width: 100px; min-width: 100px; }
+  .compare-co-header { display: flex; flex-direction: column; gap: 0.25rem; }
+  .compare-co-name { font-weight: 600; color: #1a202c; font-size: 0.85rem; }
+  .compare-co-id { font-size: 0.7rem; color: #9ca3af; font-family: monospace; }
+  .role-select { padding: 0.25rem 0.4rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; margin-top: 0.2rem; }
+  .role-select.role-parent { background: #dcfce7; color: #166534; border-color: #86efac; }
+  .role-select.role-division { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .role-select.role-merge { background: #fef9c3; color: #92400e; border-color: #fde68a; }
+  .role-select.role-skip { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
+  .compare-field-label { font-weight: 600; font-size: 0.78rem; color: #6b7280; padding: 0.5rem 0.75rem; vertical-align: top; white-space: nowrap; border-right: 1px solid #f3f4f6; }
+  .compare-cell { padding: 0.45rem 0.75rem; border-bottom: 1px solid #f3f4f6; vertical-align: top; font-size: 0.85rem; transition: background 0.1s; }
+  .compare-cell:hover { background: #f0f9ff; }
+  .compare-cell.compare-parent { background: #fafff9; }
+  .compare-cell.compare-skip { opacity: 0.4; }
+  .compare-cell.compare-selected { background: #eff6ff; }
+  .compare-val { color: #1a202c; line-height: 1.4; }
+  .compare-val-chosen { font-weight: 600; color: #1e40af; }
+  .check-mark { color: #22c55e; font-weight: 700; margin-right: 0.25rem; }
+  .stats-row-sep td { border-top: 2px solid #e5e7eb; }
+
+  /* Action summary */
+  .action-summary { padding: 0.625rem 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.82rem; color: #374151; }
+  .action-summary-item { display: flex; gap: 0.25rem; }
 
   .action-bar { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; flex-wrap: wrap; }
   .action-hint { font-size: 0.78rem; color: #9ca3af; margin-left: auto; font-style: italic; }

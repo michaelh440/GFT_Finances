@@ -143,7 +143,9 @@ export async function load({ locals }) {
       co.corp_company_id,
       co.company_name,
       co.industry,
+      co.company_size,
       co.website,
+      co.summary,
       co.notes,
       co.parent_company_id,
       COUNT(DISTINCT c.corp_contact_id)::int    AS contact_count,
@@ -217,7 +219,10 @@ export const actions = {
         co.corp_company_id,
         co.company_name,
         co.industry,
+        co.company_size,
         co.website,
+        co.summary,
+        co.notes,
         co.status,
         COUNT(DISTINCT c.corp_contact_id)::int    AS contact_count,
         COUNT(DISTINCT e.corp_engagement_id)::int AS engagement_count,
@@ -257,7 +262,12 @@ export const actions = {
       let merged = 0;
 
       for (const m of merges) {
-        const { keep_id, discard_ids, updates } = m;
+        const { keep_id, discard_ids: rawDiscardIds, division_ids: rawDivisionIds, updates } = m;
+
+        // Safety: never discard the keep company itself
+        const discard_ids = (rawDiscardIds || []).filter((/** @type {number} */ id) => id !== keep_id);
+        const division_ids = (rawDivisionIds || []).filter((/** @type {number} */ id) => id !== keep_id);
+        if (!keep_id || (discard_ids.length === 0 && division_ids.length === 0)) continue;
 
         // Run the whole group as a transaction so partial failures roll back
         await sql.begin(async (/** @type {any} */ sql) => {
@@ -265,10 +275,12 @@ export const actions = {
           // Apply field overrides on the keeper — only update fields that have values
           if (updates && Object.keys(updates).length > 0) {
             const u = updates;
-            if (u.company_name != null) await sql`UPDATE corp_companies SET company_name = ${u.company_name}, updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
-            if (u.industry     != null) await sql`UPDATE corp_companies SET industry     = ${u.industry},     updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
-            if (u.website      != null) await sql`UPDATE corp_companies SET website      = ${u.website},      updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
-            if (u.notes        != null) await sql`UPDATE corp_companies SET notes        = ${u.notes},        updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.company_name != null) await sql`UPDATE corp_companies SET company_name  = ${u.company_name},  updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.industry     != null) await sql`UPDATE corp_companies SET industry      = ${u.industry},      updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.company_size != null) await sql`UPDATE corp_companies SET company_size  = ${u.company_size},  updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.website      != null) await sql`UPDATE corp_companies SET website       = ${u.website},       updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.summary      != null) await sql`UPDATE corp_companies SET summary       = ${u.summary},       updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
+            if (u.notes        != null) await sql`UPDATE corp_companies SET notes         = ${u.notes},         updated_at = NOW() WHERE corp_company_id = ${keep_id}`;
           }
 
           // Get the canonical company name AFTER any update
@@ -311,8 +323,17 @@ export const actions = {
             }
           }
 
+          // Link divisions as children of the parent company
+          for (const division_id of division_ids) {
+            await sql`
+              UPDATE corp_companies SET
+                parent_company_id = ${keep_id},
+                updated_at        = NOW()
+              WHERE corp_company_id = ${division_id}
+            `;
+          }
+
           // Sync canonical name on all contacts already linked to keep_id
-          // (covers contacts that were linked before this merge)
           if (canonicalName) {
             await sql`
               UPDATE corp_contacts SET

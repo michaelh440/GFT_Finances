@@ -19,6 +19,7 @@ export async function load({ locals }) {
       FROM corp_contacts
       WHERE email IS NOT NULL AND TRIM(email) != ''
         AND LOWER(TRIM(email)) NOT LIKE '%placeholder.local%'
+        AND (is_active = true OR is_active IS NULL)
       GROUP BY LOWER(TRIM(email))
       HAVING COUNT(*) > 1
     ),
@@ -32,6 +33,7 @@ export async function load({ locals }) {
       WHERE first_name IS NOT NULL AND last_name IS NOT NULL
         AND phone IS NOT NULL
         AND TRIM(phone) NOT IN ('', '0', '111111111')
+        AND (is_active = true OR is_active IS NULL)
       GROUP BY
         LOWER(TRIM(first_name)),
         LOWER(TRIM(last_name)),
@@ -118,7 +120,12 @@ export const actions = {
       let merged = 0;
 
       for (const m of merges) {
-        const { keep_id, discard_ids, updates } = m;
+        const { keep_id, discard_ids: rawDiscardIds, previous_ids: rawPreviousIds, updates } = m;
+
+        // Safety: never discard/previous the keep contact itself
+        const discard_ids = (rawDiscardIds || []).filter((/** @type {number} */ id) => id !== keep_id);
+        const previous_ids = (rawPreviousIds || []).filter((/** @type {number} */ id) => id !== keep_id);
+        if (!keep_id || (discard_ids.length === 0 && previous_ids.length === 0 && (!updates || Object.keys(updates).length === 0))) continue;
 
         // ── Fetch the canonical contact's current state ───────────────────
         const canonicalRows = await sql`
@@ -191,6 +198,44 @@ export const actions = {
           `;
           await sql`
             DELETE FROM corp_contacts WHERE corp_contact_id = ${discard_id}
+          `;
+        }
+
+        // ── Process "previous" contacts — save as history, reassign engagements, mark inactive
+        for (const prev_id of previous_ids) {
+          const prevRows = await sql`
+            SELECT company_name, email, phone, corp_company_id FROM corp_contacts
+            WHERE corp_contact_id = ${prev_id}
+          `;
+          const prev = prevRows[0];
+          if (!prev) continue;
+
+          // Save as history entry on the keep contact
+          await sql`
+            INSERT INTO corp_contact_history
+              (corp_contact_id, company_name, email, phone, notes, corp_company_id)
+            VALUES (
+              ${keep_id},
+              ${prev.company_name ?? null},
+              ${prev.email ?? null},
+              ${prev.phone ?? null},
+              ${'Previous contact details from ID ' + prev_id},
+              ${prev.corp_company_id ?? null}
+            )
+          `;
+
+          // Reassign engagements to the keep contact
+          await sql`
+            UPDATE corp_engagements
+            SET corp_contact_id = ${keep_id}, updated_at = NOW()
+            WHERE corp_contact_id = ${prev_id}
+          `;
+
+          // Mark the contact as inactive (previous) rather than deleting
+          await sql`
+            UPDATE corp_contacts
+            SET is_active = false, updated_at = NOW()
+            WHERE corp_contact_id = ${prev_id}
           `;
         }
 
