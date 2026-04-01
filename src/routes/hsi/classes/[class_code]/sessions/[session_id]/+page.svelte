@@ -36,7 +36,7 @@
 	import { resolve } from '$app/paths';
 	import { canDataEntry } from '$lib/permissions';
 
-	/** @type {{ classInfo: ClassInfo|null, session: Session|null, students: Student[], totalRevenue: number, user: any }} */
+	/** @type {{ classInfo: ClassInfo|null, session: Session|null, students: Student[], totalRevenue: number, user: any, canSeePII: boolean }} */
 	export let data;
 
 	$: user = data.user;
@@ -44,6 +44,10 @@
 	$: session = data.session;
 	$: students = data.students;
 	$: totalRevenue = data.totalRevenue;
+	$: canSeePII = data.canSeePII;
+
+	// PII masking — starts masked, resets on every navigation
+	let showPII = false;
 
 	/**
 	 * @param {number} amount
@@ -121,12 +125,18 @@
 				</div>
 				<div class="info-item">
 					<span class="info-label">Start Date</span>
-					<span class="info-value">{formatDate(session.start_date)}</span>
+					<span class="info-value">
+						{formatDate(session.start_date)}
+						{#if session.start_time}<span class="time-value"> {session.start_time}</span>{/if}
+					</span>
 				</div>
 				{#if session.end_date}
 					<div class="info-item">
 						<span class="info-label">End Date</span>
-						<span class="info-value">{formatDate(session.end_date)}</span>
+						<span class="info-value">
+							{formatDate(session.end_date)}
+							{#if session.end_time}<span class="time-value"> {session.end_time}</span>{/if}
+						</span>
 					</div>
 				{/if}
 				<div class="info-item">
@@ -176,7 +186,14 @@
 
 		<!-- Students Table -->
 		<div class="section">
-			<h2>Registered Students</h2>
+			<div class="section-header-row">
+				<h2>Registered Students</h2>
+				{#if canSeePII}
+					<button class="btn-unmask" on:click={() => showPII = !showPII}>
+						{showPII ? 'Hide PII' : 'Show PII'}
+					</button>
+				{/if}
+			</div>
 			{#if students.length === 0}
 				<p class="empty-state">No students registered for this session.</p>
 			{:else}
@@ -197,8 +214,8 @@
 								<td class="student-name">
 									<a href={resolve(`/hsi/students/${student.student_id}`)}>{student.last_name}, {student.first_name}</a>
 								</td>
-								<td>{student.email || '—'}</td>
-								<td>{student.phone || '—'}</td>
+								<td>{(showPII ? student.email : student.email_masked) || '—'}</td>
+								<td>{(showPII ? student.phone : student.phone_masked) || '—'}</td>
 								<td>{formatDate(student.registration_date)}</td>
 								<td class="col-right">{formatCurrency(student.amount_paid)}</td>
 								<td>
@@ -329,6 +346,7 @@
 		font-size: 0.95rem;
 		color: #1a202c;
 	}
+	.time-value { color: #6b7280; font-size: 0.85rem; }
 
 	.code {
 		font-family: monospace;
@@ -391,6 +409,25 @@
 		border-radius: 0.5rem;
 		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 	}
+	.section-header-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+	.section-header-row h2 { margin: 0; }
+	.btn-unmask {
+		padding: 0.4rem 0.85rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		background: white;
+		color: #374151;
+		font-size: 0.8rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+	.btn-unmask:hover { background: #f3f4f6; border-color: #3b82f6; color: #3b82f6; }
 
 	table {
 		width: 100%;

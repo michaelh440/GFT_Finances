@@ -8,6 +8,10 @@
 	export let form;
 
 	$: classInfo = data.classInfo;
+	$: CLASS_TYPES = data.workflow?.class_types ?? [];
+	$: STUDENT_TYPES = data.workflow?.student_types ?? [];
+	$: DURATION_UNITS = data.workflow?.duration_units ?? [];
+	$: tracks = data.tracks || [];
 
 	// Use form values (on validation error) or loaded data
 	$: class_name = form?.values?.class_name ?? classInfo?.class_name ?? '';
@@ -77,12 +81,9 @@
 						<label for="class_type">Class Type</label>
 						<select id="class_type" name="class_type" value={class_type}>
 							<option value="">— Select —</option>
-							<option value="8 week class">8 Week Class</option>
-							<option value="1 day workshop">1 Day Workshop</option>
-							<option value="intensive">Intensive</option>
-							<option value="private">Private</option>
-							<option value="audition">Audition</option>
-							<option value="conservatory">Conservatory</option>
+							{#each CLASS_TYPES as ct (ct.value)}
+								<option value={ct.value}>{ct.label}</option>
+							{/each}
 						</select>
 					</div>
 
@@ -90,10 +91,9 @@
 						<label for="student_type">Student Type</label>
 						<select id="student_type" name="student_type" value={student_type}>
 							<option value="">— Select —</option>
-							<option value="adult">Adult</option>
-							<option value="minor">Minor</option>
-							<option value="high school league">High School League</option>
-							<option value="child">Child</option>
+							{#each STUDENT_TYPES as st (st.value)}
+								<option value={st.value}>{st.label}</option>
+							{/each}
 						</select>
 					</div>
 
@@ -114,13 +114,16 @@
 
 					<div class="form-group">
 						<label for="track">Track</label>
-						<input
-							type="text"
-							id="track"
-							name="track"
-							value={track}
-							placeholder="e.g. Core Track, Musical Improv Track"
-						/>
+						{#if tracks.length > 0}
+							<select id="track" name="track" value={track}>
+								<option value="">— Select —</option>
+								{#each tracks as t (t.track_name)}
+									<option value={t.track_name}>{t.track_name}</option>
+								{/each}
+							</select>
+						{:else}
+							<input type="text" id="track" name="track" value={track} placeholder="e.g. Core Track" />
+						{/if}
 					</div>
 
 					<div class="form-group">
@@ -148,10 +151,9 @@
 							/>
 							<select id="duration_unit" name="duration_unit" value={duration_unit}>
 								<option value="">— Unit —</option>
-								<option value="minutes">Minutes</option>
-								<option value="hours">Hours</option>
-								<option value="days">Days</option>
-								<option value="weeks">Weeks</option>
+								{#each DURATION_UNITS as du (du.value)}
+									<option value={du.value}>{du.label}</option>
+								{/each}
 							</select>
 						</div>
 						<span class="help-text">Default duration for all sessions of this class.</span>

@@ -1,4 +1,4 @@
-<!-- src/routes/hsi/classes/[class_code]/sessions/[session_id]/edit/+page.svelte -->
+<!-- src/routes/hsi/classes/[class_code]/sessions/new/+page.svelte -->
 <script>
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
@@ -9,24 +9,23 @@
 	export let form;
 
 	$: classInfo = data.classInfo;
-	$: session = data.session;
 	$: teachers = data.teachers || [];
 	$: durationUnits = data.durationUnits || [];
 </script>
 
 <svelte:head>
-	<title>Edit {session ? session.session_name : 'Session'} | B&C Financial Tracker</title>
+	<title>New Session — {classInfo ? classInfo.class_name : 'Class'} | B&C Financial Tracker</title>
 </svelte:head>
 
 <div class="container">
-	{#if !classInfo || !session}
-		<div class="alert alert-error">Session not found.</div>
+	{#if !classInfo}
+		<div class="alert alert-error">Class not found.</div>
 		<a href={resolve('/hsi/classes')} class="btn-secondary">Back to Classes</a>
 	{:else}
 		<header>
 			<div>
-				<a href={resolve(`/hsi/classes/${classInfo.class_code}/sessions/${session.session_id}`)} class="breadcrumb">← Back to {session.session_name}</a>
-				<h1>Edit Session</h1>
+				<a href={resolve(`/hsi/classes/${classInfo.class_code}`)} class="breadcrumb">← Back to {classInfo.class_name}</a>
+				<h1>New Session</h1>
 			</div>
 		</header>
 
@@ -39,7 +38,10 @@
 				<div class="form-grid">
 					<div class="form-group">
 						<label for="session_name">Session Name *</label>
-						<input type="text" id="session_name" name="session_name" value={session.session_name} required class="input" />
+						<input type="text" id="session_name" name="session_name"
+							value={form?.session_name || ''}
+							placeholder="e.g. {classInfo.class_name} — Spring 2026"
+							required class="input" />
 					</div>
 
 					<div class="form-group">
@@ -47,7 +49,7 @@
 						<select id="teacher_id" name="teacher_id" class="input">
 							<option value="">— None —</option>
 							{#each teachers as teacher (teacher.teacher_id)}
-								<option value={teacher.teacher_id} selected={session.teacher_id === teacher.teacher_id}>
+								<option value={teacher.teacher_id}>
 									{teacher.last_name}, {teacher.first_name}
 								</option>
 							{/each}
@@ -56,37 +58,48 @@
 
 					<div class="form-group">
 						<label for="start_date">Start Date</label>
-						<input type="date" id="start_date" name="start_date" value={session.start_date || ''} class="input" />
+						<input type="date" id="start_date" name="start_date" value={form?.start_date || ''} class="input" />
 					</div>
 
 					<div class="form-group">
 						<label for="end_date">End Date</label>
-						<input type="date" id="end_date" name="end_date" value={session.end_date || ''} class="input" />
+						<input type="date" id="end_date" name="end_date" value={form?.end_date || ''} class="input" />
 					</div>
 
 					<div class="form-group">
 						<label for="start_time">Start Time</label>
-						<input type="time" id="start_time" name="start_time" value={session.start_time || ''} class="input" />
+						<input type="time" id="start_time" name="start_time" value={form?.start_time || ''} class="input" />
 					</div>
 
 					<div class="form-group">
 						<label for="end_time">End Time</label>
-						<input type="time" id="end_time" name="end_time" value={session.end_time || ''} class="input" />
+						<input type="time" id="end_time" name="end_time" value={form?.end_time || ''} class="input" />
 					</div>
 
 					<div class="form-group form-group-full-row">
 						<label for="location">Location</label>
-						<input type="text" id="location" name="location" value={session.location || ''} class="input" />
+						<input type="text" id="location" name="location" value={form?.location || ''} placeholder="e.g. Studio A" class="input" />
+					</div>
+
+					<div class="form-group">
+						<label for="price">Session Price</label>
+						<input type="number" id="price" name="price" value={form?.price || ''} min="0" step="0.01" placeholder="Leave blank to use class price" class="input" />
 					</div>
 
 					<div class="form-group">
 						<label for="duration_value">Duration</label>
 						<div class="duration-input">
-							<input type="number" id="duration_value" name="duration_value" value={session.duration_value || ''} min="1" placeholder={classInfo.duration_value ? String(classInfo.duration_value) : 'e.g. 8'} class="input" />
+							<input type="number" id="duration_value" name="duration_value"
+								value={form?.duration_value || ''} min="1"
+								placeholder={classInfo.duration_value ? String(classInfo.duration_value) : 'e.g. 8'}
+								class="input" />
 							<select id="duration_unit" name="duration_unit" class="input">
 								<option value="">— Unit —</option>
 								{#each durationUnits as du (du.value)}
-									<option value={du.value} selected={session.duration_unit === du.value}>{du.label}</option>
+									<option value={du.value}
+										selected={classInfo.duration_unit === du.value}>
+										{du.label}
+									</option>
 								{/each}
 							</select>
 						</div>
@@ -96,16 +109,9 @@
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label class="checkbox-label">
-						<input type="checkbox" name="is_active" checked={session.is_active} />
-						Active
-					</label>
-				</div>
-
 				<div class="form-actions">
-					<button type="submit" class="btn-primary">Save Changes</button>
-					<a href={resolve(`/hsi/classes/${classInfo.class_code}/sessions/${session.session_id}`)} class="btn-secondary">Cancel</a>
+					<button type="submit" class="btn-primary">Create Session</button>
+					<a href={resolve(`/hsi/classes/${classInfo.class_code}`)} class="btn-secondary">Cancel</a>
 				</div>
 			</form>
 		</div>
@@ -133,9 +139,6 @@
 	.duration-input { display: flex; gap: 0.5rem; }
 	.duration-input .input { flex: 1; }
 	.help-text { font-size: 0.75rem; color: #9ca3af; }
-
-	.checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 500; color: #374151; cursor: pointer; margin-bottom: 1.25rem; }
-	.checkbox-label input { width: 1rem; height: 1rem; cursor: pointer; }
 
 	.form-actions { display: flex; gap: 1rem; }
 	.btn-primary { background-color: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }

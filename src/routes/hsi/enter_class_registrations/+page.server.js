@@ -1,7 +1,9 @@
 // src/routes/hsi/enter_class_registrations/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+  requirePermission(locals.user, 'hsi', 'data_entry');
   try {
     const classes = await sql`
       SELECT class_code, class_name, track, standard_price
@@ -24,7 +26,8 @@ export const load = async () => {
 
 export const actions = {
   // Manual row entry
-  manual: async ({ request }) => {
+  manual: async ({ request, locals }) => {
+    requirePermission(locals.user, 'hsi', 'data_entry');
     const formData = await request.formData();
     const rowCount = parseInt((formData.get('row_count') || '').toString()) || 0;
 
@@ -78,36 +81,50 @@ export const actions = {
   },
 
   // CSV Step 1: Check for matches and session
-  csv_check: async ({ request }) => {
+  csv_check: async ({ request, locals }) => {
+    requirePermission(locals.user, 'hsi', 'data_entry');
     const formData = await request.formData();
     const csvData = (formData.get('csv_data') || '').toString();
     const classCode = (formData.get('csv_class_code') || '').toString();
     const classDate = (formData.get('csv_class_date') || '').toString();
+    const classTime = (formData.get('csv_class_time') || '').toString().trim() || null;
 
     if (!csvData || !classCode || !classDate) {
       return { success: false, error: 'CSV data, class, and class date are required.' };
     }
 
     try {
-      // Check if a session already exists for this class + start_date
+      // Check if a session already exists for this class + start_date + start_time
+      const timeFilter = classTime
+        ? sql`AND cs.start_time = ${classTime}`
+        : sql`AND cs.start_time IS NULL`;
+
       const existingSession = await sql`
-        SELECT session_id, session_name, start_date, end_date, instructor, location, price
-        FROM class_sessions
-        WHERE class_code = ${classCode}
-          AND start_date = ${classDate}
+        SELECT cs.session_id, cs.session_name, cs.start_date, cs.end_date,
+          cs.start_time, cs.end_time,
+          COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor,
+          cs.location, cs.price
+        FROM class_sessions cs
+        LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
+        WHERE cs.class_code = ${classCode}
+          AND cs.start_date = ${classDate}
+          ${timeFilter}
         LIMIT 1
       `;
 
       let sessionInfo = null;
       if (existingSession.length > 0) {
+        const es = existingSession[0];
         sessionInfo = {
-          session_id: existingSession[0].session_id,
-          session_name: existingSession[0].session_name,
-          start_date: existingSession[0].start_date?.toISOString().split('T')[0],
-          end_date: existingSession[0].end_date?.toISOString().split('T')[0],
-          instructor: existingSession[0].instructor,
-          location: existingSession[0].location,
-          price: Number(existingSession[0].price || 0),
+          session_id: es.session_id,
+          session_name: es.session_name,
+          start_date: es.start_date?.toISOString().split('T')[0],
+          end_date: es.end_date?.toISOString().split('T')[0],
+          start_time: es.start_time || null,
+          end_time: es.end_time || null,
+          instructor: es.instructor,
+          location: es.location,
+          price: Number(es.price || 0),
           exists: true
         };
       }
@@ -304,11 +321,13 @@ export const actions = {
   },
 
   // CSV Step 2: Confirm and save with user decisions
-  csv_confirm: async ({ request }) => {
+  csv_confirm: async ({ request, locals }) => {
+    requirePermission(locals.user, 'hsi', 'data_entry');
     const formData = await request.formData();
     const decisionsJson = (formData.get('decisions') || '').toString();
     const classCode = (formData.get('csv_class_code') || '').toString();
     const classDate = (formData.get('csv_class_date') || '').toString();
+    const classTime = (formData.get('csv_class_time') || '').toString().trim() || null;
     const sessionName = (formData.get('session_name') || '').toString();
     const existingSessionId = (formData.get('existing_session_id') || '').toString();
 
@@ -338,8 +357,8 @@ export const actions = {
         const finalName = sessionName || `${classDate} ${classCode}`;
 
         const newSession = await sql`
-          INSERT INTO class_sessions (class_code, session_name, start_date, price)
-          VALUES (${classCode}, ${finalName}, ${classDate}, ${defaultPrice})
+          INSERT INTO class_sessions (class_code, session_name, start_date, start_time, price)
+          VALUES (${classCode}, ${finalName}, ${classDate}, ${classTime}, ${defaultPrice})
           RETURNING session_id
         `;
         sessionId = newSession[0].session_id;
@@ -388,16 +407,17 @@ export const actions = {
                 await sql`UPDATE students SET first_name = ${csv.first_name}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
               } else if (field === 'last_name') {
                 await sql`UPDATE students SET last_name = ${csv.last_name}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
-              } else if (field === 'phone') {
+              } else if (field === 'phone' && csv.phone) {
                 await sql`UPDATE students SET phone = ${csv.phone}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
               }
             }
           }
 
-          // Fill in AcctID and address if empty
+          // Fill in AcctID, phone, and address if empty
           await sql`
             UPDATE students SET
               vbo_account_id = CASE WHEN (vbo_account_id IS NULL OR vbo_account_id = '') AND ${csv.acct_id || ''} != '' THEN ${csv.acct_id} ELSE vbo_account_id END,
+              phone = CASE WHEN (phone IS NULL OR phone = '') AND ${csv.phone || ''} != '' THEN ${csv.phone} ELSE phone END,
               mobile_phone = CASE WHEN (mobile_phone IS NULL OR mobile_phone = '') AND ${csv.mobile_phone || ''} != '' THEN ${csv.mobile_phone} ELSE mobile_phone END,
               address_line1 = CASE WHEN (address_line1 IS NULL OR address_line1 = '') AND ${csv.address_line1 || ''} != '' THEN ${csv.address_line1} ELSE address_line1 END,
               address_line2 = CASE WHEN (address_line2 IS NULL OR address_line2 = '') AND ${csv.address_line2 || ''} != '' THEN ${csv.address_line2} ELSE address_line2 END,
@@ -424,16 +444,17 @@ export const actions = {
                 await sql`UPDATE students SET first_name = ${csv.first_name}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
               } else if (field === 'last_name') {
                 await sql`UPDATE students SET last_name = ${csv.last_name}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
-              } else if (field === 'phone') {
+              } else if (field === 'phone' && csv.phone) {
                 await sql`UPDATE students SET phone = ${csv.phone}, updated_at = CURRENT_TIMESTAMP WHERE student_id = ${studentId}`;
               }
             }
           }
 
-          // Fill in AcctID and address if empty
+          // Fill in AcctID, phone, and address if empty
           await sql`
             UPDATE students SET
               vbo_account_id = CASE WHEN (vbo_account_id IS NULL OR vbo_account_id = '') AND ${csv.acct_id || ''} != '' THEN ${csv.acct_id} ELSE vbo_account_id END,
+              phone = CASE WHEN (phone IS NULL OR phone = '') AND ${csv.phone || ''} != '' THEN ${csv.phone} ELSE phone END,
               mobile_phone = CASE WHEN (mobile_phone IS NULL OR mobile_phone = '') AND ${csv.mobile_phone || ''} != '' THEN ${csv.mobile_phone} ELSE mobile_phone END,
               address_line1 = CASE WHEN (address_line1 IS NULL OR address_line1 = '') AND ${csv.address_line1 || ''} != '' THEN ${csv.address_line1} ELSE address_line1 END,
               address_line2 = CASE WHEN (address_line2 IS NULL OR address_line2 = '') AND ${csv.address_line2 || ''} != '' THEN ${csv.address_line2} ELSE address_line2 END,

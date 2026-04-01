@@ -38,13 +38,13 @@ export const load = async ({ params, locals }) => {
 
 		// Get all sessions for this class with registration counts and revenue
 		const sessions = await sql`
-			SELECT 
+			SELECT
 				cs.session_id,
 				cs.session_name,
 				cs.class_code,
 				cs.start_date,
 				cs.end_date,
-				cs.instructor,
+				COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor,
 				cs.location,
 				cs.duration_value,
 				cs.duration_unit,
@@ -54,10 +54,11 @@ export const load = async ({ params, locals }) => {
 				COUNT(r.registration_id) AS registration_count,
 				COALESCE(SUM(r.amount_paid), 0) AS session_revenue
 			FROM class_sessions cs
+			LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
 			LEFT JOIN registrations r ON r.session_id = cs.session_id
 			WHERE cs.class_code = ${class_code}
 			GROUP BY cs.session_id, cs.session_name, cs.class_code, cs.start_date,
-				cs.end_date, cs.instructor, cs.location, cs.duration_value, cs.duration_unit, cs.is_active, cs.created_at
+				cs.end_date, t.first_name, t.last_name, cs.instructor, cs.location, cs.duration_value, cs.duration_unit, cs.is_active, cs.created_at
 			ORDER BY cs.start_date DESC
 		`;
 

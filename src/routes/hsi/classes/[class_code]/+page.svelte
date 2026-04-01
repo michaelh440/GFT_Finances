@@ -162,7 +162,12 @@
 
 		<!-- Sessions Table -->
 		<div class="section">
-			<h2>Class Sessions</h2>
+			<div class="section-header-row">
+				<h2>Class Sessions</h2>
+				{#if canDataEntry(user, 'hsi')}
+					<a href={resolve(`/hsi/classes/${classInfo.class_code}/sessions/new`)} class="btn-primary-sm">Add Session</a>
+				{/if}
+			</div>
 			{#if sessions.length === 0}
 				<p class="empty-state">No sessions found for this class.</p>
 			{:else}
@@ -216,6 +221,10 @@
 	.header-actions { display: flex; gap: 0.75rem; align-items: center; padding-top: 1.5rem; }
 	.btn-primary { background-color: #3b82f6; color: white; padding: 0.6rem 1.25rem; border-radius: 0.5rem; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; }
 	.btn-primary:hover { background-color: #2563eb; }
+	.btn-primary-sm { background-color: #3b82f6; color: white; padding: 0.4rem 1rem; border-radius: 0.375rem; text-decoration: none; font-weight: 500; font-size: 0.85rem; }
+	.btn-primary-sm:hover { background-color: #2563eb; }
+	.section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+	.section-header-row h2 { margin: 0; }
 	.info-card { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); margin-bottom: 1.5rem; }
 	.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 	.info-item { display: flex; flex-direction: column; gap: 0.25rem; }

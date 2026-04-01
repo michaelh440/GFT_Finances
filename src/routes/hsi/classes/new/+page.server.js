@@ -6,13 +6,27 @@ import { requirePermission } from '$lib/guards';
 export const load = async ({ locals }) => {
 	requirePermission(locals.user, 'hsi', 'data_entry');
 
-	const tracks = await sql`
-		SELECT track_name FROM class_tracks
-		WHERE is_active = true
-		ORDER BY sort_order ASC, track_name ASC
-	`.catch(() => []);
+	const [tracks, workflowRows] = await Promise.all([
+		sql`
+			SELECT track_name FROM class_tracks
+			WHERE is_active = true
+			ORDER BY sort_order ASC, track_name ASC
+		`.catch(() => []),
+		sql`
+			SELECT category, value, label, sort_order
+			FROM class_workflow
+			WHERE is_active = true
+			ORDER BY category, sort_order, label
+		`.catch(() => []),
+	]);
 
-	return { tracks, user: locals.user };
+	const workflow = {
+		class_types: workflowRows.filter(r => r.category === 'class_type'),
+		student_types: workflowRows.filter(r => r.category === 'student_type'),
+		duration_units: workflowRows.filter(r => r.category === 'duration_unit'),
+	};
+
+	return { tracks, workflow, user: locals.user };
 };
 
 export const actions = {

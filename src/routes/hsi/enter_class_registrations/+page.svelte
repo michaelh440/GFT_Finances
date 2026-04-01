@@ -54,6 +54,7 @@
   // ---- CSV Upload State ----
   let csvClassCode = '';
   let csvClassDate = '';
+  let csvClassTime = '';
   /** @type {File|null} */
   let _csvFile = null;
   /** @type {any[]} */
@@ -530,6 +531,11 @@
             <input type="date" id="csvClassDate" bind:value={csvClassDate} class="input-date" required />
           </div>
 
+          <div class="config-group">
+            <label for="csvClassTime">Start Time:</label>
+            <input type="time" id="csvClassTime" bind:value={csvClassTime} class="input-time" />
+          </div>
+
           <div class="config-group config-group-wide">
             <label for="csvSessionName">Session Name:</label>
             <input type="text" id="csvSessionName" bind:value={sessionName} class="input-text" placeholder="e.g. Jan 2026 Level 1" />
@@ -592,6 +598,7 @@
           <input type="hidden" name="csv_data" value={JSON.stringify(csvParsed)} />
           <input type="hidden" name="csv_class_code" value={csvClassCode} />
           <input type="hidden" name="csv_class_date" value={csvClassDate} />
+          <input type="hidden" name="csv_class_time" value={csvClassTime} />
 
           <h3 class="preview-title">Preview ({csvParsed.length} students)</h3>
 
@@ -681,6 +688,7 @@
         }}>
           <input type="hidden" name="csv_class_code" value={csvClassCode} />
           <input type="hidden" name="csv_class_date" value={csvClassDate} />
+          <input type="hidden" name="csv_class_time" value={csvClassTime} />
           <input type="hidden" id="decisions-input" name="decisions" value="" />
           <input type="hidden" name="session_name" value={sessionName} />
           <input type="hidden" name="existing_session_id" value={existingSessionId || ''} />

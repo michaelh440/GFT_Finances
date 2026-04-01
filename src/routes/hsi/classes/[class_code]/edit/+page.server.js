@@ -1,8 +1,10 @@
 // src/routes/hsi/classes/[class_code]/edit/+page.server.js
 import sql from '$lib/db';
 import { fail, redirect } from '@sveltejs/kit';
+import { requirePermission } from '$lib/guards';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, locals }) => {
+	requirePermission(locals.user, 'hsi', 'data_entry');
 	const { class_code } = params;
 
 	try {
@@ -27,11 +29,30 @@ export const load = async ({ params }) => {
 			return { classInfo: null };
 		}
 
+		const workflowRows = await sql`
+			SELECT category, value, label, sort_order
+			FROM class_workflow
+			WHERE is_active = true
+			ORDER BY category, sort_order, label
+		`.catch(() => []);
+
+		const tracks = await sql`
+			SELECT track_name FROM class_tracks
+			WHERE is_active = true
+			ORDER BY sort_order ASC, track_name ASC
+		`.catch(() => []);
+
 		return {
 			classInfo: {
 				...classInfo,
 				standard_price: Number(classInfo.standard_price)
-			}
+			},
+			tracks,
+			workflow: {
+				class_types: workflowRows.filter(r => r.category === 'class_type'),
+				student_types: workflowRows.filter(r => r.category === 'student_type'),
+				duration_units: workflowRows.filter(r => r.category === 'duration_unit'),
+			},
 		};
 	} catch (error) {
 		console.error('Error loading class for edit:', error);
@@ -40,7 +61,8 @@ export const load = async ({ params }) => {
 };
 
 export const actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
+		requirePermission(locals.user, 'hsi', 'data_entry');
 		const { class_code } = params;
 		const formData = await request.formData();
 

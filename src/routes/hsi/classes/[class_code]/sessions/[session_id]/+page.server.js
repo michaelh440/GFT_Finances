@@ -1,10 +1,28 @@
 // src/routes/hsi/classes/[class_code]/sessions/[session_id]/+page.server.js
 import sql from '$lib/db';
 import { requirePermission } from '$lib/guards';
+import { hasPermission } from '$lib/permissions';
+
+/** @param {string|null} email */
+function maskEmail(email) {
+	if (!email) return null;
+	const [local, domain] = email.split('@');
+	if (!domain) return '***';
+	return local[0] + '***@' + domain;
+}
+
+/** @param {string|null} phone */
+function maskPhone(phone) {
+	if (!phone) return null;
+	const digits = phone.replace(/\D/g, '');
+	if (digits.length <= 4) return '***';
+	return '***-***-' + digits.slice(-4);
+}
 
 export const load = async ({ params, locals }) => {
 	requirePermission(locals.user, 'hsi', 'viewer');
 	const { class_code, session_id } = params;
+	const canSeePII = hasPermission(locals.user, 'hsi', 'data_entry');
 
 	try {
 		// Get the class info
@@ -31,21 +49,25 @@ export const load = async ({ params, locals }) => {
 
 		// Get the session info
 		const [session] = await sql`
-			SELECT 
-				session_id,
-				session_name,
-				class_code,
-				start_date,
-				end_date,
-				instructor,
-				location,
-				duration_value,
-				duration_unit,
-				is_active,
-				created_at
-			FROM class_sessions
-			WHERE session_id = ${session_id}
-				AND class_code = ${class_code}
+			SELECT
+				cs.session_id,
+				cs.session_name,
+				cs.class_code,
+				cs.start_date,
+				cs.end_date,
+				cs.start_time,
+				cs.end_time,
+				cs.teacher_id,
+				COALESCE(t.first_name || ' ' || t.last_name, cs.instructor) AS instructor,
+				cs.location,
+				cs.duration_value,
+				cs.duration_unit,
+				cs.is_active,
+				cs.created_at
+			FROM class_sessions cs
+			LEFT JOIN teachers t ON cs.teacher_id = t.teacher_id
+			WHERE cs.session_id = ${session_id}
+				AND cs.class_code = ${class_code}
 		`;
 
 		if (!session) {
@@ -62,13 +84,13 @@ export const load = async ({ params, locals }) => {
 
 		// Get registered students for this session
 		const students = await sql`
-			SELECT 
+			SELECT
 				r.registration_id,
 				r.student_id,
 				s.first_name,
 				s.last_name,
 				s.email,
-				s.phone,
+				COALESCE(NULLIF(s.phone, ''), s.mobile_phone) AS phone,
 				r.amount_paid,
 				r.registration_date,
 				r.class_date
@@ -88,10 +110,15 @@ export const load = async ({ params, locals }) => {
 			session,
 			students: students.map((s) => ({
 				...s,
+				email: canSeePII ? s.email : maskEmail(s.email),
+				phone: canSeePII ? s.phone : maskPhone(s.phone),
+				email_masked: maskEmail(s.email),
+				phone_masked: maskPhone(s.phone),
 				amount_paid: Number(s.amount_paid)
 			})),
 			totalRevenue,
-			user: locals.user
+			user: locals.user,
+			canSeePII,
 		};
 	} catch (error) {
 		console.error('Error loading session detail:', error);
