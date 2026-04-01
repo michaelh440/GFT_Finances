@@ -1,6 +1,6 @@
 <!-- src/routes/shows/reports/+page.svelte -->
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import Chart from 'chart.js/auto';
 
@@ -31,8 +31,10 @@
 	 * @property {number} revenue
 	 */
 
-	/** @type {{ shows: ShowItem[], summaries: Summary[] }} */
+	/** @type {{ shows: ShowItem[], summaries: Summary[], pastReports: any[] }} */
 	export let data;
+	/** @type {any} */
+	export let form;
 
 	let selectedShowCode = 'all';
 	let selectedFormat = 'all';
@@ -41,6 +43,26 @@
 	/** @type {Record<string, Chart>} */
 	let charts = {};
 	let mounted = false;
+	let generating = false;
+	let reportTitle = 'GFT Show Report';
+
+	// Revenue by item date range
+	let itemDateStart = '';
+	let itemDateEnd = '';
+
+	// PDF section toggles
+	let pdfIncludeMonthly = true;
+	let pdfInclude4Month = true;
+	let pdfIncludeYtd = true;
+	let pdfIncludeMoM = true;
+	let pdfIncludeItemRevenue = true;
+
+	// PDF section notes
+	let pdfNotesMonthly = '';
+	let pdfNotes4Month = '';
+	let pdfNotesYtd = '';
+	let pdfNotesMoM = '';
+	let pdfNotesItemRevenue = '';
 
 	// Year filter states
 	/** @type {number[]} */
@@ -56,6 +78,10 @@
 
 	onMount(() => {
 		mounted = true;
+	});
+	onDestroy(() => {
+		Object.values(charts).forEach((c) => c.destroy());
+		charts = {};
 	});
 
 	// Get unique filter values from data
@@ -82,7 +108,7 @@
 		if (filteredData && filteredData.length > 0) {
 			const years = [
 				...new Set(filteredData.map((/** @type {Summary} */ s) => s.summary_year))
-			].filter((y) => y >= 2023 && y <= 2027);
+			].filter((y) => y >= 2016 && y <= 2030);
 
 			availableYears = years.sort((a, b) => b - a);
 
@@ -120,6 +146,31 @@
 		selectedMonth4M,
 		selectedYears4M
 	);
+
+	// Initialize item date range to current year
+	$: if (!itemDateStart && !itemDateEnd && filteredData.length > 0) {
+		const now = new Date();
+		itemDateStart = `${now.getFullYear()}-01`;
+		itemDateEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+	}
+
+	// Revenue by item — aggregate filtered data within the selected date range
+	$: itemRevenueData = (() => {
+		if (!filteredData || !itemDateStart || !itemDateEnd) return [];
+		const startDate = itemDateStart + '-01';
+		const endDate = itemDateEnd + '-28';
+		/** @type {Record<string, { show_name: string, revenue: number, tickets: number }>} */
+		const byShow = {};
+		for (const s of filteredData) {
+			if (s.summary_month < startDate || s.summary_month > endDate) continue;
+			if (!byShow[s.show_code]) {
+				byShow[s.show_code] = { show_name: s.show_name || s.show_code, revenue: 0, tickets: 0 };
+			}
+			byShow[s.show_code].revenue += s.revenue;
+			byShow[s.show_code].tickets += s.tickets_sold;
+		}
+		return Object.values(byShow).filter((d) => d.revenue > 0).sort((a, b) => b.revenue - a.revenue);
+	})();
 
 	/**
 	 * @param {string} showCode
@@ -217,7 +268,7 @@
 			const date = new Date(summary.summary_month + 'T12:00:00');
 			const month = date.getMonth();
 
-			if (year < 2023 || year > 2027) return;
+			if (year < 2016 || year > 2030) return;
 
 			if (!dataByYear[year]) {
 				dataByYear[year] = Array(12)
@@ -479,6 +530,201 @@
 		}).format(value);
 	}
 
+	/** @param {any} d */
+	function formatDate(d) {
+		if (!d) return '—';
+		const x = new Date(d + (d.includes('T') ? '' : 'T12:00:00'));
+		return isNaN(x.getTime()) ? '—' : x.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+	}
+	/** @param {any} d */
+	function formatDateTime(d) {
+		if (!d) return '—';
+		const x = new Date(d);
+		return isNaN(x.getTime()) ? '—' : x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+	}
+	/** @param {any} b */
+	function formatBytes(b) {
+		if (!b) return '—';
+		if (b < 1024) return b + ' B';
+		if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+		return (b / (1024 * 1024)).toFixed(1) + ' MB';
+	}
+
+	async function generateAndSavePDF() {
+		generating = true;
+		try {
+			// Load jsPDF on demand
+			if (!window.jspdf) {
+				const cdns = [
+					'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
+					'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+					'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+				];
+				let loaded = false;
+				for (const src of cdns) {
+					try {
+						await new Promise((resolve, reject) => {
+							const s = document.createElement('script');
+							s.src = src;
+							s.onload = resolve;
+							s.onerror = () => reject(new Error(`Failed to load from ${src}`));
+							document.head.appendChild(s);
+						});
+						if (window.jspdf) { loaded = true; break; }
+					} catch { /* try next CDN */ }
+				}
+				if (!loaded) throw new Error('Could not load jsPDF from any CDN. Check your network/firewall.');
+			}
+			// @ts-ignore
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'letter' });
+			const pageW = doc.internal.pageSize.getWidth();
+			const pageH = doc.internal.pageSize.getHeight();
+			const margin = 50;
+			const contentW = pageW - margin * 2;
+			let y = margin;
+
+			// Title
+			doc.setFontSize(22);
+			doc.setFont('helvetica', 'bold');
+			doc.text(reportTitle, margin, y + 22);
+			y += 40;
+
+			// Subtitle / metadata
+			doc.setFontSize(11);
+			doc.setFont('helvetica', 'normal');
+			doc.setTextColor(100);
+			const filterDesc = [
+				selectedShowCode !== 'all' ? `Show: ${data.shows.find(s => s.show_code === selectedShowCode)?.show_name || selectedShowCode}` : null,
+				selectedFormat !== 'all' ? `Format: ${selectedFormat}` : null,
+				selectedAudience !== 'all' ? `Audience: ${selectedAudience}` : null,
+				selectedDay !== 'all' ? `Day: ${selectedDay}` : null,
+			].filter(Boolean).join(' | ') || 'All Shows';
+			doc.text(filterDesc, margin, y);
+			y += 14;
+			doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, margin, y);
+			doc.setTextColor(0);
+			y += 20;
+			doc.setDrawColor(200);
+			doc.line(margin, y, pageW - margin, y);
+			y += 20;
+
+			// Sections with their charts and notes
+			const sections = [
+				{ include: pdfIncludeMonthly, title: 'Monthly Analysis', notes: pdfNotesMonthly, charts: [
+					{ id: 'monthlyTicketsChart', title: 'Monthly Tickets Sold by Year' },
+					{ id: 'monthlyRevenueChart', title: 'Monthly Revenue by Year' },
+				]},
+				{ include: pdfInclude4Month, title: '4-Month Rolling Window', notes: pdfNotes4Month, charts: [
+					{ id: 'fourMonthTicketsChart', title: '4-Month Rolling Tickets Sold' },
+					{ id: 'fourMonthRevenueChart', title: '4-Month Rolling Revenue' },
+				]},
+				{ include: pdfIncludeYtd, title: 'Year-to-Date Comparison', notes: pdfNotesYtd, charts: [
+					{ id: 'ytdTicketsChart', title: 'Year-to-Date Cumulative Tickets' },
+					{ id: 'ytdRevenueChart', title: 'Year-to-Date Cumulative Revenue' },
+				]},
+				{ include: pdfIncludeMoM, title: 'Month over Month Growth', notes: pdfNotesMoM, charts: [
+					{ id: 'momTicketsChart', title: `Month over Month Ticket Growth - ${selectedYearMoM}` },
+					{ id: 'momRevenueChart', title: `Month over Month Revenue Growth - ${selectedYearMoM}` },
+				]},
+				{ include: pdfIncludeItemRevenue, title: `Revenue by Show (${itemDateStart || '?'} – ${itemDateEnd || '?'})`, notes: pdfNotesItemRevenue, charts: [
+					{ id: 'itemRevenueChart' },
+				]},
+			];
+
+			for (const section of sections) {
+				if (!section.include) continue;
+
+				// Section header
+				if (y + 40 > pageH - margin) { doc.addPage(); y = margin; }
+				doc.setFontSize(15);
+				doc.setFont('helvetica', 'bold');
+				doc.text(section.title, margin, y);
+				y += 8;
+				doc.setDrawColor(180);
+				doc.line(margin, y, pageW - margin, y);
+				y += 12;
+
+				// Charts — render side by side in pairs
+				const chartW = (contentW - 10) / 2;
+				const chartH = 180;
+				for (let i = 0; i < section.charts.length; i += 2) {
+					if (y + chartH + 10 > pageH - margin) { doc.addPage(); y = margin; }
+					const left = section.charts[i];
+					const right = section.charts[i + 1];
+					const cvL = left ? /** @type {HTMLCanvasElement | null} */ (document.getElementById(left.id)) : null;
+					const cvR = right ? /** @type {HTMLCanvasElement | null} */ (document.getElementById(right.id)) : null;
+					if (cvL) doc.addImage(cvL.toDataURL('image/png', 1.0), 'PNG', margin, y, chartW, chartH);
+					if (cvR) doc.addImage(cvR.toDataURL('image/png', 1.0), 'PNG', margin + chartW + 10, y, chartW, chartH);
+					y += chartH + 15;
+				}
+
+				// Section notes (below charts)
+				if (section.notes.trim()) {
+					doc.setFontSize(10);
+					doc.setFont('helvetica', 'normal');
+					doc.setTextColor(80);
+					const noteText = section.notes.trim();
+					const noteLines = typeof doc.splitTextToSize === 'function'
+						? doc.splitTextToSize(noteText, contentW)
+						: noteText.split('\n');
+					for (const line of noteLines) {
+						if (y + 14 > pageH - margin) { doc.addPage(); y = margin; }
+						doc.text(String(line), margin, y);
+						y += 14;
+					}
+					doc.setTextColor(0);
+				}
+
+				// Extra space before next section
+				y += 25;
+			}
+
+			/** @type {string[]} */
+			const chartIds = sections.filter(s => s.include).flatMap(s => s.charts.map(c => c.id));
+
+			// Convert to base64 and trigger download
+			const pdfBase64 = doc.output('datauristring').split(',')[1];
+			doc.save(reportTitle.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+
+			// Save to server
+			const fd = new FormData();
+			fd.append('report_title', reportTitle);
+			// Derive date range from the actual data
+			const allMonths = filteredData.map(s => s.summary_month).sort();
+			const earliest = allMonths[0]?.slice(0, 7) || `${new Date().getFullYear()}-01`;
+			const latest = allMonths[allMonths.length - 1]?.slice(0, 7) || `${new Date().getFullYear()}-12`;
+			fd.append('date_range_start', earliest);
+			fd.append('date_range_end', latest);
+			fd.append('filters', JSON.stringify({
+				show: selectedShowCode, format: selectedFormat,
+				audience: selectedAudience, day: selectedDay,
+				yearsMonthly: selectedYearsMonthly, yearMoM: selectedYearMoM,
+			}));
+			fd.append('charts', JSON.stringify(chartIds.filter(id => document.getElementById(id))));
+			fd.append('pdf_base64', pdfBase64);
+
+			const resp = await fetch('?/generate_pdf', {
+				method: 'POST',
+				body: fd,
+				headers: { 'x-sveltekit-action': 'true' },
+			});
+			const text = await resp.text();
+			if (resp.ok && text.includes('"success"')) {
+				alert('Report saved successfully!');
+				window.location.reload();
+			} else {
+				console.warn('Save response:', resp.status, text.slice(0, 500));
+				alert('PDF downloaded but may not have saved to database.');
+			}
+		} catch (/** @type {any} */ err) {
+			console.error('PDF error:', err);
+			alert('Error generating PDF: ' + (err?.message || err?.toString() || JSON.stringify(err)));
+		} finally {
+			generating = false;
+		}
+	}
+
 	/**
 	 * @param {string} canvasId
 	 * @param {import('chart.js').ChartConfiguration} config
@@ -695,6 +941,49 @@
 			});
 		}, 100);
 	}
+
+	// Revenue by Item chart — separate reactive block so it updates on date range change
+	$: if (browser && mounted && itemRevenueData.length > 0) {
+		setTimeout(() => {
+			createChart('itemRevenueChart', {
+				type: 'bar',
+				data: {
+					labels: itemRevenueData.map((d) => d.show_name),
+					datasets: [{
+						label: 'Revenue',
+						data: itemRevenueData.map((d) => d.revenue),
+						backgroundColor: '#3b82f6'
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					indexAxis: 'y',
+					plugins: {
+						legend: { display: false },
+						title: { display: true, text: 'Revenue by Show' },
+						tooltip: {
+							callbacks: {
+								label: function (/** @type {any} */ context) {
+									return formatCurrency(context.parsed.x);
+								}
+							}
+						}
+					},
+					scales: {
+						x: {
+							beginAtZero: true,
+							ticks: {
+								callback: function (/** @type {any} */ value) {
+									return formatCurrency(value);
+								}
+							}
+						}
+					}
+				}
+			});
+		}, 120);
+	}
 </script>
 
 <svelte:head>
@@ -707,8 +996,61 @@
 			<h1>Live Show Reports</h1>
 			<p class="subtitle">Visual analysis of show performance and trends</p>
 		</div>
-		<!--a href="/shows" class="btn-secondary">Back to Shows</a-->
 	</header>
+
+	{#if form?.success}
+		<div class="alert alert-success">{form.message}</div>
+	{:else if form?.error}
+		<div class="alert alert-error">{form.error}</div>
+	{/if}
+
+	<!-- PDF Generation -->
+	<div class="pdf-panel">
+		<div class="pdf-panel-row">
+			<div class="pdf-title-group">
+				<label for="reportTitle">Report Title</label>
+				<input type="text" id="reportTitle" bind:value={reportTitle}
+					placeholder="e.g. Q1 2026 Show Performance" class="pdf-title-input" />
+			</div>
+			<button class="btn-generate" on:click={generateAndSavePDF}
+				disabled={generating || !mounted || !filteredData.length || (!pdfIncludeMonthly && !pdfInclude4Month && !pdfIncludeYtd && !pdfIncludeMoM && !pdfIncludeItemRevenue)}>
+				{generating ? 'Generating...' : 'Generate & Download PDF'}
+			</button>
+		</div>
+		<div class="pdf-sections">
+			<span class="pdf-sections-label">Include in PDF:</span>
+			<div class="pdf-section-item">
+				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMonthly} /> Monthly Analysis</label>
+				{#if pdfIncludeMonthly}
+					<textarea class="pdf-notes" bind:value={pdfNotesMonthly} placeholder="Add notes for this section..." rows="2"></textarea>
+				{/if}
+			</div>
+			<div class="pdf-section-item">
+				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfInclude4Month} /> 4-Month Rolling</label>
+				{#if pdfInclude4Month}
+					<textarea class="pdf-notes" bind:value={pdfNotes4Month} placeholder="Add notes for this section..." rows="2"></textarea>
+				{/if}
+			</div>
+			<div class="pdf-section-item">
+				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeYtd} /> Year-to-Date</label>
+				{#if pdfIncludeYtd}
+					<textarea class="pdf-notes" bind:value={pdfNotesYtd} placeholder="Add notes for this section..." rows="2"></textarea>
+				{/if}
+			</div>
+			<div class="pdf-section-item">
+				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMoM} /> Month over Month</label>
+				{#if pdfIncludeMoM}
+					<textarea class="pdf-notes" bind:value={pdfNotesMoM} placeholder="Add notes for this section..." rows="2"></textarea>
+				{/if}
+			</div>
+			<div class="pdf-section-item">
+				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeItemRevenue} /> Revenue by Show</label>
+				{#if pdfIncludeItemRevenue}
+					<textarea class="pdf-notes" bind:value={pdfNotesItemRevenue} placeholder="Add notes for this section..." rows="2"></textarea>
+				{/if}
+			</div>
+		</div>
+	</div>
 
 	<!-- Global Filters -->
 	<div class="filter-section">
@@ -844,6 +1186,20 @@
 			</div>
 		</section>
 
+		<!-- YTD Section -->
+		<section class="chart-section">
+			<h2 class="section-title">Year-to-Date Comparison</h2>
+
+			<div class="charts-grid">
+				<div class="chart-card">
+					<canvas id="ytdTicketsChart"></canvas>
+				</div>
+				<div class="chart-card">
+					<canvas id="ytdRevenueChart"></canvas>
+				</div>
+			</div>
+		</section>
+
 		<!-- Month over Month Section -->
 		<section class="chart-section">
 			<h2 class="section-title">Month over Month Growth</h2>
@@ -869,21 +1225,65 @@
 			</div>
 		</section>
 
-		<!-- YTD Section -->
+		<!-- Revenue by Item Section -->
 		<section class="chart-section">
-			<h2 class="section-title">Year-to-Date Comparison</h2>
+			<h2 class="section-title">Revenue by Show</h2>
 
-			<div class="charts-grid">
-				<div class="chart-card">
-					<canvas id="ytdTicketsChart"></canvas>
-				</div>
-				<div class="chart-card">
-					<canvas id="ytdRevenueChart"></canvas>
+			<div class="filter-section">
+				<div class="filter-row">
+					<div class="filter-group">
+						<label for="itemDateStart">From:</label>
+						<input type="month" id="itemDateStart" bind:value={itemDateStart} class="filter-input" />
+					</div>
+					<div class="filter-group">
+						<label for="itemDateEnd">To:</label>
+						<input type="month" id="itemDateEnd" bind:value={itemDateEnd} class="filter-input" />
+					</div>
 				</div>
 			</div>
+
+			{#if itemRevenueData.length > 0}
+				<div class="chart-card chart-tall">
+					<canvas id="itemRevenueChart"></canvas>
+				</div>
+			{:else}
+				<div class="empty-state">No revenue data for the selected date range.</div>
+			{/if}
 		</section>
 	{:else}
 		<div class="loading">Loading charts...</div>
+	{/if}
+
+	{#if data.pastReports && data.pastReports.length > 0}
+		<section class="chart-section past-reports">
+			<h2 class="section-title">Previously Generated Reports</h2>
+			<div class="table-wrapper">
+				<table>
+					<thead>
+						<tr>
+							<th>Title</th>
+							<th>Generated</th>
+							<th>By</th>
+							<th>Size</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.pastReports as r (r.report_id)}
+							<tr>
+								<td class="rpt-title">{r.report_title}</td>
+								<td>{formatDateTime(r.created_at)}</td>
+								<td>{r.generated_by || '—'}</td>
+								<td>{formatBytes(r.file_size_bytes)}</td>
+								<td>
+									<a href="/gft/reports/download/{r.report_id}" class="btn-download" target="_blank">Download</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
 	{/if}
 </div>
 
@@ -1015,6 +1415,31 @@
 		box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 		height: 400px;
 	}
+	.chart-card.chart-tall {
+		height: 600px;
+	}
+
+	.filter-input {
+		padding: 0.5rem 1rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 1rem;
+		background-color: white;
+	}
+	.filter-input:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 2rem;
+		color: #6b7280;
+		background: white;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
 
 	canvas {
 		max-height: 100%;
@@ -1026,6 +1451,118 @@
 		color: #6b7280;
 		font-size: 1.125rem;
 	}
+
+	/* PDF panel */
+	.pdf-panel {
+		background: white;
+		padding: 1.25rem 1.5rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		margin-bottom: 1.5rem;
+	}
+	.pdf-panel-row {
+		display: flex;
+		align-items: flex-end;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+	.pdf-title-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		flex: 1;
+		min-width: 250px;
+	}
+	.pdf-title-group label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.pdf-title-input {
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.9rem;
+	}
+	.pdf-title-input:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+	}
+	.btn-generate {
+		background: #3b82f6;
+		color: white;
+		padding: 0.5rem 1.25rem;
+		border-radius: 0.5rem;
+		border: none;
+		font-weight: 600;
+		font-size: 0.9rem;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.btn-generate:hover { background: #2563eb; }
+	.btn-generate:disabled { background: #93c5fd; cursor: not-allowed; }
+	.pdf-sections {
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		gap: 1rem;
+		margin-top: 0.75rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid #f3f4f6;
+	}
+	.pdf-sections-label {
+		grid-column: 1 / -1;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.pdf-section-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+	.pdf-section-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.875rem;
+		color: #374151;
+		cursor: pointer;
+	}
+	.pdf-section-toggle input { cursor: pointer; accent-color: #3b82f6; }
+	.pdf-notes {
+		width: 100%;
+		padding: 0.4rem 0.5rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.375rem;
+		font-size: 0.8rem;
+		font-family: inherit;
+		resize: vertical;
+		color: #374151;
+	}
+	.pdf-notes:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+	.pdf-notes::placeholder { color: #9ca3af; }
+
+	/* Alerts */
+	.alert { padding: 0.875rem 1.25rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-weight: 500; }
+	.alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+	.alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+	/* Past reports */
+	.past-reports { margin-top: 2rem; }
+	.table-wrapper { overflow-x: auto; background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+	.past-reports table { width: 100%; border-collapse: collapse; }
+	.past-reports thead { background: #f9fafb; }
+	.past-reports th { padding: 0.625rem 1rem; text-align: left; font-weight: 600; color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid #e5e7eb; }
+	.past-reports td { padding: 0.5rem 1rem; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; }
+	.past-reports tr:hover { background: #f9fafb; }
+	.rpt-title { font-weight: 500; }
+	.btn-download { display: inline-block; padding: 0.3rem 0.75rem; background: #3b82f6; color: white; border-radius: 0.375rem; text-decoration: none; font-size: 0.8rem; font-weight: 500; }
+	.btn-download:hover { background: #2563eb; }
 
 	@media (max-width: 1024px) {
 		.filter-row {

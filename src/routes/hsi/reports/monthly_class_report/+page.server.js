@@ -1,7 +1,9 @@
 // src/routes/hsi/reports/classes/+page.server.js
 import sql from '$lib/db';
+import { requirePermission } from '$lib/guards';
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	requirePermission(locals.user, 'hsi', 'manager');
 	try {
 		const summaries = await sql`
 			SELECT
