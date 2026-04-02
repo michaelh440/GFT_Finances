@@ -1017,38 +1017,13 @@
 				{generating ? 'Generating...' : 'Generate & Download PDF'}
 			</button>
 		</div>
-		<div class="pdf-sections">
+		<div class="pdf-includes">
 			<span class="pdf-sections-label">Include in PDF:</span>
-			<div class="pdf-section-item">
-				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMonthly} /> Monthly Analysis</label>
-				{#if pdfIncludeMonthly}
-					<textarea class="pdf-notes" bind:value={pdfNotesMonthly} placeholder="Add notes for this section..." rows="2"></textarea>
-				{/if}
-			</div>
-			<div class="pdf-section-item">
-				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfInclude4Month} /> 4-Month Rolling</label>
-				{#if pdfInclude4Month}
-					<textarea class="pdf-notes" bind:value={pdfNotes4Month} placeholder="Add notes for this section..." rows="2"></textarea>
-				{/if}
-			</div>
-			<div class="pdf-section-item">
-				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeYtd} /> Year-to-Date</label>
-				{#if pdfIncludeYtd}
-					<textarea class="pdf-notes" bind:value={pdfNotesYtd} placeholder="Add notes for this section..." rows="2"></textarea>
-				{/if}
-			</div>
-			<div class="pdf-section-item">
-				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMoM} /> Month over Month</label>
-				{#if pdfIncludeMoM}
-					<textarea class="pdf-notes" bind:value={pdfNotesMoM} placeholder="Add notes for this section..." rows="2"></textarea>
-				{/if}
-			</div>
-			<div class="pdf-section-item">
-				<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeItemRevenue} /> Revenue by Show</label>
-				{#if pdfIncludeItemRevenue}
-					<textarea class="pdf-notes" bind:value={pdfNotesItemRevenue} placeholder="Add notes for this section..." rows="2"></textarea>
-				{/if}
-			</div>
+			<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMonthly} /> Monthly</label>
+			<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfInclude4Month} /> 4-Month Rolling</label>
+			<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeYtd} /> Year-to-Date</label>
+			<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeMoM} /> Month over Month</label>
+			<label class="pdf-section-toggle"><input type="checkbox" bind:checked={pdfIncludeItemRevenue} /> Revenue by Show</label>
 		</div>
 	</div>
 
@@ -1132,6 +1107,13 @@
 					<canvas id="monthlyRevenueChart"></canvas>
 				</div>
 			</div>
+
+			{#if pdfIncludeMonthly}
+				<div class="section-notes">
+					<label class="section-notes-label">PDF Notes — Monthly Analysis</label>
+					<textarea class="section-notes-input" bind:value={pdfNotesMonthly} placeholder="Add notes for this section..." rows="2"></textarea>
+				</div>
+			{/if}
 		</section>
 
 		<!-- 4-Month Rolling Section -->
@@ -1184,6 +1166,13 @@
 					<canvas id="fourMonthRevenueChart"></canvas>
 				</div>
 			</div>
+
+			{#if pdfInclude4Month}
+				<div class="section-notes">
+					<label class="section-notes-label">PDF Notes — 4-Month Rolling</label>
+					<textarea class="section-notes-input" bind:value={pdfNotes4Month} placeholder="Add notes for this section..." rows="2"></textarea>
+				</div>
+			{/if}
 		</section>
 
 		<!-- YTD Section -->
@@ -1198,6 +1187,13 @@
 					<canvas id="ytdRevenueChart"></canvas>
 				</div>
 			</div>
+
+			{#if pdfIncludeYtd}
+				<div class="section-notes">
+					<label class="section-notes-label">PDF Notes — Year-to-Date</label>
+					<textarea class="section-notes-input" bind:value={pdfNotesYtd} placeholder="Add notes for this section..." rows="2"></textarea>
+				</div>
+			{/if}
 		</section>
 
 		<!-- Month over Month Section -->
@@ -1223,6 +1219,13 @@
 					<canvas id="momRevenueChart"></canvas>
 				</div>
 			</div>
+
+			{#if pdfIncludeMoM}
+				<div class="section-notes">
+					<label class="section-notes-label">PDF Notes — Month over Month</label>
+					<textarea class="section-notes-input" bind:value={pdfNotesMoM} placeholder="Add notes for this section..." rows="2"></textarea>
+				</div>
+			{/if}
 		</section>
 
 		<!-- Revenue by Item Section -->
@@ -1248,6 +1251,13 @@
 				</div>
 			{:else}
 				<div class="empty-state">No revenue data for the selected date range.</div>
+			{/if}
+
+			{#if pdfIncludeItemRevenue}
+				<div class="section-notes">
+					<label class="section-notes-label">PDF Notes — Revenue by Show</label>
+					<textarea class="section-notes-input" bind:value={pdfNotesItemRevenue} placeholder="Add notes for this section..." rows="2"></textarea>
+				</div>
 			{/if}
 		</section>
 	{:else}
@@ -1504,26 +1514,21 @@
 	}
 	.btn-generate:hover { background: #2563eb; }
 	.btn-generate:disabled { background: #93c5fd; cursor: not-allowed; }
-	.pdf-sections {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: 1rem;
+	.pdf-includes {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
 		margin-top: 0.75rem;
 		padding-top: 0.75rem;
 		border-top: 1px solid #f3f4f6;
+		flex-wrap: wrap;
 	}
 	.pdf-sections-label {
-		grid-column: 1 / -1;
 		font-size: 0.75rem;
 		font-weight: 600;
 		color: #6b7280;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-	}
-	.pdf-section-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
 	}
 	.pdf-section-toggle {
 		display: flex;
@@ -1534,18 +1539,34 @@
 		cursor: pointer;
 	}
 	.pdf-section-toggle input { cursor: pointer; accent-color: #3b82f6; }
-	.pdf-notes {
+
+	.section-notes {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid #e5e7eb;
+	}
+	.section-notes-label {
+		display: block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: 0.4rem;
+	}
+	.section-notes-input {
 		width: 100%;
-		padding: 0.4rem 0.5rem;
+		padding: 0.5rem 0.75rem;
 		border: 1px solid #d1d5db;
 		border-radius: 0.375rem;
-		font-size: 0.8rem;
+		font-size: 0.875rem;
 		font-family: inherit;
 		resize: vertical;
 		color: #374151;
+		box-sizing: border-box;
 	}
-	.pdf-notes:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
-	.pdf-notes::placeholder { color: #9ca3af; }
+	.section-notes-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+	.section-notes-input::placeholder { color: #9ca3af; }
 
 	/* Alerts */
 	.alert { padding: 0.875rem 1.25rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-weight: 500; }
