@@ -234,4 +234,11 @@
   .h-pill { display: inline-flex; align-items: baseline; gap: 0.3rem; background: #f1f5f9; border-radius: 0.25rem; padding: 0.15rem 0.5rem; font-size: 0.8rem; color: #1a202c; }
   .h-label { color: #94a3b8; font-size: 0.72rem; }
   .empty { color: #888; font-style: italic; }
+
+  @media (max-width: 768px) {
+    header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+    .info-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .history-form-grid { grid-template-columns: 1fr; }
+  }
 </style>

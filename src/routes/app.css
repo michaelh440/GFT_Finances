@@ -24,34 +24,183 @@ body {
    Global Mobile-Friendly Styles
    ============================================================ */
 
-/* Tables: wrap in a scrollable container on small screens */
+/* ---- Tablet (≤1024px) ---- */
+@media (max-width: 1024px) {
+	/* Chart grids: 2-col → 1-col */
+	.charts-grid {
+		grid-template-columns: 1fr !important;
+	}
+}
+
+/* ---- Mobile (≤768px) ---- */
 @media (max-width: 768px) {
+
+	/* --- Tables --- */
 	table {
 		display: block;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 	}
-}
 
-/* Touch-friendly targets and mobile spacing */
-@media (max-width: 768px) {
-	/* Ensure buttons and links are at least 44px tall */
-	button, .btn-primary, .btn-secondary, .btn-generate,
-	a[class*="btn-"], input[type="submit"], input[type="button"] {
+	/* --- Touch targets --- */
+	button, a[class*="btn-"], input[type="submit"], input[type="button"] {
 		min-height: 44px;
 	}
 
-	/* Larger form inputs on mobile */
+	/* --- Form inputs: prevent iOS zoom, comfortable tap size --- */
 	input[type="text"], input[type="email"], input[type="password"],
 	input[type="number"], input[type="tel"], input[type="url"],
 	input[type="search"], input[type="date"], input[type="month"],
 	select, textarea {
-		font-size: 16px; /* prevents iOS zoom on focus */
+		font-size: 16px !important;
 		min-height: 44px;
 	}
 
-	/* Reduce container padding on small screens */
+	/* --- Containers --- */
 	.container {
 		padding: 1rem !important;
+	}
+
+	/* --- Page headers: stack vertically --- */
+	header {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.75rem !important;
+	}
+	.header-actions {
+		flex-wrap: wrap !important;
+		gap: 0.5rem !important;
+	}
+
+	/* --- Typography: scale down headings --- */
+	h1 {
+		font-size: 1.5rem !important;
+	}
+	h2 {
+		font-size: 1.15rem !important;
+	}
+
+	/* --- Info grids (detail pages): single column --- */
+	.info-grid {
+		grid-template-columns: 1fr !important;
+		gap: 1rem !important;
+	}
+
+	/* --- Stats rows/grids: 2 columns on phone --- */
+	.stats-row, .stats-grid, .summary-cards {
+		grid-template-columns: repeat(2, 1fr) !important;
+		gap: 0.75rem !important;
+	}
+
+	/* --- Filter sections: stack vertically --- */
+	.filter-row {
+		grid-template-columns: 1fr !important;
+		display: flex !important;
+		flex-direction: column !important;
+		gap: 0.75rem !important;
+	}
+	.filter-group {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.5rem !important;
+	}
+	.filter-section {
+		padding: 1rem !important;
+	}
+	.filter-select {
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+
+	/* --- Form grids: single column --- */
+	.form-grid, .form-row {
+		grid-template-columns: 1fr !important;
+		display: grid !important;
+		gap: 0.75rem !important;
+	}
+
+	/* --- Chart cards --- */
+	.chart-card {
+		height: 300px !important;
+	}
+	.chart-card.chart-wide {
+		height: 280px !important;
+	}
+	.chart-card.chart-tall {
+		height: 300px !important;
+	}
+
+	/* --- PDF panel --- */
+	.pdf-panel-row {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 0.75rem !important;
+	}
+	.pdf-includes {
+		flex-wrap: wrap !important;
+		gap: 0.75rem !important;
+	}
+
+	/* --- Multi-select pills: tighter on mobile --- */
+	.multi-select-pills {
+		gap: 0.35rem !important;
+	}
+	.pill-btn {
+		font-size: 0.8rem !important;
+		padding: 0.35rem 0.65rem !important;
+	}
+
+	/* --- Year checkboxes --- */
+	.year-checkboxes {
+		gap: 0.35rem !important;
+	}
+	.checkbox-label {
+		padding: 0.3rem 0.6rem !important;
+		font-size: 0.8rem !important;
+	}
+
+	/* --- Section notes --- */
+	.section-notes-input {
+		font-size: 0.85rem !important;
+	}
+
+	/* --- Past reports table --- */
+	.past-reports table {
+		font-size: 0.8rem !important;
+	}
+
+	/* --- Review cards / card grids --- */
+	.review-list, .card-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	/* --- Pagination: stack on mobile --- */
+	.pagination {
+		flex-direction: column !important;
+		align-items: center !important;
+		gap: 0.5rem !important;
+	}
+}
+
+/* ---- Small phone (≤480px) ---- */
+@media (max-width: 480px) {
+	/* Stats: single column on very small phones */
+	.stats-row, .stats-grid, .summary-cards {
+		grid-template-columns: 1fr !important;
+	}
+
+	/* Dashboard link grids: single column */
+	.link-grid {
+		grid-template-columns: 1fr !important;
+	}
+
+	/* Tighter container padding */
+	.container {
+		padding: 0.75rem !important;
+	}
+
+	/* Smaller headings */
+	h1 {
+		font-size: 1.25rem !important;
 	}
 }

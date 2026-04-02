@@ -193,4 +193,10 @@
   .checkbox-label { flex-direction: row; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
   .btn-primary { margin-top: 0.75rem; padding: 0.4rem 1rem; background: #2563eb; color: white; border-radius: 4px; font-size: 0.9rem; border: none; cursor: pointer; }
   .btn-secondary { padding: 0.4rem 1rem; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; cursor: pointer; }
+
+  @media (max-width: 768px) {
+    header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+    .info-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
 </style>
