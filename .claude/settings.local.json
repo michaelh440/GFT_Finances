@@ -81,7 +81,10 @@
       "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i '139d' \"src/routes/hsi/student_surveys/enter/+page.server.js\")",
       "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i \"s/AND sq.question_type IN \\('free_text', 'multiple_choice'\\)/AND sq.question_type = 'free_text'/\" \"src/routes/hsi/student_surveys/results/+page.server.js\")",
       "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i '230,232d' \"src/routes/hsi/student_surveys/enter/+page.svelte\")",
-      "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i '232,233d' \"src/routes/hsi/student_surveys/templates/[template_id]/+page.svelte\")"
+      "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i '232,233d' \"src/routes/hsi/student_surveys/templates/[template_id]/+page.svelte\")",
+      "Bash(npx eslint:*)",
+      "Bash(node -e \"require\\('./src/routes/hsi/registrations/+page.server.js'\\)\")",
+      "Bash(node:*)"
     ]
   }
 }

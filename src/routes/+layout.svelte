@@ -205,11 +205,36 @@
 	$: visibleAreas = areaSections.filter(s => canSeeArea(s));
 
 	let sidebarCollapsed = false;
+	let mobileMenuOpen = false;
+
+	/** Close mobile menu on navigation */
+	afterNavigate(() => {
+		mobileMenuOpen = false;
+	});
 </script>
 
 <div class="app-layout" class:sidebar-collapsed={sidebarCollapsed}>
+	<!-- Mobile top bar -->
+	<div class="mobile-topbar">
+		<button class="hamburger-btn" on:click={() => mobileMenuOpen = !mobileMenuOpen} aria-label="Toggle menu">
+			{#if mobileMenuOpen}
+				<span class="hamburger-icon">✕</span>
+			{:else}
+				<span class="hamburger-icon">☰</span>
+			{/if}
+		</button>
+		<a href={resolve('/')} class="mobile-logo">B&C Financial Tracker</a>
+	</div>
+
+	<!-- Mobile overlay backdrop -->
+	{#if mobileMenuOpen}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div class="mobile-backdrop" on:click={() => mobileMenuOpen = false}></div>
+	{/if}
+
 	<!-- Sidebar -->
-	<aside class="sidebar">
+	<aside class="sidebar" class:mobile-open={mobileMenuOpen}>
 		<div class="sidebar-header">
 			<a href={resolve('/')} class="logo-link">
 				{#if !sidebarCollapsed}
@@ -543,25 +568,117 @@
 		overflow-y: auto;
 	}
 
-	/* Responsive */
+	/* Mobile top bar — hidden on desktop */
+	.mobile-topbar {
+		display: none;
+	}
+
+	/* Mobile backdrop — hidden on desktop */
+	.mobile-backdrop {
+		display: none;
+	}
+
+	/* Desktop collapse behavior (above 768px) */
+	@media (min-width: 769px) {
+		.sidebar.mobile-open {
+			/* no-op on desktop */
+		}
+	}
+
+	/* Mobile / small tablet */
 	@media (max-width: 768px) {
-		.sidebar {
-			width: 64px;
+		.mobile-topbar {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 52px;
+			background-color: #1e293b;
+			color: white;
+			padding: 0 1rem;
+			z-index: 1100;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 		}
 
-		.sidebar .nav-label,
-		.sidebar .nav-full-name,
-		.sidebar .nav-chevron,
-		.sidebar .nav-children,
-		.sidebar .logo-text,
-		.sidebar .logo-sub,
-		.sidebar .nav-divider,
-		.sidebar .admin-subsections {
+		.hamburger-btn {
+			background: none;
+			border: none;
+			color: white;
+			cursor: pointer;
+			padding: 0.4rem;
+			border-radius: 0.25rem;
+			line-height: 1;
+		}
+
+		.hamburger-btn:hover {
+			background-color: #334155;
+		}
+
+		.hamburger-icon {
+			font-size: 1.4rem;
+		}
+
+		.mobile-logo {
+			color: white;
+			text-decoration: none;
+			font-weight: 700;
+			font-size: 1rem;
+			white-space: nowrap;
+		}
+
+		.mobile-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			background-color: rgba(0, 0, 0, 0.5);
+			z-index: 1200;
+		}
+
+		/* Hide sidebar by default, show as overlay when open */
+		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			width: 280px;
+			z-index: 1300;
+			transform: translateX(-100%);
+			transition: transform 0.25s ease;
+		}
+
+		.sidebar.mobile-open {
+			transform: translateX(0);
+		}
+
+		/* Always show full sidebar content when open on mobile */
+		.sidebar-collapsed .sidebar.mobile-open {
+			width: 280px;
+		}
+		.sidebar.mobile-open .nav-label,
+		.sidebar.mobile-open .nav-full-name,
+		.sidebar.mobile-open .nav-chevron,
+		.sidebar.mobile-open .nav-children,
+		.sidebar.mobile-open .logo-text,
+		.sidebar.mobile-open .logo-sub,
+		.sidebar.mobile-open .nav-divider,
+		.sidebar.mobile-open .tier-label {
+			display: revert;
+		}
+		.sidebar.mobile-open .logo-text-sm {
 			display: none;
 		}
 
-		.sidebar .logo-text-sm {
-			display: inline;
+		/* Hide desktop collapse button on mobile */
+		.collapse-btn {
+			display: none;
+		}
+
+		/* Push main content below the top bar */
+		.main-content {
+			padding-top: 52px;
 		}
 	}
 </style>
