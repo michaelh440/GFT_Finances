@@ -29,7 +29,7 @@
 </script>
 
 <svelte:head>
-	<title>Update Patron Data | B&C Financial Tracker</title>
+	<title>Update Patron Data | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -56,7 +56,7 @@
 </script>
 
 <svelte:head>
-	<title>Add Promotion | B&C Financial Tracker</title>
+	<title>Add Promotion | StageLedger</title>
 </svelte:head>
 
 <div class="container">

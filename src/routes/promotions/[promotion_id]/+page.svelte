@@ -62,7 +62,7 @@
 </script>
 
 <svelte:head>
-	<title>{promo ? promo.promotion_name : 'Promotion'} | B&C Financial Tracker</title>
+	<title>{promo ? promo.promotion_name : 'Promotion'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -45,7 +45,7 @@
 </script>
 
 <svelte:head>
-	<title>{isNew ? 'Add User' : `Edit ${editUser?.first_name || 'User'}`} | B&C Financial Tracker</title>
+	<title>{isNew ? 'Add User' : `Edit ${editUser?.first_name || 'User'}`} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

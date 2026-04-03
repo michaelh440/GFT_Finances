@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>{classInfo ? `Edit ${classInfo.class_name}` : 'Class Not Found'} | B&C Financial Tracker</title>
+	<title>{classInfo ? `Edit ${classInfo.class_name}` : 'Class Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

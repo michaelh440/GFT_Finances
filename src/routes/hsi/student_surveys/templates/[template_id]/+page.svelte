@@ -32,7 +32,7 @@
 </script>
 
 <svelte:head>
-	<title>{template ? template.template_name : 'Template Not Found'} | B&C Financial Tracker</title>
+	<title>{template ? template.template_name : 'Template Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

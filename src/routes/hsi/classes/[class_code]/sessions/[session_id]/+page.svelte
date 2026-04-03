@@ -75,7 +75,7 @@
 
 <svelte:head>
 	<title>
-		{session ? session.session_name : 'Session Not Found'} | B&C Financial Tracker
+		{session ? session.session_name : 'Session Not Found'} | StageLedger
 	</title>
 </svelte:head>
 

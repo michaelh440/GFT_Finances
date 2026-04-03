@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Add New Class | B&C Financial Tracker</title>
+	<title>Add New Class | StageLedger</title>
 </svelte:head>
 
 <div class="container">

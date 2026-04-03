@@ -138,7 +138,7 @@
 </script>
 
 <svelte:head>
-  <title>Corp Companies | B&C Financial Tracker</title>
+  <title>Corp Companies | StageLedger</title>
 </svelte:head>
 
 <div class="container" data-sveltekit-reload>

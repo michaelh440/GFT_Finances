@@ -9,13 +9,13 @@
 </script>
 
 <svelte:head>
-	<title>Login | B&C Financial Tracker</title>
+	<title>Login | StageLedger</title>
 </svelte:head>
 
 <div class="login-wrapper">
 	<div class="login-card">
 		<div class="login-header">
-			<h1>B&C Financial Tracker</h1>
+			<h1>StageLedger</h1>
 			<p>Sign in to your account</p>
 		</div>
 

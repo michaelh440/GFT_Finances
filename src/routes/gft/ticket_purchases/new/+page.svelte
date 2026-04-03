@@ -57,7 +57,7 @@
 </script>
 
 <svelte:head>
-	<title>Record Ticket Purchase | B&C Financial Tracker</title>
+	<title>Record Ticket Purchase | StageLedger</title>
 </svelte:head>
 
 <div class="container">

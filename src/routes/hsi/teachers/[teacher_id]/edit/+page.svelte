@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>Edit {teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Teacher'} | B&C Financial Tracker</title>
+	<title>Edit {teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Teacher'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

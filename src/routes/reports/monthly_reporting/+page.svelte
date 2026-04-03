@@ -281,7 +281,7 @@
 </script>
 
 <svelte:head>
-	<title>Monthly Report Generator | B&C Financial Tracker</title>
+	<title>Monthly Report Generator | StageLedger</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 </svelte:head>
 

@@ -189,7 +189,7 @@
 </script>
 
 <svelte:head>
-  <title>Company Lookup | B&C Financial Tracker</title>
+  <title>Company Lookup | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-	<title>Enter Monthly Summary | B&C Financial Tracker</title>
+	<title>Enter Monthly Summary | StageLedger</title>
 </svelte:head>
 
 <div class="container">

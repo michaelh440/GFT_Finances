@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>New Survey Template | B&C Financial Tracker</title>
+	<title>New Survey Template | StageLedger</title>
 </svelte:head>
 
 <div class="container">

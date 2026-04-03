@@ -126,7 +126,7 @@
 </script>
 
 <svelte:head>
-	<title>Ticket Purchases | B&C Financial Tracker</title>
+	<title>Ticket Purchases | StageLedger</title>
 </svelte:head>
 
 <div class="container">

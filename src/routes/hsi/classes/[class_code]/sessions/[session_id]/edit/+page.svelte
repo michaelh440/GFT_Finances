@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Edit {session ? session.session_name : 'Session'} | B&C Financial Tracker</title>
+	<title>Edit {session ? session.session_name : 'Session'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

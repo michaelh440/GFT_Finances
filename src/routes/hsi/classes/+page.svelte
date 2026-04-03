@@ -52,7 +52,7 @@
 </script>
 
 <svelte:head>
-	<title>HSI Classes | B&C Financial Tracker</title>
+	<title>HSI Classes | StageLedger</title>
 </svelte:head>
 
 <div class="container">

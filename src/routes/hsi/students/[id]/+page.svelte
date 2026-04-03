@@ -63,7 +63,7 @@
 
 <svelte:head>
 	<title
-		>{student ? `${student.first_name} ${student.last_name}` : 'Student Not Found'} | B&C Financial Tracker</title
+		>{student ? `${student.first_name} ${student.last_name}` : 'Student Not Found'} | StageLedger</title
 	>
 </svelte:head>
 

@@ -291,7 +291,7 @@
   const labelify = (/** @type {string|null} */ s) => s ? s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—';
 </script>
 
-<svelte:head><title>Import Corp Data | B&C Financial Tracker</title></svelte:head>
+<svelte:head><title>Import Corp Data | StageLedger</title></svelte:head>
 
 <div class="container">
   <header>

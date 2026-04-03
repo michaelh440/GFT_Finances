@@ -49,7 +49,7 @@
 </script>
 
 <svelte:head>
-	<title>Audit Log | B&C Financial Tracker</title>
+	<title>Audit Log | StageLedger</title>
 </svelte:head>
 
 <div class="container">

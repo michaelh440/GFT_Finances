@@ -987,7 +987,7 @@
 </script>
 
 <svelte:head>
-	<title>Show Reports | B&C Financial Tracker</title>
+	<title>Show Reports | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -50,7 +50,7 @@
 </script>
 
 <svelte:head>
-	<title>Survey Results | B&C Financial Tracker</title>
+	<title>Survey Results | StageLedger</title>
 </svelte:head>
 
 <div class="container">

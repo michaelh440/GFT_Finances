@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-	<title>{track ? track.track_name : 'Track Not Found'} | B&C Financial Tracker</title>
+	<title>{track ? track.track_name : 'Track Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

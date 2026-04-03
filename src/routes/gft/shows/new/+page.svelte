@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Add New Show | B&C Financial Tracker</title>
+	<title>Add New Show | StageLedger</title>
 </svelte:head>
 
 <div class="container">

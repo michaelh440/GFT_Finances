@@ -223,7 +223,7 @@
 				<span class="hamburger-icon">☰</span>
 			{/if}
 		</button>
-		<a href={resolve('/')} class="mobile-logo">B&C Financial Tracker</a>
+		<a href={resolve('/')} class="mobile-logo">StageLedger</a>
 	</div>
 
 	<!-- Mobile overlay backdrop -->
@@ -238,10 +238,9 @@
 		<div class="sidebar-header">
 			<a href={resolve('/')} class="logo-link">
 				{#if !sidebarCollapsed}
-					<span class="logo-text">B&C Entertainment</span>
-					<span class="logo-sub">Financial Tracker</span>
+					<span class="logo-text">StageLedger</span>
 				{:else}
-					<span class="logo-text-sm">B&C</span>
+					<span class="logo-text-sm">SL</span>
 				{/if}
 			</a>
 			<button

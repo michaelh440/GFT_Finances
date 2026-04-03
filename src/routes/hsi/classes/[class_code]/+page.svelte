@@ -68,7 +68,7 @@
 
 <svelte:head>
 	<title
-		>{classInfo ? `${classInfo.class_name}` : 'Class Not Found'} | B&C Financial Tracker</title
+		>{classInfo ? `${classInfo.class_name}` : 'Class Not Found'} | StageLedger</title
 	>
 </svelte:head>
 

@@ -139,7 +139,7 @@
 </script>
 
 <svelte:head>
-	<title>Zip Code Analytics | B&C Financial Tracker</title>
+	<title>Zip Code Analytics | StageLedger</title>
 </svelte:head>
 
 <div class="container">

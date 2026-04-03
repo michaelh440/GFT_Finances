@@ -365,7 +365,7 @@
 </script>
 
 <svelte:head>
-  <title>Enter Class Registrations | B&C Financial Tracker</title>
+  <title>Enter Class Registrations | StageLedger</title>
 </svelte:head>
 
 <div class="container">

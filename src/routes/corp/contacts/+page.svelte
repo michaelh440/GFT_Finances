@@ -93,7 +93,7 @@
 </script>
 
 <svelte:head>
-  <title>Corp Contacts | B&C Financial Tracker</title>
+  <title>Corp Contacts | StageLedger</title>
 </svelte:head>
 
 <div class="container">

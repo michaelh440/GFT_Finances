@@ -104,7 +104,7 @@
 </script>
 
 <svelte:head>
-	<title>Promotions | B&C Financial Tracker</title>
+	<title>Promotions | StageLedger</title>
 </svelte:head>
 
 <div class="container">

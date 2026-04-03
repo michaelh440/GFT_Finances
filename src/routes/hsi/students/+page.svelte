@@ -90,7 +90,7 @@
 </script>
 
 <svelte:head>
-	<title>Students | B&C Financial Tracker</title>
+	<title>Students | StageLedger</title>
 </svelte:head>
 
 <div class="container" data-sveltekit-reload>

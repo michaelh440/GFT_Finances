@@ -46,7 +46,7 @@
 </script>
 
 <svelte:head>
-	<title>{teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Teacher'} | B&C Financial Tracker</title>
+	<title>{teacher ? `${teacher.first_name} ${teacher.last_name}` : 'Teacher'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

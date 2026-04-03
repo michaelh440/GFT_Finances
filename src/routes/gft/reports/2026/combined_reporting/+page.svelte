@@ -344,7 +344,7 @@
 </script>
 
 <svelte:head>
-	<title>Combined Reporting | B&C Financial Tracker</title>
+	<title>Combined Reporting | StageLedger</title>
 </svelte:head>
 
 <div class="container">

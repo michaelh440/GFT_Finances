@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-	<title>New Session — {classInfo ? classInfo.class_name : 'Class'} | B&C Financial Tracker</title>
+	<title>New Session — {classInfo ? classInfo.class_name : 'Class'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Add Teacher | B&C Financial Tracker</title>
+	<title>Add Teacher | StageLedger</title>
 </svelte:head>
 
 <div class="container">

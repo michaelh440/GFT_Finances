@@ -127,7 +127,7 @@
 </script>
 
 <svelte:head>
-  <title>Corp Engagements | B&C Financial Tracker</title>
+  <title>Corp Engagements | StageLedger</title>
 </svelte:head>
 
 <div class="container">

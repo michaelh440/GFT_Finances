@@ -59,7 +59,7 @@
 </script>
 
 <svelte:head>
-	<title>{showInfo ? showInfo.show_name : 'Show Not Found'} | B&C Financial Tracker</title>
+	<title>{showInfo ? showInfo.show_name : 'Show Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

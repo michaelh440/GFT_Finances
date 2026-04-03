@@ -37,7 +37,7 @@
 </script>
 
 <svelte:head>
-	<title>{patron ? `${patron.first_name} ${patron.last_name}` : 'Patron Not Found'} | B&C Financial Tracker</title>
+	<title>{patron ? `${patron.first_name} ${patron.last_name}` : 'Patron Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

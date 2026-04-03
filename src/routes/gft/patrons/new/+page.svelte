@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>Add Patron | B&C Financial Tracker</title>
+	<title>Add Patron | StageLedger</title>
 </svelte:head>
 
 <div class="container">

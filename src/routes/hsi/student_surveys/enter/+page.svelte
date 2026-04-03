@@ -45,7 +45,7 @@
 </script>
 
 <svelte:head>
-	<title>Enter Survey | B&C Financial Tracker</title>
+	<title>Enter Survey | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -79,7 +79,7 @@
 </script>
 
 <svelte:head>
-	<title>Teachers | B&C Financial Tracker</title>
+	<title>Teachers | StageLedger</title>
 </svelte:head>
 
 <div class="container">

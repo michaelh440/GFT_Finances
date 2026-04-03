@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-  <title>Corp Workflow Settings | B&C Financial Tracker</title>
+  <title>Corp Workflow Settings | StageLedger</title>
 </svelte:head>
 
 <div class="container">

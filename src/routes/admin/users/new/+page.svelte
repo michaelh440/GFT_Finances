@@ -41,7 +41,7 @@
 </script>
 
 <svelte:head>
-	<title>Add New User | B&C Financial Tracker</title>
+	<title>Add New User | StageLedger</title>
 </svelte:head>
 
 <div class="container">

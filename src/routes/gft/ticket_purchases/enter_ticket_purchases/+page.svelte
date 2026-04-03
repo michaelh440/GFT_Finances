@@ -329,7 +329,7 @@
 </script>
 
 <svelte:head>
-	<title>Enter Ticket Purchases | B&C Financial Tracker</title>
+	<title>Enter Ticket Purchases | StageLedger</title>
 </svelte:head>
 
 <div class="container" data-sveltekit-reload>

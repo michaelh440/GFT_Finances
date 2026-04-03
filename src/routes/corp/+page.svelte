@@ -4,7 +4,7 @@
 </script>
 
 <svelte:head>
-	<title>B&C Entertainment | Financial Tracker</title>
+	<title>StageLedger</title>
 </svelte:head>
 
 <div class="home">
@@ -12,7 +12,7 @@
 		<div class="logo-container">
 			<div class="logo-placeholder">
 				<span class="logo-icon">💼</span>
-				<h1>B&C Corporate Business</h1>
+				<h1>Corporate Business</h1>
 				<p class="tagline">''</p>
 			</div>
 		</div>

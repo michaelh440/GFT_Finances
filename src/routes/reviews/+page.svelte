@@ -57,7 +57,7 @@
   function onSearchKey(e) { if (e.key === 'Enter') applyFilters(); }
 </script>
 
-<svelte:head><title>Customer Reviews | B&C Financial Tracker</title></svelte:head>
+<svelte:head><title>Customer Reviews | StageLedger</title></svelte:head>
 
 <div class="container" data-sveltekit-reload>
   <header>

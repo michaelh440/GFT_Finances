@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Add Track | B&C Financial Tracker</title>
+	<title>Add Track | StageLedger</title>
 </svelte:head>
 
 <div class="container">

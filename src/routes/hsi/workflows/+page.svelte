@@ -41,7 +41,7 @@
 </script>
 
 <svelte:head>
-  <title>HSI Workflow Settings | B&C Financial Tracker</title>
+  <title>HSI Workflow Settings | StageLedger</title>
 </svelte:head>
 
 <div class="container">

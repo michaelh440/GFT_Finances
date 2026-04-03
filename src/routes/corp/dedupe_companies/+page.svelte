@@ -247,7 +247,7 @@
   }
 </script>
 
-<svelte:head><title>Dedupe Corp Companies | B&C Financial Tracker</title></svelte:head>
+<svelte:head><title>Dedupe Corp Companies | StageLedger</title></svelte:head>
 
 <div class="container">
   <header>

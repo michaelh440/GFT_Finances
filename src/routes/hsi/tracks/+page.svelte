@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>Class Tracks | B&C Financial Tracker</title>
+	<title>Class Tracks | StageLedger</title>
 </svelte:head>
 
 <div class="container">

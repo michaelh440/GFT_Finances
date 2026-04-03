@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>Student Surveys | B&C Financial Tracker</title>
+	<title>Student Surveys | StageLedger</title>
 </svelte:head>
 
 <div class="container">

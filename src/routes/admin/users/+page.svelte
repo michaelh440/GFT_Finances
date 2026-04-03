@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>User Management | B&C Financial Tracker</title>
+	<title>User Management | StageLedger</title>
 </svelte:head>
 
 <div class="container">

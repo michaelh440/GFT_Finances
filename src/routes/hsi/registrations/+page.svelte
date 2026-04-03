@@ -604,7 +604,7 @@
 </script>
 
 <svelte:head>
-	<title>Registration Funnel | B&C Financial Tracker</title>
+	<title>Registration Funnel | StageLedger</title>
 </svelte:head>
 
 <div class="container">

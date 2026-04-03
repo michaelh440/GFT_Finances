@@ -56,7 +56,7 @@
 </script>
 
 <svelte:head>
-  <title>{company?.company_name ?? 'Company'} | Corp | B&C Financial Tracker</title>
+  <title>{company?.company_name ?? 'Company'} | Corp | StageLedger</title>
 </svelte:head>
 
 <div class="container">

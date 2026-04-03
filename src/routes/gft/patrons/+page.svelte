@@ -130,7 +130,7 @@
 </script>
 
 <svelte:head>
-	<title>Patrons | B&C Financial Tracker</title>
+	<title>Patrons | StageLedger</title>
 </svelte:head>
 
 <div class="container" data-sveltekit-reload>

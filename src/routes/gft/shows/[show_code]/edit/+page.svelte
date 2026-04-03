@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-	<title>{showInfo ? `Edit ${showInfo.show_name}` : 'Show Not Found'} | B&C Financial Tracker</title>
+	<title>{showInfo ? `Edit ${showInfo.show_name}` : 'Show Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

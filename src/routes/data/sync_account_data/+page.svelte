@@ -73,7 +73,7 @@
 </script>
 
 <svelte:head>
-	<title>Sync Patron Account IDs | B&C Financial Tracker</title>
+	<title>Sync Patron Account IDs | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -49,7 +49,7 @@
 </script>
 
 <svelte:head>
-	<title>Live Shows | B&C Financial Tracker</title>
+	<title>Live Shows | StageLedger</title>
 </svelte:head>
 
 <div class="container">

@@ -18,7 +18,7 @@
 </script>
 
 <svelte:head>
-	<title>{patron ? `Edit ${patron.first_name} ${patron.last_name}` : 'Patron Not Found'} | B&C Financial Tracker</title>
+	<title>{patron ? `Edit ${patron.first_name} ${patron.last_name}` : 'Patron Not Found'} | StageLedger</title>
 </svelte:head>
 
 <div class="container">

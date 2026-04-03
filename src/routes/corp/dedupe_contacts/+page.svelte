@@ -122,7 +122,7 @@
   }
 </script>
 
-<svelte:head><title>Dedupe Corp Contacts | B&C Financial Tracker</title></svelte:head>
+<svelte:head><title>Dedupe Corp Contacts | StageLedger</title></svelte:head>
 
 <div class="container" data-sveltekit-reload>
   <header>

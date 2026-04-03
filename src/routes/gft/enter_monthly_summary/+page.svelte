@@ -82,7 +82,7 @@
 </script>
 
 <svelte:head>
-	<title>Enter Show Summary | B&C Financial Tracker</title>
+	<title>Enter Show Summary | StageLedger</title>
 </svelte:head>
 
 <div class="container">
