@@ -130,5 +130,8 @@
 		header { flex-direction: column; align-items: flex-start; gap: 1rem; }
 		.header-actions { flex-wrap: wrap; }
 		.card-grid { grid-template-columns: 1fr; }
+		.table-card { overflow-x: auto; overflow-y: visible; }
+		table { display: table; min-width: 550px; }
+		th, td { white-space: nowrap; }
 	}
 </style>

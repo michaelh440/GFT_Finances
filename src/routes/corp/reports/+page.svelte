@@ -941,7 +941,12 @@
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .charts-grid { grid-template-columns: 1fr; }
     .chart-card.wide { grid-column: 1; }
-    .filter-row { flex-direction: column; }
+    .filter-row { flex-direction: column; align-items: stretch; }
+    .filter-group { width: 100%; min-width: 0; }
+    .filter-select, .filter-group input[type="month"] { width: 100%; box-sizing: border-box; }
     .section-header { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+    .table-card { overflow-x: auto; overflow-y: visible; }
+    table { display: table; min-width: 600px; }
+    th, td { white-space: nowrap; }
   }
 </style>

@@ -513,8 +513,9 @@
 
   @media (max-width: 768px) {
     header { flex-direction: column; gap: 1rem; align-items: flex-start; }
-    .filter-row { flex-direction: column; gap: 1rem; }
-    .filter-select { min-width: 100%; }
+    .filter-row { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .filter-group { width: 100%; }
+    .filter-select { width: 100%; min-width: 0; box-sizing: border-box; }
     .toolbar { flex-direction: column; align-items: flex-start; }
     .search-input { width: 100%; }
     .pagination { flex-direction: column; align-items: flex-start; }

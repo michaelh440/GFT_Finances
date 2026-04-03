@@ -430,6 +430,8 @@
 	@media (max-width: 768px) {
 		header { flex-direction: column; gap: 1rem; }
 		.filter-grid { grid-template-columns: 1fr 1fr; }
+		.filter-group select,
+		.filter-group input { width: 100%; box-sizing: border-box; min-width: 0; }
 		.filter-bottom { flex-direction: column; align-items: stretch; }
 		.btn-apply { text-align: center; }
 		table { font-size: 0.8rem; }

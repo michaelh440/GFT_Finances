@@ -247,7 +247,8 @@
 		.info-grid { grid-template-columns: repeat(2, 1fr); }
 		.stats-row { grid-template-columns: 1fr 1fr; }
 		.form-grid { grid-template-columns: 1fr; }
-		table { font-size: 0.875rem; }
-		th, td { padding: 0.5rem 0.75rem; }
+		.section { overflow-x: auto; }
+		table { display: table; min-width: 650px; font-size: 0.875rem; }
+		th, td { padding: 0.5rem 0.75rem; white-space: nowrap; }
 	}
 </style>

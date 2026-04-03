@@ -320,8 +320,12 @@
 
 	@media (max-width: 768px) {
 		header { flex-direction: column; gap: 1rem; align-items: flex-start; }
-		.filter-row { flex-direction: column; }
-		.search-group { max-width: 100%; }
+		.filter-row { flex-direction: column; align-items: stretch; }
+		.filter-group { width: 100%; }
+		.filter-group label { text-align: left; }
+		.filter-select { width: 100%; min-width: 0; }
+		.search-group { max-width: 100%; width: 100%; }
+		.search-input { width: 100%; }
 		th, td { padding: 0.5rem 0.75rem; }
 	}
 </style>

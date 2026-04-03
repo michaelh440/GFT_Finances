@@ -236,5 +236,8 @@
 
 	.empty-state { text-align: center; padding: 1rem; color: #6b7280; }
 
-	@media (max-width: 768px) { .select-grid { grid-template-columns: 1fr; } }
+	@media (max-width: 768px) {
+		.select-grid { grid-template-columns: 1fr; }
+		select { width: 100%; box-sizing: border-box; }
+	}
 </style>

@@ -1638,7 +1638,21 @@
 
     .config-row {
       flex-direction: column;
+      align-items: stretch;
       gap: 1rem;
+    }
+
+    .config-group {
+      width: 100%;
+    }
+
+    .config-group .input-select,
+    .config-group .input-date,
+    .config-group .input-time,
+    .config-group .input-text,
+    .config-group .input-file {
+      width: 100%;
+      box-sizing: border-box;
     }
   }
 </style>

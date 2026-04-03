@@ -247,5 +247,8 @@
   @media (max-width: 640px) {
     header { flex-direction: column; gap: 1rem; }
     .add-grid { grid-template-columns: 1fr; }
+    .table-wrapper { overflow-x: auto; overflow-y: visible; }
+    table { display: table; min-width: 600px; }
+    th, td { white-space: nowrap; }
   }
 </style>

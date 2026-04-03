@@ -338,4 +338,26 @@
 			padding: 0.5rem 0.5rem;
 		}
 	}
+
+	@media (max-width: 768px) {
+		.format-section {
+			overflow-x: auto;
+		}
+
+		table {
+			table-layout: auto;
+			min-width: 600px;
+			display: table;
+		}
+
+		colgroup {
+			display: none;
+		}
+
+		th, td {
+			padding: 0.5rem;
+			font-size: 0.8rem;
+			white-space: nowrap;
+		}
+	}
 </style>

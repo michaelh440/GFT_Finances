@@ -185,8 +185,16 @@
   .btn-secondary { padding: 0.4rem 1rem; background: white; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; cursor: pointer; }
 
   @media (max-width: 768px) {
-    header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+    .page-header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
     .info-grid { grid-template-columns: 1fr; }
+    .info-block, .notes-block, .edit-form {
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    dl { grid-template-columns: 100px 1fr; gap: 0.3rem 0.75rem; }
     .form-grid { grid-template-columns: 1fr; }
+    input, select, textarea { width: 100%; box-sizing: border-box; }
   }
 </style>

@@ -461,13 +461,20 @@
 			grid-template-columns: 1fr;
 		}
 
+		.section {
+			overflow-x: auto;
+		}
+
 		table {
+			display: table;
+			min-width: 600px;
 			font-size: 0.875rem;
 		}
 
 		th,
 		td {
 			padding: 0.5rem 0.75rem;
+			white-space: nowrap;
 		}
 	}
 </style>

@@ -672,7 +672,8 @@
 		.stats-row { grid-template-columns: repeat(2, 1fr); }
 		.charts-grid { grid-template-columns: 1fr; }
 		.chart-card.wide { grid-column: 1; }
-		.filter-row { flex-direction: column; }
-		.filter-group { min-width: 100%; }
+		.filter-row { flex-direction: column; align-items: stretch; }
+		.filter-group { width: 100%; min-width: 0; }
+		.filter-group select { width: 100%; box-sizing: border-box; }
 	}
 </style>

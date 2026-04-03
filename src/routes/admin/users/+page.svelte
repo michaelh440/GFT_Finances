@@ -1,6 +1,6 @@
 <!-- src/routes/admin/users/+page.svelte -->
 <script>
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	/** @type {any} */
 	export let data;
@@ -25,11 +25,11 @@
 <div class="container">
 	<header>
 		<div>
-			<a href="{base}/" class="back-link">← Back to Home</a>
+			<a href={resolve('/')} class="back-link">← Back to Home</a>
 			<h1>User Management</h1>
 			<p class="subtitle">{data.users.length} user{data.users.length !== 1 ? 's' : ''}</p>
 		</div>
-		<a href="{base}/admin/users/new" class="btn-primary">+ Add User</a>
+		<a href={resolve('/admin/users/new')} class="btn-primary">+ Add User</a>
 	</header>
 
 	<div class="table-wrapper">
@@ -63,7 +63,7 @@
 							<span class="status-badge" class:active={user.is_active}>{user.is_active ? 'Active' : 'Inactive'}</span>
 						</td>
 						<td class="date-cell">{formatDate(user.last_login_at)}</td>
-						<td><a href="{base}/admin/users/{user.user_id}/edit" class="btn-edit">Edit</a></td>
+						<td><a href={resolve(`/admin/users/${user.user_id}/edit`)} class="btn-edit">Edit</a></td>
 					</tr>
 				{/each}
 			</tbody>

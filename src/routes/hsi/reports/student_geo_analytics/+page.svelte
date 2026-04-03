@@ -593,8 +593,9 @@
 	.loading { text-align: center; color: #6b7280; padding: 3rem; font-size: 0.95rem; }
 
 	@media (max-width: 768px) {
-		.filter-row { flex-direction: column; gap: 1rem; }
-		.filter-select { min-width: 100%; }
+		.filter-row { flex-direction: column; align-items: stretch; gap: 1rem; }
+		.filter-group { width: 100%; }
+		.filter-select { width: 100%; min-width: 0; box-sizing: border-box; }
 		.chart-container-donut { max-width: 100%; }
 	}
 </style>

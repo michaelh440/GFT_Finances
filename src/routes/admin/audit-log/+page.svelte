@@ -171,4 +171,10 @@
 	.pagination button:hover { background: #f9fafb; }
 	.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
 	.pagination span { font-size: 0.85rem; color: #6b7280; }
+
+	@media (max-width: 768px) {
+		.filter-row { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+		.filter-group { width: 100%; min-width: 0; }
+		.filter-group select { width: 100%; box-sizing: border-box; }
+	}
 </style>

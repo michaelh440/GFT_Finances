@@ -1597,7 +1597,13 @@
 
 		.filter-group {
 			flex-direction: column;
-			align-items: flex-start;
+			align-items: stretch;
+		}
+
+		.filter-select {
+			width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
 		}
 	}
 </style>
