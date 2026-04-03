@@ -66,12 +66,14 @@
 			tiers: [
 				{ tier: 'viewer', links: [
 					{ label: 'Shows', href: '/gft/shows' },
+					{ label: 'Bar Items', href: '/gft/bar' },
 					{ label: 'Patrons', href: '/gft/patrons' },
 					{ label: 'Ticket Purchases', href: '/gft/ticket_purchases' },
 				]},
 				{ tier: 'data_entry', links: [
 					{ label: 'Enter Ticket Purchases', href: '/gft/ticket_purchases/enter_ticket_purchases' },
 					{ label: 'Enter Monthly Summary', href: '/gft/enter_monthly_summary' },
+					{ label: 'Enter Bar Summary', href: '/gft/enter_monthly_bar_summary' },
 				]},
 				{ tier: 'manager', links: [
 					{ label: 'Show Reports', href: '/gft/reports' },
@@ -131,6 +133,8 @@
 		{ label: 'View Users', href: '/admin/users' },
 		{ label: 'Add Users', href: '/admin/users/new' },
 		{ label: 'Audit Logs', href: '/admin/audit-log' },
+		{ label: 'State Standardization', href: '/admin/tools/state_standardization' },
+		{ label: 'VBO Sync', href: '/admin/tools/bi_directional_vbo_sync' },
 	];
 
 	// Tier labels for rendering sub-headers
