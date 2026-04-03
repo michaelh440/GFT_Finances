@@ -84,7 +84,8 @@
       "Bash(cd \"C:/Projects/GFT/GFT_Finances\" && sed -i '232,233d' \"src/routes/hsi/student_surveys/templates/[template_id]/+page.svelte\")",
       "Bash(npx eslint:*)",
       "Bash(node -e \"require\\('./src/routes/hsi/registrations/+page.server.js'\\)\")",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(cat:*)"
     ]
   }
 }

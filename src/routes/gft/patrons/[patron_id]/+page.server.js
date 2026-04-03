@@ -51,6 +51,56 @@ export const load = async ({ params, locals }) => {
 		const totalTickets = tickets.reduce((sum, t) => sum + Number(t.tickets_purchased), 0);
 		const totalSpent = tickets.reduce((sum, t) => sum + Number(t.amount_paid), 0);
 
+		// Cross-reference: find matching student by vbo_account_id, email, or name
+		let studentMatch = null;
+		let studentRegistrations = [];
+		let studentTotalPaid = 0;
+
+		// Try vbo_account_id first
+		if (patron.vbo_account_id) {
+			const [s] = await sql`
+				SELECT student_id, first_name, last_name FROM students
+				WHERE vbo_account_id = ${patron.vbo_account_id} LIMIT 1
+			`;
+			if (s) studentMatch = s;
+		}
+		// Fallback to email
+		if (!studentMatch && patron.email) {
+			const [s] = await sql`
+				SELECT student_id, first_name, last_name FROM students
+				WHERE LOWER(TRIM(email)) = ${patron.email.toLowerCase().trim()} LIMIT 1
+			`;
+			if (s) studentMatch = s;
+		}
+		// Fallback to name
+		if (!studentMatch && patron.first_name && patron.last_name) {
+			const [s] = await sql`
+				SELECT student_id, first_name, last_name FROM students
+				WHERE LOWER(TRIM(first_name)) = ${patron.first_name.toLowerCase().trim()}
+				  AND LOWER(TRIM(last_name)) = ${patron.last_name.toLowerCase().trim()} LIMIT 1
+			`;
+			if (s) studentMatch = s;
+		}
+
+		if (studentMatch) {
+			const regs = await sql`
+				SELECT r.registration_id, r.class_code, r.class_date, r.amount_paid,
+				       r.session_id, c.class_name, c.track,
+				       cs.session_name
+				FROM registrations r
+				JOIN classes c ON r.class_code = c.class_code
+				LEFT JOIN class_sessions cs ON r.session_id = cs.session_id
+				WHERE r.student_id = ${studentMatch.student_id}
+				ORDER BY r.class_date DESC
+			`;
+			studentRegistrations = regs.map((r) => ({
+				...r,
+				class_date: r.class_date ? r.class_date.toISOString().split('T')[0] : null,
+				amount_paid: Number(r.amount_paid || 0)
+			}));
+			studentTotalPaid = studentRegistrations.reduce((sum, r) => sum + r.amount_paid, 0);
+		}
+
 		return {
 			patron,
 			tickets: tickets.map((t) => ({
@@ -59,7 +109,10 @@ export const load = async ({ params, locals }) => {
 				amount_paid: Number(t.amount_paid)
 			})),
 			totalTickets,
-			totalSpent
+			totalSpent,
+			studentMatch: studentMatch ? { student_id: studentMatch.student_id, first_name: studentMatch.first_name, last_name: studentMatch.last_name } : null,
+			studentRegistrations,
+			studentTotalPaid,
 		};
 	} catch (error) {
 		console.error('Error loading patron detail:', error);

@@ -93,6 +93,58 @@ export const load = async ({ params, locals }) => {
       FROM registrations
       WHERE student_id = ${studentId}
     `;
+		const totalPaid = Number(totalResult[0].total_paid);
+
+		// Cross-reference: find matching patron by vbo_account_id, email, or name
+		let patronMatch = null;
+		let patronTickets = [];
+		let patronTotalSpent = 0;
+
+		const studentRaw = studentResult[0];
+		// Try vbo_account_id first
+		if (studentRaw.vbo_account_id) {
+			const [p] = await sql`
+				SELECT patron_id, first_name, last_name FROM patrons
+				WHERE vbo_account_id = ${studentRaw.vbo_account_id} LIMIT 1
+			`;
+			if (p) patronMatch = p;
+		}
+		// Fallback to email
+		if (!patronMatch && studentRaw.email) {
+			const [p] = await sql`
+				SELECT patron_id, first_name, last_name FROM patrons
+				WHERE LOWER(TRIM(email)) = ${studentRaw.email.toLowerCase().trim()} LIMIT 1
+			`;
+			if (p) patronMatch = p;
+		}
+		// Fallback to name
+		if (!patronMatch && studentRaw.first_name && studentRaw.last_name) {
+			const [p] = await sql`
+				SELECT patron_id, first_name, last_name FROM patrons
+				WHERE LOWER(TRIM(first_name)) = ${studentRaw.first_name.toLowerCase().trim()}
+				  AND LOWER(TRIM(last_name)) = ${studentRaw.last_name.toLowerCase().trim()} LIMIT 1
+			`;
+			if (p) patronMatch = p;
+		}
+
+		if (patronMatch) {
+			const tickets = await sql`
+				SELECT st.ticket_id, st.show_code, st.show_date, st.tickets_purchased,
+				       st.amount_paid, st.purchase_date, s.show_name, s.format
+				FROM show_tickets st
+				JOIN shows s ON s.show_code = st.show_code
+				WHERE st.patron_id = ${patronMatch.patron_id}
+				ORDER BY st.show_date DESC
+			`;
+			patronTickets = tickets.map((t) => ({
+				...t,
+				show_date: t.show_date ? t.show_date.toISOString().split('T')[0] : null,
+				purchase_date: t.purchase_date ? t.purchase_date.toISOString().split('T')[0] : null,
+				tickets_purchased: Number(t.tickets_purchased),
+				amount_paid: Number(t.amount_paid)
+			}));
+			patronTotalSpent = patronTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+		}
 
 		return {
 			student,
@@ -104,7 +156,10 @@ export const load = async ({ params, locals }) => {
 					: null,
 				amount_paid: Number(r.amount_paid || 0)
 			})),
-			totalPaid: Number(totalResult[0].total_paid),
+			totalPaid,
+			patronMatch: patronMatch ? { patron_id: patronMatch.patron_id, first_name: patronMatch.first_name, last_name: patronMatch.last_name } : null,
+			patronTickets,
+			patronTotalSpent,
 			user: locals.user,
 			canSeePII,
 		};

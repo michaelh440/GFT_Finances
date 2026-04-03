@@ -692,6 +692,14 @@
 									{#if result.csv.acct_id}
 										<span class="acctid-tag">{result.csv.acct_id}</span>
 									{/if}
+									{#if result.csv.state}
+										<span class="state-tag" class:state-warn={result.csv.state !== result.csv.state_original}>
+											{result.csv.city ? result.csv.city + ', ' : ''}{result.csv.state}
+											{#if result.csv.state !== result.csv.state_original}
+												<span class="state-orig">(was: {result.csv.state_original})</span>
+											{/if}
+										</span>
+									{/if}
 									<span class="match-badge badge-{result.matchType}">
 										{#if result.matchType === 'acctid_match'}AcctID Match
 										{:else if result.matchType === 'email_match'}Email Match
@@ -913,6 +921,9 @@
 	.promo-tag { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; background-color: #fef3c7; color: #92400e; margin-left: 0.4rem; }
 	.class-tag { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; background-color: #e0e7ff; color: #4338ca; margin-left: 0.4rem; }
 	.acctid-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; background-color: #dbeafe; color: #1e40af; margin-left: 0.4rem; font-family: monospace; }
+	.state-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500; background-color: #f3f4f6; color: #374151; margin-left: 0.4rem; }
+	.state-tag.state-warn { background-color: #fef3c7; color: #92400e; }
+	.state-orig { font-size: 0.65rem; color: #9ca3af; margin-left: 0.2rem; }
 	tr.promo-row { background-color: #fffbeb; }
 	.col-right { text-align: right; }
 	tr.dimmed { opacity: 0.5; }

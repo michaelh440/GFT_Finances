@@ -1,6 +1,7 @@
 // src/routes/hsi/enter_class_registrations/+page.server.js
 import sql from '$lib/db';
 import { requirePermission } from '$lib/guards';
+import { standardizeState } from '$lib/states';
 
 export const load = async ({ locals }) => {
   requirePermission(locals.user, 'hsi', 'data_entry');
@@ -296,7 +297,8 @@ export const actions = {
             address_line1: row.address_line1 || '',
             address_line2: row.address_line2 || '',
             city: row.city || '',
-            state: row.state || '',
+            state: standardizeState(row.state),
+            state_original: row.state || '',
             zip_code: row.zip_code || '',
             country: row.country || ''
           },

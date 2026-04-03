@@ -9,6 +9,10 @@
 	$: tickets = data.tickets;
 	$: totalTickets = data.totalTickets;
 	$: totalSpent = data.totalSpent;
+	$: studentMatch = data.studentMatch;
+	$: studentRegistrations = data.studentRegistrations || [];
+	$: studentTotalPaid = data.studentTotalPaid || 0;
+	$: combinedTotal = totalSpent + studentTotalPaid;
 
 	/**
 	 * @param {number} amount
@@ -80,17 +84,25 @@
 
 		<!-- Summary Stats -->
 		<div class="stats-row">
+			{#if studentMatch}
+				<div class="stat-card stat-highlight">
+					<span class="stat-value">{formatCurrency(combinedTotal)}</span>
+					<span class="stat-label">Combined Total</span>
+				</div>
+			{/if}
 			<div class="stat-card">
-				<span class="stat-value">{tickets.length}</span>
-				<span class="stat-label">{tickets.length === 1 ? 'Purchase' : 'Purchases'}</span>
+				<span class="stat-value">{formatCurrency(totalSpent)}</span>
+				<span class="stat-label">Ticket Revenue</span>
 			</div>
+			{#if studentMatch}
+				<div class="stat-card">
+					<span class="stat-value">{formatCurrency(studentTotalPaid)}</span>
+					<span class="stat-label">Class Revenue</span>
+				</div>
+			{/if}
 			<div class="stat-card">
 				<span class="stat-value">{totalTickets}</span>
 				<span class="stat-label">Total Tickets</span>
-			</div>
-			<div class="stat-card">
-				<span class="stat-value">{formatCurrency(totalSpent)}</span>
-				<span class="stat-label">Total Spent</span>
 			</div>
 			<div class="stat-card">
 				<span class="stat-value">{uniqueShows}</span>
@@ -141,6 +153,49 @@
 				</table>
 			{/if}
 		</div>
+
+		<!-- Student Registration History (cross-reference) -->
+		{#if studentMatch}
+			<div class="section" style="margin-top: 2rem;">
+				<div class="section-header-row">
+					<h2>Class Registration History</h2>
+					<a href={resolve(`/hsi/students/${studentMatch.student_id}`)} class="btn-link">View Student Profile →</a>
+				</div>
+				{#if studentRegistrations.length === 0}
+					<p class="empty-state">No class registrations found.</p>
+				{:else}
+					<table>
+						<thead>
+							<tr>
+								<th>Class</th>
+								<th>Session</th>
+								<th>Class Date</th>
+								<th class="col-right">Amount Paid</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each studentRegistrations as reg (reg.registration_id)}
+								<tr>
+									<td>
+										<a href={resolve(`/hsi/classes/${reg.class_code}`)} class="show-link">{reg.class_name}</a>
+										<span class="show-format">{reg.track || ''}</span>
+									</td>
+									<td>{reg.session_name || '—'}</td>
+									<td>{formatDate(reg.class_date)}</td>
+									<td class="col-right">{formatCurrency(reg.amount_paid)}</td>
+								</tr>
+							{/each}
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="3" class="total-label">Total</td>
+								<td class="col-right total-value">{formatCurrency(studentTotalPaid)}</td>
+							</tr>
+						</tfoot>
+					</table>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -396,6 +451,27 @@
 	.btn-secondary:hover {
 		background-color: #d1d5db;
 	}
+
+	.stat-highlight {
+		background: linear-gradient(135deg, #eff6ff, #dbeafe);
+		border: 1px solid #bfdbfe;
+	}
+
+	.section-header-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+	.section-header-row h2 { margin: 0; }
+
+	.btn-link {
+		color: #3b82f6;
+		text-decoration: none;
+		font-size: 0.85rem;
+		font-weight: 500;
+	}
+	.btn-link:hover { text-decoration: underline; }
 
 	@media (max-width: 768px) {
 		header {

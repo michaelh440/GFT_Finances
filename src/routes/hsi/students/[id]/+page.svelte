@@ -29,13 +29,17 @@
 
 	import { resolve } from '$app/paths';
 
-	/** @type {{ student: Student|null, registrations: Registration[], totalPaid: number, user: any, canSeePII: boolean }} */
+	/** @type {{ student: Student|null, registrations: Registration[], totalPaid: number, patronMatch: any, patronTickets: any[], patronTotalSpent: number, user: any, canSeePII: boolean }} */
 	export let data;
 
 	$: student = data.student;
 	$: registrations = data.registrations;
 	$: totalPaid = data.totalPaid;
+	$: patronMatch = data.patronMatch;
+	$: patronTickets = data.patronTickets || [];
+	$: patronTotalSpent = data.patronTotalSpent || 0;
 	$: canSeePII = data.canSeePII;
+	$: combinedTotal = totalPaid + patronTotalSpent;
 
 	let showPII = false;
 
@@ -113,19 +117,28 @@
 
 		<!-- Summary Stats -->
 		<div class="stats-row">
+			{#if patronMatch}
+				<div class="stat-card stat-highlight">
+					<span class="stat-value">{formatCurrency(combinedTotal)}</span>
+					<span class="stat-label">Combined Total</span>
+				</div>
+			{/if}
 			<div class="stat-card">
 				<span class="stat-value">{formatCurrency(totalPaid)}</span>
-				<span class="stat-label">Total Paid</span>
+				<span class="stat-label">Class Revenue</span>
 			</div>
+			{#if patronMatch}
+				<div class="stat-card">
+					<span class="stat-value">{formatCurrency(patronTotalSpent)}</span>
+					<span class="stat-label">Ticket Revenue</span>
+				</div>
+			{/if}
 			<div class="stat-card">
 				<span class="stat-value">{registrations.length}</span>
-				<span class="stat-label"
-					>{registrations.length === 1 ? 'Registration' : 'Registrations'}</span
-				>
+				<span class="stat-label">{registrations.length === 1 ? 'Registration' : 'Registrations'}</span>
 			</div>
 			<div class="stat-card">
-				<span class="stat-value">{[...new Set(registrations.map((r) => r.class_code))].length}</span
-				>
+				<span class="stat-value">{[...new Set(registrations.map((r) => r.class_code))].length}</span>
 				<span class="stat-label">Unique Classes</span>
 			</div>
 		</div>
@@ -183,6 +196,50 @@
 				</table>
 			{/if}
 		</div>
+
+		<!-- Patron Ticket History (cross-reference) -->
+		{#if patronMatch}
+			<div class="section" style="margin-top: 2rem;">
+				<div class="section-header-row">
+					<h2>Ticket Purchase History</h2>
+					<a href={resolve(`/gft/patrons/${patronMatch.patron_id}`)} class="btn-link">View Patron Profile →</a>
+				</div>
+				{#if patronTickets.length === 0}
+					<p class="empty-state">No ticket purchases found.</p>
+				{:else}
+					<table>
+						<thead>
+							<tr>
+								<th>Show</th>
+								<th>Show Date</th>
+								<th class="col-right">Tickets</th>
+								<th class="col-right">Amount Paid</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each patronTickets as ticket (ticket.ticket_id)}
+								<tr>
+									<td>
+										<a href={resolve(`/gft/shows/${ticket.show_code}`)} class="show-link">{ticket.show_name}</a>
+										<span class="show-format">{ticket.format || ''}</span>
+									</td>
+									<td>{formatDate(ticket.show_date)}</td>
+									<td class="col-right">{ticket.tickets_purchased}</td>
+									<td class="col-right">{formatCurrency(ticket.amount_paid)}</td>
+								</tr>
+							{/each}
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="2" class="total-label">Total</td>
+								<td class="col-right total-value">{patronTickets.reduce((s, t) => s + t.tickets_purchased, 0)}</td>
+								<td class="col-right total-value">{formatCurrency(patronTotalSpent)}</td>
+							</tr>
+						</tfoot>
+					</table>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -451,6 +508,37 @@
 	.btn-secondary:hover {
 		background-color: #d1d5db;
 	}
+
+	.stat-highlight {
+		background: linear-gradient(135deg, #eff6ff, #dbeafe);
+		border: 1px solid #bfdbfe;
+	}
+
+	.section-header-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+	.section-header-row h2 { margin: 0; }
+
+	.btn-link {
+		color: #3b82f6;
+		text-decoration: none;
+		font-size: 0.85rem;
+		font-weight: 500;
+	}
+	.btn-link:hover { text-decoration: underline; }
+
+	.show-link {
+		color: #3b82f6;
+		text-decoration: none;
+		font-weight: 500;
+		font-size: 0.9rem;
+		display: block;
+	}
+	.show-link:hover { text-decoration: underline; }
+	.show-format { display: block; font-size: 0.8rem; color: #6b7280; }
 
 	@media (max-width: 768px) {
 		.info-grid {

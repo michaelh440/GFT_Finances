@@ -745,6 +745,14 @@
                   <span class="review-name">{match.csv.first_name} {match.csv.last_name}</span>
                   <span class="review-email">{match.csv.email}</span>
                   {#if match.csv.acct_id}<span class="acctid-tag">AcctID: {match.csv.acct_id}</span>{/if}
+                  {#if match.csv.state}
+                    <span class="state-tag" class:state-warn={match.csv.state !== match.csv.state_original}>
+                      {match.csv.city ? match.csv.city + ', ' : ''}{match.csv.state}
+                      {#if match.csv.state !== match.csv.state_original}
+                        <span class="state-orig">(was: {match.csv.state_original})</span>
+                      {/if}
+                    </span>
+                  {/if}
                   {#if match.matchType === 'new'}
                     <span class="match-badge badge-new">New Student</span>
                   {:else if match.matchType === 'acctid_match'}
@@ -1505,6 +1513,9 @@
   .badge-acctid { background: #dbeafe; color: #1e40af; }
   .badge-name { background: #fef3c7; color: #92400e; }
   .acctid-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; background-color: #dbeafe; color: #1e40af; margin-left: 0.4rem; font-family: monospace; }
+  .state-tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500; background-color: #f3f4f6; color: #374151; margin-left: 0.4rem; }
+  .state-tag.state-warn { background-color: #fef3c7; color: #92400e; }
+  .state-orig { font-size: 0.65rem; color: #9ca3af; margin-left: 0.2rem; }
   .db-student-info { font-size: 0.8rem; color: #6b7280; margin-top: 0.25rem; }
 
   .review-action-row {

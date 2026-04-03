@@ -1,6 +1,7 @@
 // src/routes/shows/ticket_purchases/enter_ticket_purchases/+page.server.js
 import sql from '$lib/db';
 import { requirePermission } from '$lib/guards';
+import { standardizeState } from '$lib/states';
 
 export const load = async ({ locals }) => {
 	requirePermission(locals.user, 'gft', 'data_entry');
@@ -110,7 +111,8 @@ function parseCSZReport(text) {
 				address_line1: fields[4] || '',
 				address_line2: fields[5] || '',
 				city: fields[6] || '',
-				state: fields[7] || '',
+				state: standardizeState(fields[7]),
+				state_original: fields[7] || '',
 				zip_code: fields[8] || '',
 				country: fields[9] || '',
 				email: fields[10] || '',
@@ -139,7 +141,8 @@ function parseCSZReport(text) {
 				address_line1: fields[4] || '',
 				address_line2: fields[5] || '',
 				city: fields[6] || '',
-				state: fields[7] || '',
+				state: standardizeState(fields[7]),
+				state_original: fields[7] || '',
 				zip_code: fields[8] || '',
 				country: fields[9] || '',
 				email: fields[10] || '',
@@ -164,7 +167,8 @@ function parseCSZReport(text) {
 				address_line1: fields[3] || '',
 				address_line2: fields[4] || '',
 				city: fields[5] || '',
-				state: fields[6] || '',
+				state: standardizeState(fields[6]),
+				state_original: fields[6] || '',
 				zip_code: fields[7] || '',
 				country: fields[8] || '',
 				email: fields[9] || '',
