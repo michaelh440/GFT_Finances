@@ -135,6 +135,7 @@
 		{ label: 'Audit Logs', href: '/admin/audit-log' },
 		{ label: 'State Standardization', href: '/admin/tools/state_standardization' },
 		{ label: 'VBO Sync', href: '/admin/tools/bi_directional_vbo_sync' },
+		{ label: 'Seed Customers', href: '/admin/tools/seed_people' },
 	];
 
 	// Tier labels for rendering sub-headers
